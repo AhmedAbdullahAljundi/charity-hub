@@ -1,0 +1,511 @@
+// =============================================================================
+// CharityHub - Normalized PostgreSQL Schema
+// =============================================================================
+// Senior Data Architect Design
+// Converts legacy Excel structure to clean, normalized relational model
+// - No duplicated columns (children, income, medical)
+// - Unified Person model (Husband, Wife, Children)
+// - Separated financial, medical, education domains
+// - Optimized for PMT scoring
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum HousingType {
+  OWNED
+  RENT
+  SHARED
+}
+
+enum RoleInFamily {
+  HUSBAND
+  WIFE
+  CHILD
+  OTHER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  SEPARATED
+}
+
+enum EducationLevel {
+  NONE
+  NURSERY
+  PRIMARY
+  PREPARATORY
+  SECONDARY
+  UNIVERSITY
+}
+
+enum EducationStage {
+  NURSERY
+  PRIMARY
+  PREPARATORY
+  SECONDARY
+  UNIVERSITY
+}
+
+enum AcademicStatus {
+  ENROLLED
+  DROPPED
+  GRADUATED
+  SUSPENDED
+}
+
+enum IncomeSourceType {
+  SALARY
+  PENSION
+  AID
+  NAFAKA
+  FAMILY_SUPPORT
+  CHARITY
+  TAKAFUL_KARAMA
+  PROJECT
+  PROPERTY
+  CHILDREN_INCOME
+  RATION_CARD
+  OTHER
+}
+
+enum MedicalCategory {
+  A
+  B
+  C
+  D
+}
+
+enum DiseaseSeverity {
+  MILD
+  MODERATE
+  SEVERE
+  CRITICAL
+}
+
+enum AssistanceType {
+  FINANCIAL
+  FOOD
+  CLOTHING
+  MEDICAL
+  EDUCATION
+  IN_KIND
+}
+
+enum VulnerabilityClassification {
+  VERY_FRAGILE
+  FRAGILE
+  WEAK
+  MODERATE
+  OUT_OF_PRIORITY
+}
+
+enum SocialStatus {
+  ORPHANS
+  DIVORCED
+  POOR
+  NEEDY
+  DISABILITY
+  STUDENT
+  PRISONER
+  ELDERLY
+  ABANDONMENT
+  CHRONIC_DISEASE
+  TEMPORARY_INJURY
+  OTHER
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum SimulationStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// =============================================================================
+// CORE MODELS
+// =============================================================================
+
+/// Family - Household unit. No person-specific data here.
+/// Links to registration_number for legacy Excel migration.
+model Family {
+  id                  String        @id @default(uuid()) @db.Uuid
+  registration_number String        @unique
+  social_status       SocialStatus?
+  address             String
+  region              String?
+  housing_type        HousingType
+  rent_value          Decimal?      @db.Decimal(12, 2)
+  phone               String?
+  notes               String?
+  created_at          DateTime      @default(now())
+  updated_at          DateTime      @updatedAt
+
+  persons        Person[]
+  incomes        Income[]
+  expenses       Expense[]
+  assistances    Assistance[]
+  scoringRecords Scoring[]
+
+  @@index([registration_number])
+  @@index([social_status])
+  @@index([region])
+  @@index([housing_type])
+  @@map("families")
+}
+
+/// Expense - Family-level expenses. One row per expense item.
+model Expense {
+  id          String   @id @default(uuid()) @db.Uuid
+  family_id   String   @db.Uuid
+  amount      Decimal  @db.Decimal(12, 2)
+  description String?
+  category    String?
+  date        DateTime @default(now())
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  family Family @relation(fields: [family_id], references: [id], onDelete: Cascade)
+
+  @@index([family_id])
+  @@map("expenses")
+}
+
+/// Person - Unified model for Husband, Wife, Children.
+/// Eliminates: Husband name, Wife name, Child1..Child6 columns.
+model Person {
+  id              String          @id @default(uuid()) @db.Uuid
+  family_id       String          @db.Uuid
+  full_name       String
+  national_id     String?         @unique
+  role_in_family  RoleInFamily
+  gender          Gender
+  birth_date      DateTime?
+  marital_status  MaritalStatus?
+  education_level EducationLevel?
+  occupation      String?
+  smoker          Boolean         @default(false)
+  disability      Boolean         @default(false)
+  deceased        Boolean         @default(false)
+  death_year      Int?
+  notes           String?
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+
+  family           Family            @relation(fields: [family_id], references: [id], onDelete: Cascade)
+  medicalCases     MedicalCase[]
+  educationRecords EducationRecord[]
+
+  @@index([family_id])
+  @@index([national_id])
+  @@index([role_in_family])
+  @@index([gender])
+  @@index([birth_date])
+  @@map("persons")
+}
+
+/// Income - Family-level financial. One row per source.
+/// Eliminates: Multiple income columns (Income1, Income2, ...).
+model Income {
+  id          String           @id @default(uuid()) @db.Uuid
+  family_id   String           @db.Uuid
+  source_type IncomeSourceType
+  amount      Decimal          @db.Decimal(12, 2)
+  verified    Boolean          @default(false)
+  notes       String?
+  created_at  DateTime         @default(now())
+  updated_at  DateTime         @updatedAt
+
+  family Family @relation(fields: [family_id], references: [id], onDelete: Cascade)
+
+  @@index([family_id])
+  @@index([source_type])
+  @@index([verified])
+  @@map("incomes")
+}
+
+/// MedicalCase - Person-level medical. Separated from family data.
+/// Eliminates: Medical columns mixed with family rows.
+model MedicalCase {
+  id                String           @id @default(uuid()) @db.Uuid
+  person_id         String           @db.Uuid
+  disease_name      String
+  disease_severity  DiseaseSeverity?
+  chronic           Boolean          @default(false)
+  medical_category  MedicalCategory?
+  doctor_name       String?
+  treatment_cost    Decimal?         @db.Decimal(12, 2)
+  last_service_date DateTime?
+  next_allowed_date DateTime?
+  notes             String?
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
+
+  person Person @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@index([medical_category])
+  @@index([chronic])
+  @@index([last_service_date])
+  @@map("medical_cases")
+}
+
+/// EducationRecord - Person-level education. One row per enrollment.
+/// Eliminates: Repeated grade columns.
+
+model EducationRecord {
+  id                 String          @id @default(uuid()) @db.Uuid
+  person_id          String          @db.Uuid
+  school_name        String
+  stage              EducationStage?
+  grade              String?
+  academic_status    AcademicStatus?
+  memorization_level String?
+  performance_score  Float?
+  dropout_risk       Boolean         @default(false)
+  academic_year      Int?
+  created_at         DateTime        @default(now())
+  updated_at         DateTime        @updatedAt
+
+  person Person @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@index([academic_status])
+  @@index([stage])
+  @@map("education_records")
+}
+
+/// Assistance - Distribution/donation records.
+/// Tracks what was given to family, by whom, when.
+model Assistance {
+  id              String         @id @default(uuid()) @db.Uuid
+  family_id       String         @db.Uuid
+  assistance_type AssistanceType
+  provider_name   String?
+  amount          Decimal?       @db.Decimal(12, 2)
+  items           Json?
+  date            DateTime       @default(now())
+  notes           String?
+  created_at      DateTime       @default(now())
+
+  family Family @relation(fields: [family_id], references: [id], onDelete: Cascade)
+
+  @@index([family_id])
+  @@index([assistance_type])
+  @@index([date])
+  @@map("assistances")
+}
+
+/// Scoring - Cached PMT results. One row per calculation.
+/// Optimized for scoring queries: total_need, vulnerability_index.
+model Scoring {
+  id                  String                      @id @default(uuid()) @db.Uuid
+  family_id           String                      @db.Uuid
+  total_need          Decimal                     @db.Decimal(14, 4)
+  total_income        Decimal                     @db.Decimal(14, 4)
+  vulnerability_index Decimal                     @db.Decimal(10, 4)
+  classification      VulnerabilityClassification
+  breakdown           Json?
+  calculated_at       DateTime                    @default(now())
+
+  family Family @relation(fields: [family_id], references: [id], onDelete: Cascade)
+
+  @@index([family_id])
+  @@index([family_id, calculated_at])
+  @@index([classification])
+  @@index([vulnerability_index])
+  @@index([calculated_at])
+  @@map("scorings")
+}
+
+/// ScoringRule - PMT coefficients. Configurable per deployment.
+model ScoringRule {
+  id          String  @id @default(uuid()) @db.Uuid
+  rule_key    String  @unique
+  coefficient Float
+  description String?
+  active      Boolean @default(true)
+
+  @@index([active])
+  @@map("scoring_rules")
+}
+
+// =============================================================================
+// RBAC & AUDIT
+// =============================================================================
+
+model Role {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String           @unique
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String           @unique
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  role_id       String @db.Uuid
+  permission_id String @db.Uuid
+
+  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+  @@index([permission_id])
+  @@map("role_permissions")
+}
+
+model User {
+  id       String @id @default(uuid()) @db.Uuid
+  name     String
+  email    String @unique
+  password String
+  role_id  String @db.Uuid
+
+  role         Role          @relation(fields: [role_id], references: [id], onDelete: Restrict)
+  auditLogs    AuditLog[]    @relation("UserAuditLogs")
+  simulations  Simulation[]
+  researchLogs ResearchLog[]
+
+  @@index([role_id])
+  @@index([email])
+  @@map("users")
+}
+
+model AuditLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  table_name String
+  record_id  String
+  action     AuditAction
+  changed_by String?     @db.Uuid
+  timestamp  DateTime    @default(now())
+  old_data   Json?
+  new_data   Json?
+
+  changedBy User? @relation("UserAuditLogs", fields: [changed_by], references: [id], onDelete: SetNull)
+
+  @@index([table_name])
+  @@index([record_id])
+  @@index([timestamp])
+  @@index([changed_by])
+  @@index([table_name, record_id])
+  @@map("audit_logs")
+}
+
+// =============================================================================
+// ANTIGRAVITY RESEARCH PLATFORM
+// =============================================================================
+
+/// PhysicsModel - Catalog of available physics computation models.
+model PhysicsModel {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  equation    String? // LaTeX or plain-text formula
+  parameters  Json // JSON schema describing expected input parameters
+  version     String   @default("1.0.0")
+  category    String? // e.g. "classical", "quantum", "relativistic"
+  active      Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  simulations Simulation[]
+
+  @@index([active])
+  @@index([category])
+  @@map("physics_models")
+}
+
+/// Simulation - A user-submitted simulation run.
+model Simulation {
+  id               String           @id @default(uuid()) @db.Uuid
+  user_id          String           @db.Uuid
+  physics_model_id String           @db.Uuid
+  name             String
+  description      String?
+  parameters       Json // The input parameters for this run
+  status           SimulationStatus @default(PENDING)
+  error_message    String?
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
+  completed_at     DateTime?
+
+  user         User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  physicsModel PhysicsModel      @relation(fields: [physics_model_id], references: [id], onDelete: Restrict)
+  result       SimulationResult?
+  researchLogs ResearchLog[]
+
+  @@index([user_id])
+  @@index([physics_model_id])
+  @@index([status])
+  @@index([created_at])
+  @@map("simulations")
+}
+
+/// SimulationResult - Output from a completed simulation.
+model SimulationResult {
+  id                 String   @id @default(uuid()) @db.Uuid
+  simulation_id      String   @unique @db.Uuid
+  output_data        Json // Primary result data
+  metrics            Json? // Convergence, iterations, accuracy, etc.
+  visualization_data Json? // Pre-computed data for frontend charts
+  computation_time   Int? // Milliseconds
+  created_at         DateTime @default(now())
+
+  simulation Simulation @relation(fields: [simulation_id], references: [id], onDelete: Cascade)
+
+  @@index([simulation_id])
+  @@map("simulation_results")
+}
+
+/// ResearchLog - Scientist's notes linked optionally to simulations.
+model ResearchLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  user_id       String   @db.Uuid
+  simulation_id String?  @db.Uuid
+  title         String
+  content       String
+  tags          Json? // Array of string tags
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  user       User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  simulation Simulation? @relation(fields: [simulation_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([simulation_id])
+  @@index([created_at])
+  @@map("research_logs")
+}
