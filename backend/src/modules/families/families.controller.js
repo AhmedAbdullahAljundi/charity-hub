@@ -8,6 +8,15 @@ const { AppError, NotFoundError } = require('../../utils/errors')
 const { registerFamily } = require('./families.service')
 const { validateRegistrationPayload } = require('./families.validator')
 
+function isPrismaUniqueConstraintError(error) {
+  return Boolean(error && typeof error === 'object' && error.code === 'P2002')
+}
+
+async function registerFromBody(body) {
+  const validated = validateRegistrationPayload(body)
+  return registerFamily(validated)
+}
+
 const familiesController = {
   /**
    * Full family registration (Family + Persons + Income + Medical + Education + Scoring)
@@ -15,11 +24,7 @@ const familiesController = {
    */
   register: async (req, res, next) => {
     try {
-      // 1) Validate payload
-      const validated = validateRegistrationPayload(req.body)
-
-      // 2) Delegate to service (transaction + PMT scoring)
-      const result = await registerFamily(validated)
+      const result = await registerFromBody(req.body)
 
       res.status(201).json({
         success: true,
@@ -28,6 +33,9 @@ const familiesController = {
         classification: result.scoring.classification,
       })
     } catch (error) {
+      if (isPrismaUniqueConstraintError(error)) {
+        return next(new AppError('رقم الهوية/التسجيل مسجل مسبقاً', 409, 'CONFLICT_ERROR'))
+      }
       if (error.name === 'ValidationError') {
         return next(new AppError(error.message, 400, 'VALIDATION_ERROR'))
       }
@@ -264,58 +272,23 @@ const familiesController = {
    */
   create: async (req, res, next) => {
     try {
-      const body = req.body
-      const {
-        head_name,
-        national_id,
-        phone,
-        address,
-        housing_type,
-        spouse_name,
-        classification,
-        status,
-        notes,
-      } = body
-
-      if (!head_name || !national_id || !address || !housing_type) {
-        throw new AppError('البيانات الأساسية مطلوبة (الاسم، رقم الهوية، العنوان، نوع السكن)', 400, 'VALIDATION_ERROR')
-      }
-
-      // Check if national_id already exists
-      const existing = await prisma.family.findUnique({
-        where: { national_id: String(national_id).trim() },
-      })
-
-      if (existing) {
-        throw new AppError('رقم الهوية مسجل مسبقاً', 409, 'CONFLICT_ERROR')
-      }
-
-      const data = {
-        head_name: String(head_name).trim(),
-        national_id: String(national_id).trim(),
-        phone: phone ? String(phone).trim() : null,
-        address: String(address).trim(),
-        housing_type,
-        spouse_name: spouse_name ? String(spouse_name).trim() : null,
-        classification: classification || null,
-        status: status || 'PENDING',
-        notes: notes ? String(notes).trim() : null,
-      }
-
-      const family = await prisma.family.create({
-        data,
-        include: {
-          persons: true,
-          incomes: true,
-        },
-      })
+      // NOTE: The current DB schema stores family identifiers in `registration_number` (Family model)
+      // and stores names/national IDs under Persons. The frontend "Add Family" form already sends
+      // the full registration payload (family + persons + ...), even if arrays are empty.
+      //
+      // To avoid API confusion and broken payloads, treat POST /families as an alias of /families/register.
+      const result = await registerFromBody(req.body)
 
       res.status(201).json({
         success: true,
-        data: family,
-        message: 'تم إنشاء العائلة بنجاح',
+        familyId: result.familyId,
+        vulnerabilityIndex: result.scoring.vulnerabilityIndex,
+        classification: result.scoring.classification,
       })
     } catch (error) {
+      if (isPrismaUniqueConstraintError(error)) {
+        return next(new AppError('رقم الهوية/التسجيل مسجل مسبقاً', 409, 'CONFLICT_ERROR'))
+      }
       next(error)
     }
   },

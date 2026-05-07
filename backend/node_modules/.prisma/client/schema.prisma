@@ -139,13 +139,6 @@ enum AuditAction {
   DELETE
 }
 
-enum SimulationStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  FAILED
-}
-
 // =============================================================================
 // CORE MODELS
 // =============================================================================
@@ -394,10 +387,8 @@ model User {
   password String
   role_id  String @db.Uuid
 
-  role         Role          @relation(fields: [role_id], references: [id], onDelete: Restrict)
-  auditLogs    AuditLog[]    @relation("UserAuditLogs")
-  simulations  Simulation[]
-  researchLogs ResearchLog[]
+  role      Role       @relation(fields: [role_id], references: [id], onDelete: Restrict)
+  auditLogs AuditLog[] @relation("UserAuditLogs")
 
   @@index([role_id])
   @@index([email])
@@ -422,90 +413,4 @@ model AuditLog {
   @@index([changed_by])
   @@index([table_name, record_id])
   @@map("audit_logs")
-}
-
-// =============================================================================
-// ANTIGRAVITY RESEARCH PLATFORM
-// =============================================================================
-
-/// PhysicsModel - Catalog of available physics computation models.
-model PhysicsModel {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @unique
-  description String?
-  equation    String? // LaTeX or plain-text formula
-  parameters  Json // JSON schema describing expected input parameters
-  version     String   @default("1.0.0")
-  category    String? // e.g. "classical", "quantum", "relativistic"
-  active      Boolean  @default(true)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  simulations Simulation[]
-
-  @@index([active])
-  @@index([category])
-  @@map("physics_models")
-}
-
-/// Simulation - A user-submitted simulation run.
-model Simulation {
-  id               String           @id @default(uuid()) @db.Uuid
-  user_id          String           @db.Uuid
-  physics_model_id String           @db.Uuid
-  name             String
-  description      String?
-  parameters       Json // The input parameters for this run
-  status           SimulationStatus @default(PENDING)
-  error_message    String?
-  created_at       DateTime         @default(now())
-  updated_at       DateTime         @updatedAt
-  completed_at     DateTime?
-
-  user         User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  physicsModel PhysicsModel      @relation(fields: [physics_model_id], references: [id], onDelete: Restrict)
-  result       SimulationResult?
-  researchLogs ResearchLog[]
-
-  @@index([user_id])
-  @@index([physics_model_id])
-  @@index([status])
-  @@index([created_at])
-  @@map("simulations")
-}
-
-/// SimulationResult - Output from a completed simulation.
-model SimulationResult {
-  id                 String   @id @default(uuid()) @db.Uuid
-  simulation_id      String   @unique @db.Uuid
-  output_data        Json // Primary result data
-  metrics            Json? // Convergence, iterations, accuracy, etc.
-  visualization_data Json? // Pre-computed data for frontend charts
-  computation_time   Int? // Milliseconds
-  created_at         DateTime @default(now())
-
-  simulation Simulation @relation(fields: [simulation_id], references: [id], onDelete: Cascade)
-
-  @@index([simulation_id])
-  @@map("simulation_results")
-}
-
-/// ResearchLog - Scientist's notes linked optionally to simulations.
-model ResearchLog {
-  id            String   @id @default(uuid()) @db.Uuid
-  user_id       String   @db.Uuid
-  simulation_id String?  @db.Uuid
-  title         String
-  content       String
-  tags          Json? // Array of string tags
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-
-  user       User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  simulation Simulation? @relation(fields: [simulation_id], references: [id], onDelete: SetNull)
-
-  @@index([user_id])
-  @@index([simulation_id])
-  @@index([created_at])
-  @@map("research_logs")
 }

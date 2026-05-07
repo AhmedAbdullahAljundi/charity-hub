@@ -22,55 +22,6 @@ async function main() {
     console.log(`✅ Created ${summary.permissionsCreated} permissions`);
     console.log(`✅ Created ${summary.rolePermissionsCreated} role-permission mappings`);
 
-    // Seed Physics Models for Antigravity Research Platform
-    console.log('\n🔬 Seeding physics models...');
-    const physicsModels = [
-      {
-        name: 'Newtonian Gravity',
-        description: 'Classical gravitational force between two masses using Newton\'s law of universal gravitation.',
-        equation: 'F = G × m₁ × m₂ / r²',
-        category: 'classical',
-        parameters: { mass1: 'kg', mass2: 'kg', distance: 'm' },
-      },
-      {
-        name: 'Relativistic Energy',
-        description: 'Einstein\'s special relativity energy calculation with Lorentz factor.',
-        equation: 'E = γmc²',
-        category: 'relativistic',
-        parameters: { mass: 'kg', velocity: 'm/s' },
-      },
-      {
-        name: 'Quantum Oscillator',
-        description: 'Quantum harmonic oscillator energy levels and zero-point energy.',
-        equation: 'E_n = ℏω(n + ½)',
-        category: 'quantum',
-        parameters: { angular_frequency: 'rad/s', quantum_number: 'integer', mass: 'kg' },
-      },
-      {
-        name: 'Anti-Gravity Field',
-        description: 'Theoretical repulsive gravitational field model with coupling constant and trajectory simulation.',
-        equation: 'F_ag = -G_eff × m × S / r²',
-        category: 'anti_gravity_field',
-        parameters: { mass: 'kg', field_strength: 'N/kg', distance: 'm', coupling_constant: 'dimensionless' },
-      },
-      {
-        name: 'Electromagnetic',
-        description: 'Lorentz force calculation for charged particles in electric and magnetic fields.',
-        equation: 'F = qE + qv×B',
-        category: 'electromagnetic',
-        parameters: { charge: 'C', electric_field: 'V/m', magnetic_field: 'T', velocity: 'm/s' },
-      },
-    ];
-
-    for (const model of physicsModels) {
-      await prisma.physicsModel.upsert({
-        where: { name: model.name },
-        update: model,
-        create: model,
-      });
-    }
-    console.log(`✅ Seeded ${physicsModels.length} physics models`);
-
     // Display role-permission mappings
     console.log('\n📊 Role-Permission Mappings:');
     const roles = await prisma.role.findMany({

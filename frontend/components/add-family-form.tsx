@@ -153,7 +153,7 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
         return;
       }
 
-      // ── CREATE MODE: POST /v1/families/register ──
+      // ── CREATE MODE: POST /v1/families ──
       const payload = {
         family: {
           registration_number: data.nationalId,
@@ -200,7 +200,7 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
         educationRecords: [],
       };
 
-      const response = await api.post("/v1/families/register", payload);
+      const response = await api.post("/v1/families", payload);
 
       const vulnerabilityIndex = response.data?.vulnerabilityIndex ?? 0;
       const classification = response.data?.classification ?? "متوسط";

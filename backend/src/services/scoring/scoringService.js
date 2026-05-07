@@ -19,9 +19,10 @@ const { AppError } = require('../../utils/errors')
 const EDUCATION_WEIGHTS = {
   [EducationLevel.UNIVERSITY]: 0.95,
   [EducationLevel.SECONDARY]: 0.8,
-  [EducationLevel.PRIMARY]: 0.7,
-  [EducationLevel.NONE]: 0.5,
   [EducationLevel.PREPARATORY]: 0.75, // Interpolated between PRIMARY and SECONDARY
+  [EducationLevel.PRIMARY]: 0.7,
+  [EducationLevel.NURSERY]: 0.6,  
+  [EducationLevel.NONE]: 0.5,
 }
 
 /**

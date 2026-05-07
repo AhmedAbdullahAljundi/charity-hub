@@ -48,11 +48,7 @@ const config = {
     enabled: process.env.AUDIT_ENABLED === 'true',
   },
 
-  // Simulation engine
-  simulation: {
-    timeout: parseInt(process.env.SIMULATION_TIMEOUT || '30000', 10),
-    maxConcurrent: parseInt(process.env.MAX_CONCURRENT_SIMULATIONS || '5', 10),
-  },
+
 }
 
 // Validate required environment variables

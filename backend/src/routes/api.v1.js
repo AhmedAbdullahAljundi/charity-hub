@@ -27,9 +27,4 @@ router.use('/income', require('../modules/income/income.routes'))
 router.use('/expenses', require('../modules/expenses/expenses.routes'))
 router.use('/medical', require('../modules/medical/medical.routes'))
 
-// Antigravity Research Platform routes
-router.use('/physics-models', require('../modules/physics-models/physics-models.routes'))
-router.use('/simulations', require('../modules/simulations/simulations.routes'))
-router.use('/research-logs', require('../modules/research-logs/research-logs.routes'))
-
 module.exports = router

@@ -15,7 +15,6 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
-  Atom,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,6 @@ const menuItems = [
   { label: "التقارير", href: "/dashboard/reports", icon: FileBarChart },
   { label: "سجل التعديلات", href: "/dashboard/audit", icon: History },
   { label: "المستخدمين والصلاحيات", href: "/dashboard/users", icon: Shield },
-  { label: "Antigravity Research", href: "/dashboard/antigravity", icon: Atom },
 ];
 
 function SidebarContent({ collapsed, pathname }) {
