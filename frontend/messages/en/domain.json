@@ -1,0 +1,91 @@
+{
+  "vulnerability": {
+    "VERY_FRAGILE": "Very Fragile (Critical)",
+    "FRAGILE": "Fragile",
+    "WEAK": "Weak",
+    "MODERATE": "Moderate",
+    "OUT_OF_PRIORITY": "Out of Priority"
+  },
+  "social_status": {
+    "NEEDY": "Needy",
+    "ORPHAN": "Orphan",
+    "WIDOW": "Widow",
+    "DIVORCED": "Divorced",
+    "DISABLED": "Disabled",
+    "ELDERLY": "Elderly",
+    "CHRONIC_ILLNESS": "Chronic Illness",
+    "PRISONER_FAMILY": "Prisoner Family",
+    "STUDENT": "Student",
+    "ORPHANS": "Orphans",
+    "POOR": "Poor",
+    "DISABILITY": "Disability",
+    "PRISONER": "Prisoner",
+    "ABANDONMENT": "Abandonment",
+    "CHRONIC_DISEASE": "Chronic Disease",
+    "TEMPORARY_INJURY": "Temporary Injury",
+    "OTHER": "Other"
+  },
+  "eligibility": {
+    "ELIGIBLE": "Eligible",
+    "INELIGIBLE": "Ineligible",
+    "PENDING": "Under Review",
+    "SUSPENDED": "Suspended"
+  },
+  "role": {
+    "HUSBAND": "Head of Family",
+    "WIFE": "Wife",
+    "CHILD": "Child",
+    "FATHER": "Father",
+    "MOTHER": "Mother",
+    "BROTHER": "Brother",
+    "SISTER": "Sister",
+    "GRANDSON": "Grandson",
+    "GRANDDAUGHTER": "Granddaughter",
+    "OTHER_RELATIVE": "Other Relative",
+    "OTHER": "Other"
+  },
+  "gender": {
+    "MALE": "Male",
+    "FEMALE": "Female"
+  },
+  "education": {
+    "NONE": "No Education",
+    "NURSERY": "Nursery",
+    "ILLITERATE": "Illiterate",
+    "LITERATE": "Literate",
+    "PRIMARY": "Primary",
+    "PREPARATORY": "Preparatory",
+    "SECONDARY": "Secondary",
+    "TECHNICAL_SECONDARY": "Technical Secondary",
+    "DIPLOMA": "Diploma",
+    "UNIVERSITY": "University",
+    "POSTGRADUATE": "Postgraduate",
+    "KINDERGARTEN": "Kindergarten",
+    "NOT_APPLICABLE": "Not Applicable"
+  },
+  "maritalStatus": {
+    "SINGLE": "Single",
+    "MARRIED": "Married",
+    "DIVORCED": "Divorced",
+    "WIDOWED": "Widowed",
+    "SEPARATED": "Separated",
+    "MARRIED_FEMALE": "Married (Female)",
+    "DIVORCED_FEMALE": "Divorced (Female)",
+    "WIDOWER": "Widower",
+    "WIDOW": "Widow",
+    "UNMARRIED_FEMALE": "Unmarried (Female)"
+  },
+  "disabilitySeverities": {
+    "A": "Mild Disability",
+    "B": "Moderate Disability",
+    "C": "Severe Disability",
+    "D": "Profound Disability"
+  },
+  "chronicSeverities": {
+    "MILD": "Mild",
+    "MODERATE": "Moderate",
+    "SEVERE": "Severe",
+    "CRITICAL": "Critical"
+  },
+  "unknown": "Unknown"
+}

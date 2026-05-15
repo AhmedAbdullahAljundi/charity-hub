@@ -14,6 +14,7 @@ function ScrollArea({
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
       className={cn('relative', className)}
+      suppressHydrationWarning
       {...props}
     >
       <ScrollAreaPrimitive.Viewport

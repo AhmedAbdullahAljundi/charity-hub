@@ -3,6 +3,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
+import { dictLabel } from "@/lib/i18n/dict-label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -19,56 +21,59 @@ import { Switch } from "@/components/ui/switch";
 import { useFamiliesStore, CASE_CATEGORIES, AID_DECISIONS } from "@/lib/store";
 import api from "@/lib/api";
 import { Loader2, User, Phone, MapPin, CreditCard, FileText, HandCoins } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
-const familySchema = z.object({
-  headName: z.string().min(3, "يجب أن يكون الاسم 3 أحرف على الأقل"),
-  wifeName: z.string().optional(),
-  nationalId: z
-    .string()
-    .length(14, "الرقم القومي يجب أن يكون 14 رقم")
-    .regex(/^\d+$/, "الرقم القومي يجب أن يحتوي على أرقام فقط"),
-  wifeNationalId: z.string().optional().refine(
-    (val) => !val || (val.length === 14 && /^\d+$/.test(val)),
-    "الرقم القومي يجب أن يكون 14 رقم"
-  ),
-  phone: z
-    .string()
-    .min(11, "رقم الهاتف يجب أن يكون 11 رقم")
-    .regex(/^01[0125]\d{8}$/, "رقم هاتف غير صحيح"),
-  phone2: z.string().optional().refine(
-    (val) => !val || /^01[0125]\d{8}$/.test(val),
-    "رقم هاتف غير صحيح"
-  ),
-  address: z.string().min(5, "يجب إدخال العنوان بالتفصيل"),
-  housingType: z.string().min(1, "يجب اختيار نوع السكن"),
-  meezaCard: z.string().optional().refine(
-    (val) => !val || (val.length >= 16 && /^\d+$/.test(val)),
-    "رقم بطاقة ميزة يجب أن يكون 16 رقم على الأقل"
-  ),
-  category: z.string().min(1, "يجب اختيار تصنيف الحالة"),
-  categoryReason: z.string().min(5, "يجب كتابة سبب التصنيف"),
-  aidDecision: z.string().min(1, "يجب اختيار نوع المساعدة"),
-  monthlyAidAmount: z.coerce.number().min(0, "المبلغ يجب أن يكون 0 أو أكثر").max(9999, "المبلغ لا يتجاوز 4 أرقام"),
-  pdfName: z.string().optional(),
-  notes: z.string().optional(),
-  fieldResearchDone: z.boolean().optional(),
-  dataVerified: z.boolean().optional(),
-});
+function createFamilySchema(tv: (key: string) => string) {
+  return z.object({
+    headName: z.string().min(3, tv("headNameMin")),
+    wifeName: z.string().optional(),
+    nationalId: z
+      .string()
+      .length(14, tv("nationalIdLength"))
+      .regex(/^\d+$/, tv("nationalIdDigits")),
+    wifeNationalId: z.string().optional().refine(
+      (val) => !val || (val.length === 14 && /^\d+$/.test(val)),
+      tv("nationalIdLength")
+    ),
+    phone: z
+      .string()
+      .min(11, tv("phoneMin"))
+      .regex(/^01[0125]\d{8}$/, tv("phoneInvalid")),
+    phone2: z.string().optional().refine(
+      (val) => !val || /^01[0125]\d{8}$/.test(val),
+      tv("phoneInvalid")
+    ),
+    address: z.string().min(5, tv("addressMin")),
+    housingType: z.string().min(1, tv("housingRequired")),
+    meezaCard: z.string().optional().refine(
+      (val) => !val || (val.length >= 16 && /^\d+$/.test(val)),
+      tv("meezaLength")
+    ),
+    category: z.string().min(1, tv("categoryRequired")),
+    categoryReason: z.string().min(5, tv("categoryReasonMin")),
+    aidDecision: z.string().min(1, tv("aidRequired")),
+    monthlyAidAmount: z.coerce.number().min(0, tv("monthlyAidRange")).max(9999, tv("monthlyAidRange")),
+    pdfName: z.string().optional(),
+    notes: z.string().optional(),
+    fieldResearchDone: z.boolean().optional(),
+    dataVerified: z.boolean().optional(),
+  });
+}
 
-const HOUSING_TYPES = [
-  { value: "RENT", label: "إيجار" },
-  { value: "OWNED", label: "تمليك" },
-  { value: "SHARED", label: "مشترك / عائلة" },
-];
+type FamilyFormValues = z.infer<ReturnType<typeof createFamilySchema>>;
 
-type FamilyFormValues = z.infer<typeof familySchema>;
+const HOUSING_VALUES = ["RENT", "OWNED", "SHARED"] as const;
 
 export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
-  const { addFamily, updateFamily } = useFamiliesStore();
+  const addFamily = useFamiliesStore(state => state.addFamily);
+  const updateFamily = useFamiliesStore(state => state.updateFamily);
   const [loading, setLoading] = useState(false);
   const isEdit = !!initialData;
+  const tv = useTranslations("validation.family");
+  const tf = useTranslations("families.form");
+  const tDict = useTranslations("families");
+  const familySchema = useMemo(() => createFamilySchema(tv), [tv]);
 
   const {
     register,
@@ -107,27 +112,27 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
 
   const mapCategoryToSocialStatus = (category) => {
     switch (category) {
-      case "أسرة أيتام":
+      case "orphans":
         return "ORPHANS";
-      case "مطلقات":
+      case "divorced":
         return "DIVORCED";
-      case "فقراء":
+      case "poor":
         return "POOR";
-      case "مساكين":
+      case "needy":
         return "NEEDY";
-      case "أسر إعاقة":
+      case "disability":
         return "DISABILITY";
-      case "طالب علم":
+      case "student":
         return "STUDENT";
-      case "أسر سجناء":
+      case "prisoner":
         return "PRISONER";
-      case "كبار سن":
+      case "elderly":
         return "ELDERLY";
-      case "حالات هجر واختفاء الزوج":
+      case "absence":
         return "ABANDONMENT";
-      case "أمراض مزمنة":
+      case "chronic":
         return "CHRONIC_DISEASE";
-      case "إصابة مؤقتة":
+      case "temporary_injury":
         return "TEMPORARY_INJURY";
       default:
         return "OTHER";
@@ -148,7 +153,7 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
           social_status: mapCategoryToSocialStatus(data.category),
         });
         updateFamily(initialData.id, { ...data, housing_type: data.housingType });
-        toast.success("تم تعديل الأسرة وحفظها بنجاح");
+        toast.success(tf("toast_edit_ok"));
         onSuccess?.();
         return;
       }
@@ -209,20 +214,18 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
       addFamily({
         ...data,
         id: response.data.familyId,
-        registrationDate: new Date().toISOString().split("T")[0],
-        status: "نشط",
         vulnerabilityIndex,
         classification,
       });
 
       reset();
-      toast.success("تم تسجيل الأسرة بنجاح");
+      toast.success(tf("toast_add_ok"));
       onSuccess?.();
     } catch (error: any) {
       console.error("Family save error", error);
       const message =
         error.response?.data?.message ||
-        (isEdit ? "حدث خطأ أثناء تعديل الأسرة." : "حدث خطأ أثناء تسجيل الأسرة.");
+        (isEdit ? tf("toast_edit_err") : tf("toast_add_err"));
       toast.error(message);
     } finally {
       setLoading(false);
@@ -234,29 +237,29 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
       {/* ── Section 1: Basic Info ── */}
       <div className="flex items-center gap-2 text-sm font-semibold text-primary">
         <User className="h-4 w-4" />
-        <span>البيانات الأساسية</span>
+        <span>{tf("section_basic")}</span>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="headName">اسم رب الأسرة *</Label>
-        <Input id="headName" {...register("headName")} placeholder="الاسم الرباعي" />
+        <Label htmlFor="headName">{tf("headName")}</Label>
+        <Input id="headName" {...register("headName")} placeholder={tf("headNamePh")} />
         {errors.headName && <p className="text-xs text-destructive">{errors.headName.message}</p>}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="wifeName">اسم الزوجة</Label>
-        <Input id="wifeName" {...register("wifeName")} placeholder="اسم الزوجة (يُستخدم لتسمية ملف PDF)" />
+        <Label htmlFor="wifeName">{tf("wifeName")}</Label>
+        <Input id="wifeName" {...register("wifeName")} placeholder={tf("wifeNamePh")} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="nationalId">الرقم القومي لرب الأسرة *</Label>
-          <Input id="nationalId" {...register("nationalId")} placeholder="14 رقم" dir="ltr" className="text-right" />
+          <Label htmlFor="nationalId">{tf("nationalId")}</Label>
+          <Input id="nationalId" {...register("nationalId")} placeholder={tf("nationalIdPh")} dir="ltr" className="text-right" />
           {errors.nationalId && <p className="text-xs text-destructive">{errors.nationalId.message}</p>}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="wifeNationalId">الرقم القومي للزوجة</Label>
-          <Input id="wifeNationalId" {...register("wifeNationalId")} placeholder="14 رقم" dir="ltr" className="text-right" />
+          <Label htmlFor="wifeNationalId">{tf("wifeNationalId")}</Label>
+          <Input id="wifeNationalId" {...register("wifeNationalId")} placeholder={tf("nationalIdPh")} dir="ltr" className="text-right" />
           {errors.wifeNationalId && <p className="text-xs text-destructive">{errors.wifeNationalId.message}</p>}
         </div>
       </div>
@@ -266,43 +269,45 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
       {/* ── Section 2: Contact ── */}
       <div className="flex items-center gap-2 text-sm font-semibold text-primary">
         <Phone className="h-4 w-4" />
-        <span>بيانات الاتصال</span>
+        <span>{tf("section_contact")}</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="phone">رقم الهاتف الأساسي *</Label>
-          <Input id="phone" {...register("phone")} placeholder="01xxxxxxxxx" dir="ltr" className="text-right" />
+          <Label htmlFor="phone">{tf("phone")}</Label>
+          <Input id="phone" {...register("phone")} placeholder={tf("phonePh")} dir="ltr" className="text-right" />
           {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="phone2">رقم هاتف بديل</Label>
-          <Input id="phone2" {...register("phone2")} placeholder="01xxxxxxxxx" dir="ltr" className="text-right" />
+          <Label htmlFor="phone2">{tf("phone2")}</Label>
+          <Input id="phone2" {...register("phone2")} placeholder={tf("phonePh")} dir="ltr" className="text-right" />
           {errors.phone2 && <p className="text-xs text-destructive">{errors.phone2.message}</p>}
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="address">العنوان بالتفصيل *</Label>
+          <Label htmlFor="address">{tf("address")}</Label>
           <div className="flex items-start gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground mt-2.5 shrink-0" />
-            <Input id="address" {...register("address")} placeholder="الشارع، الحي، المدينة، المحافظة" className="flex-1" />
+            <Input id="address" {...register("address")} placeholder={tf("addressPh")} className="flex-1" />
           </div>
-          {errors.address && <p className="text-xs text-destructive mr-6">{errors.address.message}</p>}
+          {errors.address && <p className="text-xs text-destructive me-6">{errors.address.message}</p>}
         </div>
         <div className="space-y-2">
-          <Label>نوع السكن *</Label>
+          <Label>{tf("housingType")}</Label>
           <Select
             defaultValue={watch("housingType") || "RENT"}
             onValueChange={(v) => setValue("housingType", v, { shouldValidate: true })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="اختر نوع السكن" />
+              <SelectValue placeholder={tf("housingPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              {HOUSING_TYPES.map((ht) => (
-                <SelectItem key={ht.value} value={ht.value}>{ht.label}</SelectItem>
+              {HOUSING_VALUES.map((hv) => (
+                <SelectItem key={hv} value={hv}>
+                  {tDict(`housing.${hv}`)}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -315,14 +320,14 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
       {/* ── Section 3: Financial ── */}
       <div className="flex items-center gap-2 text-sm font-semibold text-primary">
         <CreditCard className="h-4 w-4" />
-        <span>البيانات المالية</span>
+        <span>{tf("section_financial")}</span>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="meezaCard">رقم بطاقة ميزة (فيزا)</Label>
-        <Input id="meezaCard" {...register("meezaCard")} placeholder="رقم البطاقة (16 رقم)" dir="ltr" className="text-right" />
+        <Label htmlFor="meezaCard">{tf("meezaCard")}</Label>
+        <Input id="meezaCard" {...register("meezaCard")} placeholder={tf("meezaPh")} dir="ltr" className="text-right" />
         {errors.meezaCard && <p className="text-xs text-destructive">{errors.meezaCard.message}</p>}
-        <p className="text-[11px] text-muted-foreground">رقم البطاقة المستخدمة لصرف المساعدات عبر البنك</p>
+        <p className="text-[11px] text-muted-foreground">{tf("meezaHint")}</p>
       </div>
 
       <Separator />
@@ -330,33 +335,37 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
       {/* ── Section 4: Classification ── */}
       <div className="flex items-center gap-2 text-sm font-semibold text-primary">
         <FileText className="h-4 w-4" />
-        <span>التصنيف والحالة</span>
+        <span>{tf("section_classification")}</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>تصنيف الحالة *</Label>
+          <Label>{tf("category")}</Label>
           <Select onValueChange={(val) => setValue("category", val, { shouldValidate: true })}>
             <SelectTrigger>
-              <SelectValue placeholder="اختر التصنيف" />
+              <SelectValue placeholder={tf("categoryPh")} />
             </SelectTrigger>
             <SelectContent>
               {CASE_CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                <SelectItem key={cat.value} value={cat.key}>
+                  {dictLabel(tDict, "caseCategories", cat)}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {errors.category && <p className="text-xs text-destructive">{errors.category.message}</p>}
         </div>
         <div className="space-y-2">
-          <Label>قرار المساعدة *</Label>
+          <Label>{tf("aidDecision")}</Label>
           <Select onValueChange={(val) => setValue("aidDecision", val, { shouldValidate: true })}>
             <SelectTrigger>
-              <SelectValue placeholder="نوع المساعدة" />
+              <SelectValue placeholder={tf("aidDecisionPh")} />
             </SelectTrigger>
             <SelectContent>
               {AID_DECISIONS.map((aid) => (
-                <SelectItem key={aid} value={aid}>{aid}</SelectItem>
+                <SelectItem key={aid.value} value={aid.key}>
+                  {dictLabel(tDict, "aidDecisions", aid)}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -365,11 +374,11 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="categoryReason">سبب التصنيف *</Label>
+        <Label htmlFor="categoryReason">{tf("categoryReason")}</Label>
         <Textarea
           id="categoryReason"
           {...register("categoryReason")}
-          placeholder="اكتب سبب تصنيف هذه الأسرة في هذه الفئة..."
+          placeholder={tf("categoryReasonPh")}
           rows={2}
         />
         {errors.categoryReason && <p className="text-xs text-destructive">{errors.categoryReason.message}</p>}
@@ -380,23 +389,23 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
       {/* ── Section 5: Aid Amount ── */}
       <div className="flex items-center gap-2 text-sm font-semibold text-primary">
         <HandCoins className="h-4 w-4" />
-        <span>المساعدة المقررة</span>
+        <span>{tf("section_aid")}</span>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="monthlyAidAmount">مبلغ المساعدة الشهرية (ج.م)</Label>
+        <Label htmlFor="monthlyAidAmount">{tf("monthlyAidAmount")}</Label>
         <Input
           id="monthlyAidAmount"
           type="number"
           {...register("monthlyAidAmount")}
           min={0}
           max={9999}
-          placeholder="الحد الأقصى 4 أرقام"
+          placeholder={tf("monthlyAidPlaceholder")}
           dir="ltr"
           className="text-right"
         />
         {errors.monthlyAidAmount && <p className="text-xs text-destructive">{errors.monthlyAidAmount.message}</p>}
-        <p className="text-[11px] text-muted-foreground">المبلغ لا يتجاوز 9999 ج.م (4 أرقام) للتوافق مع نظام البنك</p>
+        <p className="text-[11px] text-muted-foreground">{tf("monthlyAidHint")}</p>
       </div>
 
       <Separator />
@@ -405,8 +414,8 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
       <div className="space-y-4 rounded-xl bg-secondary/50 p-4">
         <div className="flex items-center justify-between">
           <div>
-            <Label className="text-sm font-medium">تم إجراء بحث ميداني</Label>
-            <p className="text-[11px] text-muted-foreground mt-0.5">هل تم إرسال متطوع لزيارة الأسرة؟</p>
+            <Label className="text-sm font-medium">{tf("fieldResearchTitle")}</Label>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{tf("fieldResearchHint")}</p>
           </div>
           <Switch
             checked={fieldResearchDone}
@@ -416,8 +425,8 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
 
         <div className="flex items-center justify-between">
           <div>
-            <Label className="text-sm font-medium">تم التحقق من البيانات</Label>
-            <p className="text-[11px] text-muted-foreground mt-0.5">هل تم مراجعة المستندات وتأكيد صحة البيانات؟</p>
+            <Label className="text-sm font-medium">{tf("dataVerifiedTitle")}</Label>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{tf("dataVerifiedHint")}</p>
           </div>
           <Switch
             checked={dataVerified}
@@ -427,14 +436,14 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="pdfName">اسم ملف PDF</Label>
-        <Input id="pdfName" {...register("pdfName")} placeholder="عادةً يكون اسم الزوجة" />
-        <p className="text-[11px] text-muted-foreground">اسم الزوجة لأنها الأكثر ترددًا على الجمعية</p>
+        <Label htmlFor="pdfName">{tf("pdfName")}</Label>
+        <Input id="pdfName" {...register("pdfName")} placeholder={tf("pdfNamePh")} />
+        <p className="text-[11px] text-muted-foreground">{tf("pdfNameHint")}</p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">ملاحظات إضافية</Label>
-        <Textarea id="notes" {...register("notes")} placeholder="أي ملاحظات أخرى..." rows={2} />
+        <Label htmlFor="notes">{tf("notes")}</Label>
+        <Textarea id="notes" {...register("notes")} placeholder={tf("notesPh")} rows={2} />
       </div>
       {/* ── Submit Button ── */}
       <Button
@@ -443,7 +452,7 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
         disabled={loading}
       >
         {loading && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
-        {loading ? "جاري الحفظ..." : isEdit ? "حفظ التعديلات" : "تسجيل الأسرة"}
+        {loading ? tf("saving") : isEdit ? tf("submitEdit") : tf("submitAdd")}
       </Button>
     </form>
   );

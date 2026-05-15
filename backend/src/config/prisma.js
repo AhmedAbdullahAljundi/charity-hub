@@ -7,8 +7,8 @@
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' 
-    ? ['query', 'info', 'warn', 'error']
+  log: process.env.NODE_ENV === 'development'
+    ? ['warn', 'error']  // 'query' + 'info' removed — they add overhead on every request
     : ['error'],
 });
 

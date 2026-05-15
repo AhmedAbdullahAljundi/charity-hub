@@ -1,0 +1,27 @@
+{
+  "title": "Volunteers",
+  "subtitle": "Manage the volunteer team and assignments",
+  "addVolunteer": "Add volunteer",
+  "toastComingSoon": "Adding volunteers is not available yet.",
+  "searchPlaceholder": "Search by name, area, or phone…",
+  "tasksCount": "{count} tasks",
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "specialty": {
+    "field": "Field research",
+    "data": "Data entry",
+    "medical": "Medical disbursement",
+    "education": "Education follow-up"
+  },
+  "demo": {
+    "v5_name": "Mohamed Ibrahim Ali",
+    "v1_area": "Mansoura",
+    "v2_area": "Tanta",
+    "v3_area": "Damanhur",
+    "v4_area": "Kafr El Sheikh",
+    "v5_area": "Zagazig",
+    "v6_area": "Banha"
+  }
+}

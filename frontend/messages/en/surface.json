@@ -1,0 +1,177 @@
+{
+  "education": {
+    "title": "Education tracking",
+    "subtitle": "Monitor schooling level and Quran memorization",
+    "stats": {
+      "totalStudents": "Total students",
+      "averageGrades": "Average grades",
+      "topPerformers": "High achievers"
+    },
+    "searchPlaceholder": "Search by name, family, or grade…",
+    "table": {
+      "student": "Student",
+      "family": "Family",
+      "grade": "Grade level",
+      "level": "Performance",
+      "quran": "Quran memorization",
+      "updated": "Last updated"
+    },
+    "levels": {
+      "excellent": "Excellent",
+      "veryGood": "Very good",
+      "good": "Good",
+      "weak": "Weak"
+    },
+    "demo": {
+      "s1_name": "Mohamed Ahmed",
+      "s1_family": "Ahmed Mohamed family",
+      "s1_grade": "First year secondary",
+      "s1_quran": "Surah Al-Baqarah",
+      "s2_name": "Sara Ahmed",
+      "s2_family": "Ahmed Mohamed family",
+      "s2_grade": "Sixth grade primary",
+      "s2_quran": "Surah Al Imran",
+      "s3_name": "Ali Fatima",
+      "s3_family": "Fatima Al-Sayed family",
+      "s3_grade": "Third year preparatory",
+      "s3_quran": "Surah An-Nisa",
+      "s4_name": "Nour Mahmoud",
+      "s4_family": "Mahmoud Ali family",
+      "s4_grade": "Second grade primary",
+      "s4_quran": "Juz Amma",
+      "s5_name": "Yasmin Mahmoud",
+      "s5_family": "Mahmoud Ali family",
+      "s5_grade": "Fourth grade primary",
+      "s5_quran": "Surah Ya-Sin",
+      "s6_name": "Ahmed Hassan",
+      "s6_family": "Hassan Mohamed family",
+      "s6_grade": "Second year secondary",
+      "s6_quran": "Surah Al-Kahf"
+    }
+  },
+  "medical": {
+    "title": "Medical records",
+    "subtitle": "Track medical cases and treatment costs",
+    "addRecord": "Add medical record",
+    "stats": {
+      "totalCases": "Total cases",
+      "criticalCases": "Critical cases",
+      "monthlyCost": "Estimated monthly cost"
+    },
+    "searchPlaceholder": "Search family, member, or condition…",
+    "table": {
+      "family": "Family",
+      "member": "Member",
+      "condition": "Condition",
+      "severity": "Severity",
+      "cost": "Monthly cost",
+      "status": "Status"
+    },
+    "severityStyle": {
+      "moderate": "moderate",
+      "chronic": "chronic",
+      "acute": "acute",
+      "severe": "severe"
+    },
+    "demo": {
+      "r1_family": "Ahmed Mohamed family",
+      "r1_member": "Ahmed Mohamed",
+      "r1_condition": "Hypertension",
+      "r1_severity": "Moderate",
+      "r1_status": "Ongoing",
+      "r2_family": "Ahmed Mohamed family",
+      "r2_member": "Fatima Ali",
+      "r2_condition": "Type 2 diabetes",
+      "r2_severity": "Chronic",
+      "r2_status": "Ongoing",
+      "r3_family": "Fatima Al-Sayed family",
+      "r3_member": "Fatima Al-Sayed",
+      "r3_condition": "Rheumatism",
+      "r3_severity": "Moderate",
+      "r3_status": "Ongoing",
+      "r4_family": "Mahmoud Ali family",
+      "r4_member": "Mahmoud Ali",
+      "r4_condition": "Leg fracture",
+      "r4_severity": "Acute",
+      "r4_status": "Temporary care",
+      "r5_family": "Zainab Abd El-Rahman family",
+      "r5_member": "Ali Zainab",
+      "r5_condition": "Intellectual disability",
+      "r5_severity": "Severe",
+      "r5_status": "Ongoing",
+      "r6_family": "Mariam Ahmed family",
+      "r6_member": "Mariam Ahmed",
+      "r6_condition": "Severe anemia",
+      "r6_severity": "Moderate",
+      "r6_status": "Temporary care"
+    }
+  },
+  "audit": {
+    "title": "Audit log",
+    "subtitle": "Track all actions and changes in the system",
+    "types": {
+      "add": "Create",
+      "edit": "Update",
+      "research": "Field research",
+      "report": "Report",
+      "disbursement": "Disbursement",
+      "refresh": "Update"
+    },
+    "demo": {
+      "l1_user": "System administrator",
+      "l1_action": "Added new family",
+      "l1_target": "Ahmed Mohamed family",
+      "l2_user": "System administrator",
+      "l2_action": "Updated family record",
+      "l2_target": "Fatima Al-Sayed family",
+      "l3_user": "Amr Hossam",
+      "l3_action": "Completed field research",
+      "l3_target": "Mahmoud Ali family",
+      "l4_user": "Noura Mohamed",
+      "l4_action": "Entered income data",
+      "l4_target": "Zainab Abd El-Rahman family",
+      "l5_user": "System administrator",
+      "l5_action": "Exported families report",
+      "l5_target": "Summary report",
+      "l6_user": "Khaled Abdel Aziz",
+      "l6_action": "Medical disbursement",
+      "l6_target": "Fatima Ali — Ahmed family",
+      "l7_user": "System administrator",
+      "l7_action": "Updated user permissions",
+      "l7_target": "Noura Mohamed Said",
+      "l8_user": "Hind Ahmed",
+      "l8_action": "Education follow-up updated",
+      "l8_target": "Mohamed Ahmed — first year secondary"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Generate and export reports",
+    "filterPlaceholder": "Report type",
+    "filterAll": "All reports",
+    "types": {
+      "comprehensive": "Comprehensive",
+      "financial": "Financial",
+      "analytical": "Analytical",
+      "periodic": "Periodic",
+      "operations": "Operations",
+      "educational": "Educational"
+    },
+    "lastGenerated": "Last generated: {date}",
+    "exportExcel": "Export Excel",
+    "cards": {
+      "r1_title": "Families overview report",
+      "r1_desc": "All registered families with classifications and indicators",
+      "r2_title": "Income & expenses report",
+      "r2_desc": "Monthly income and expense breakdown for every family",
+      "r3_title": "Vulnerability indicators report",
+      "r3_desc": "Vulnerability scores and classifications with regional breakdown",
+      "r4_title": "Monthly performance report",
+      "r4_desc": "Monthly activity: registrations, field visits, and distributions",
+      "r5_title": "Distributions report",
+      "r5_desc": "Full log of material, food, and in-kind distributions",
+      "r6_title": "Education follow-up report",
+      "r6_desc": "Schooling progress and Quran memorization by household"
+    }
+  }
+}

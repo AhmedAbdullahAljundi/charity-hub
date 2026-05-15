@@ -1,0 +1,50 @@
+{
+  "validation": {
+    "login": {
+      "email": "البريد الإلكتروني غير صحيح",
+      "passwordMin": "كلمة المرور يجب أن تكون 6 أحرف على الأقل"
+    },
+    "family": {
+      "headNameMin": "يجب أن يكون الاسم 3 أحرف على الأقل",
+      "nationalIdLength": "الرقم القومي يجب أن يكون 14 رقم",
+      "nationalIdDigits": "الرقم القومي يجب أن يحتوي على أرقام فقط",
+      "phoneMin": "رقم الهاتف يجب أن يكون 11 رقم",
+      "phoneInvalid": "رقم هاتف غير صحيح",
+      "addressMin": "يجب إدخال العنوان بالتفصيل",
+      "housingRequired": "يجب اختيار نوع السكن",
+      "meezaLength": "رقم بطاقة ميزة يجب أن يكون 16 رقم على الأقل",
+      "categoryRequired": "يجب اختيار تصنيف الحالة",
+      "categoryReasonMin": "يجب كتابة سبب التصنيف",
+      "aidRequired": "يجب اختيار نوع المساعدة",
+      "monthlyAidRange": "المبلغ يجب أن يكون 0 أو أكثر والحد الأقصى 4 أرقام"
+    },
+    "member": {
+      "nameMin": "الاسم مطلوب (3 أحرف على الأقل)",
+      "nationalId14": "الرقم القومي يجب أن يكون 14 رقم",
+      "relationRequired": "اختر صلة القرابة",
+      "birthRequired": "تاريخ الميلاد مطلوب",
+      "genderRequired": "اختر النوع",
+      "sourceRequired": "اختر مصدر الدخل",
+      "amountRequired": "المبلغ مطلوب",
+      "frequencyRequired": "اختر التكرار",
+      "expenseCategoryRequired": "اختر فئة المصروف",
+      "medicalConditionRequired": "أدخل اسم الحالة",
+      "personRequired": "اختر فرد الأسرة"
+    }
+  },
+  "auth": {
+    "tagline": "نظام إدارة الجمعيات الخيرية",
+    "loginTitle": "تسجيل الدخول",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "passwordPlaceholder": "كلمة المرور",
+    "submit": "تسجيل الدخول",
+    "submitLoading": "جاري تسجيل الدخول…",
+    "toggleHidePassword": "إخفاء كلمة المرور",
+    "toggleShowPassword": "عرض كلمة المرور",
+    "demoHintTitle": "بيانات تجريبية:",
+    "errorInvalid": "بيانات الدخول غير صحيحة. جرب: admin@charityhub.org / 123456",
+    "errorNetwork": "حدث خطأ في الاتصال بالخادم",
+    "demoAdminName": "مدير النظام"
+  }
+}

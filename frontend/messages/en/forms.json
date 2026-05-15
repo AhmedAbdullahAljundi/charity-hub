@@ -1,0 +1,50 @@
+{
+  "validation": {
+    "login": {
+      "email": "Invalid email address",
+      "passwordMin": "Password must be at least 6 characters"
+    },
+    "family": {
+      "headNameMin": "Name must be at least 3 characters",
+      "nationalIdLength": "National ID must be 14 digits",
+      "nationalIdDigits": "National ID must contain digits only",
+      "phoneMin": "Phone must be 11 digits",
+      "phoneInvalid": "Invalid Egyptian mobile number",
+      "addressMin": "Enter a detailed address",
+      "housingRequired": "Select housing type",
+      "meezaLength": "Meeza card must be at least 16 digits",
+      "categoryRequired": "Select case category",
+      "categoryReasonMin": "Explain the classification reason",
+      "aidRequired": "Select aid type",
+      "monthlyAidRange": "Amount must be between 0 and 9999"
+    },
+    "member": {
+      "nameMin": "Name must be at least 3 characters",
+      "nationalId14": "National ID must be 14 digits",
+      "relationRequired": "Select relation",
+      "birthRequired": "Birth date is required",
+      "genderRequired": "Select gender",
+      "sourceRequired": "Select income source",
+      "amountRequired": "Amount is required",
+      "frequencyRequired": "Select frequency",
+      "expenseCategoryRequired": "Select expense category",
+      "medicalConditionRequired": "Condition is required",
+      "personRequired": "Select family member"
+    }
+  },
+  "auth": {
+    "tagline": "Charity management platform",
+    "loginTitle": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "passwordPlaceholder": "Password",
+    "submit": "Sign in",
+    "submitLoading": "Signing in…",
+    "toggleHidePassword": "Hide password",
+    "toggleShowPassword": "Show password",
+    "demoHintTitle": "Demo credentials:",
+    "errorInvalid": "Invalid credentials. Try: admin@charityhub.org / 123456",
+    "errorNetwork": "Could not reach the server",
+    "demoAdminName": "System administrator"
+  }
+}

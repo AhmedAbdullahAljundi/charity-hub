@@ -1,0 +1,90 @@
+/**
+ * CharityHub semantic design tokens (light / dark).
+ * Consumed by Tailwind @theme in app/globals.css via var(--*).
+ */
+
+:root {
+  --background: oklch(0.98 0.002 155);
+  --foreground: oklch(0.17 0.02 155);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.17 0.02 155);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.17 0.02 155);
+  --primary: oklch(0.55 0.17 160);
+  --primary-foreground: oklch(0.99 0.002 155);
+  --secondary: oklch(0.95 0.02 155);
+  --secondary-foreground: oklch(0.25 0.04 155);
+  --muted: oklch(0.95 0.01 155);
+  --muted-foreground: oklch(0.5 0.02 155);
+  --accent: oklch(0.92 0.04 155);
+  --accent-foreground: oklch(0.25 0.04 155);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.9 0.02 155);
+  --input: oklch(0.9 0.02 155);
+  --ring: oklch(0.55 0.17 160);
+  /* Charts: distinct hues, works in both themes */
+  --chart-1: oklch(0.55 0.17 160);
+  --chart-2: oklch(0.65 0.15 45);
+  --chart-3: oklch(0.55 0.2 25);
+  --chart-4: oklch(0.6 0.14 250);
+  --chart-5: oklch(0.5 0.02 155);
+  --chart-grid: oklch(0.9 0.02 155 / 0.35);
+  --chart-tooltip-shadow: oklch(0.17 0.02 155 / 0.12);
+  --radius: 1rem;
+  --sidebar: oklch(0.2 0.04 160);
+  --sidebar-foreground: oklch(0.92 0.02 155);
+  --sidebar-primary: oklch(0.55 0.17 160);
+  --sidebar-primary-foreground: oklch(0.99 0.002 155);
+  --sidebar-accent: oklch(0.28 0.05 160);
+  --sidebar-accent-foreground: oklch(0.92 0.02 155);
+  --sidebar-border: oklch(0.3 0.04 160);
+  --sidebar-ring: oklch(0.55 0.17 160);
+  --warning: oklch(0.75 0.18 65);
+  --warning-foreground: oklch(0.3 0.08 65);
+  --success: oklch(0.6 0.17 155);
+  --success-foreground: oklch(0.99 0.002 155);
+  --color-scheme: light;
+}
+
+.dark {
+  --background: oklch(0.16 0.022 160);
+  --foreground: oklch(0.93 0.02 155);
+  --card: oklch(0.19 0.022 160);
+  --card-foreground: oklch(0.93 0.02 155);
+  --popover: oklch(0.19 0.022 160);
+  --popover-foreground: oklch(0.93 0.02 155);
+  --primary: oklch(0.62 0.16 160);
+  --primary-foreground: oklch(0.99 0.002 155);
+  --secondary: oklch(0.26 0.03 160);
+  --secondary-foreground: oklch(0.93 0.02 155);
+  --muted: oklch(0.26 0.02 160);
+  --muted-foreground: oklch(0.66 0.03 155);
+  --accent: oklch(0.26 0.03 160);
+  --accent-foreground: oklch(0.93 0.02 155);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.3 0.03 160);
+  --input: oklch(0.3 0.03 160);
+  --ring: oklch(0.58 0.15 160);
+  --chart-1: oklch(0.62 0.16 160);
+  --chart-2: oklch(0.68 0.14 45);
+  --chart-3: oklch(0.58 0.18 25);
+  --chart-4: oklch(0.65 0.14 250);
+  --chart-5: oklch(0.55 0.02 155);
+  --chart-grid: oklch(0.93 0.02 155 / 0.12);
+  --chart-tooltip-shadow: oklch(0 0 0 / 0.35);
+  --sidebar: oklch(0.15 0.03 160);
+  --sidebar-foreground: oklch(0.92 0.02 155);
+  --sidebar-primary: oklch(0.6 0.17 160);
+  --sidebar-primary-foreground: oklch(0.99 0.002 155);
+  --sidebar-accent: oklch(0.22 0.04 160);
+  --sidebar-accent-foreground: oklch(0.92 0.02 155);
+  --sidebar-border: oklch(0.26 0.03 160);
+  --sidebar-ring: oklch(0.58 0.15 160);
+  --warning: oklch(0.72 0.16 65);
+  --warning-foreground: oklch(0.95 0.02 65);
+  --success: oklch(0.62 0.15 155);
+  --success-foreground: oklch(0.99 0.002 155);
+  --color-scheme: dark;
+}

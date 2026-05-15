@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,139 +26,172 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
+import { dictLabel } from "@/lib/i18n/dict-label";
 import {
   useFamiliesStore,
-  INCOME_SOURCES, EXPENSE_CATEGORIES, MEMBER_RELATIONS,
-  EDUCATION_LEVELS, DISABILITY_CLASSES, CHRONIC_SEVERITY,
+  INCOME_SOURCES,
+  EXPENSE_CATEGORIES,
+  MEMBER_RELATIONS,
+  EDUCATION_LEVELS,
+  DISABILITY_CLASSES,
+  CHRONIC_SEVERITY,
+  GENDER_OPTIONS,
+  MARITAL_OPTIONS,
 } from "@/lib/store";
 
-/* ─────────── Classification Colors ─────────── */
-/* Classification enum → Arabic labels */
-const classificationLabelsMap: Record<string, string> = {
-  VERY_FRAGILE: 'هش للغاية (حرج)',
-  FRAGILE: 'هش للغاية',
-  WEAK: 'ضعيف',
-  MODERATE: 'متوسط',
-  OUT_OF_PRIORITY: 'خارج الأولوية',
-  // Arabic keys (for backward compat)
-  'هش للغاية (حرج)': 'هش للغاية (حرج)',
-  'هش للغاية': 'هش للغاية',
-  'ضعيف': 'ضعيف',
-  'متوسط': 'متوسط',
-  'خارج الأولوية': 'خارج الأولوية',
+const legacyClassificationMap: Record<string, string> = {
+  'هش للغاية (حرج)': 'VERY_FRAGILE',
+  'هش للغاية': 'FRAGILE',
+  'ضعيف': 'WEAK',
+  'متوسط': 'MODERATE',
+  'خارج الأولوية': 'OUT_OF_PRIORITY',
 };
 
 const classificationColors: Record<string, string> = {
-  // English enum keys
-  VERY_FRAGILE: "bg-red-100 text-red-700 border-red-200",
-  FRAGILE: "bg-red-100 text-red-700 border-red-200",
-  WEAK: "bg-orange-100 text-orange-700 border-orange-200",
-  MODERATE: "bg-blue-100 text-blue-700 border-blue-200",
-  OUT_OF_PRIORITY: "bg-gray-100 text-gray-600 border-gray-200",
-  // Arabic keys (backward compat)
-  "هش للغاية (حرج)": "bg-red-100 text-red-700 border-red-200",
-  "هش للغاية": "bg-red-100 text-red-700 border-red-200",
-  "ضعيف": "bg-orange-100 text-orange-700 border-orange-200",
-  "متوسط": "bg-blue-100 text-blue-700 border-blue-200",
-  "خارج الأولوية": "bg-gray-100 text-gray-600 border-gray-200",
+  VERY_FRAGILE: "bg-destructive/15 text-destructive border-destructive/30",
+  FRAGILE: "bg-destructive/15 text-destructive border-destructive/30",
+  WEAK: "bg-warning/15 text-warning-foreground border-warning/30",
+  MODERATE: "bg-primary/12 text-primary border-primary/25",
+  OUT_OF_PRIORITY: "bg-muted text-muted-foreground border-border",
+  "هش للغاية (حرج)": "bg-destructive/15 text-destructive border-destructive/30",
+  "هش للغاية": "bg-destructive/15 text-destructive border-destructive/30",
+  "ضعيف": "bg-warning/15 text-warning-foreground border-warning/30",
+  "متوسط": "bg-primary/12 text-primary border-primary/25",
+  "خارج الأولوية": "bg-muted text-muted-foreground border-border",
 };
 
 /* ═══════════════════════════════════════════════
-   MAIN COMPONENT
+   MAIN COMPONENT — Lazy Tab Mounting
+   Each tab's heavy content (form + schema + hooks) is only
+   instantiated the FIRST TIME the user clicks on it.
    ═══════════════════════════════════════════════ */
-export function FamilyProfileTabs({ family }) {
+export function FamilyProfileTabs({ family }: { family: any }) {
+  const tProfile = useTranslations("families.profile.tabs");
   // Support both 'income' (old local state) and 'incomes' (API response)
   const incomeList = family.incomes || family.income || [];
   const expenseList = family.expenses || [];
   const medicalList = family.medicalRecords || [];
 
-  const totalIncome = incomeList.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
-  const totalExpenses = expenseList.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-  const totalMedicalCost = medicalList.reduce((s, r) => s + (parseFloat(r.monthlyCost) || 0), 0);
-
-  // الرصيد النهائي = الدخل - (المصروفات + العلاج)
-  // إذا كان سالباً فهو عجز (احتياج)، وإذا كان موجباً فهو فائض.
+  const totalIncome = incomeList.reduce((s: any, i: any) => s + (parseFloat(i.amount) || 0), 0);
+  const totalExpenses = expenseList.reduce((s: any, e: any) => s + (parseFloat(e.amount) || 0), 0);
+  const totalMedicalCost = medicalList.reduce((s: any, r: any) => s + (parseFloat(r.monthlyCost) || 0), 0);
   const netBalance = totalIncome - (totalExpenses + totalMedicalCost);
 
+  // Track which tabs have ever been opened — mount content only on first visit
+  const [activeTab, setActiveTab] = useState("basic");
+  const [mountedTabs, setMountedTabs] = useState<Set<string>>(new Set(["basic"]));
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setMountedTabs((prev) => new Set([...prev, tab]));
+  };
+
+  const locale = useLocale();
+
   return (
-    <Tabs defaultValue="basic" className="space-y-4">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <TabsList className="w-full justify-start overflow-x-auto flex-nowrap bg-card border border-border p-1 h-auto">
         <TabsTrigger value="basic" className="gap-1.5 text-xs sm:text-sm whitespace-nowrap">
-          <User className="h-4 w-4" /> البيانات الأساسية
+          <User className="h-4 w-4" /> {tProfile("basicInfo")}
         </TabsTrigger>
         <TabsTrigger value="members" className="gap-1.5 text-xs sm:text-sm whitespace-nowrap">
-          <Users className="h-4 w-4" /> الأفراد
+          <Users className="h-4 w-4" /> {tProfile("members")}
         </TabsTrigger>
         <TabsTrigger value="income" className="gap-1.5 text-xs sm:text-sm whitespace-nowrap">
-          <Wallet className="h-4 w-4" /> الدخل
+          <Wallet className="h-4 w-4" /> {tProfile("income")}
         </TabsTrigger>
         <TabsTrigger value="expenses" className="gap-1.5 text-xs sm:text-sm whitespace-nowrap">
-          <Receipt className="h-4 w-4" /> المصروفات
+          <Receipt className="h-4 w-4" /> {tProfile("expenses")}
         </TabsTrigger>
         <TabsTrigger value="medical" className="gap-1.5 text-xs sm:text-sm whitespace-nowrap">
-          <Stethoscope className="h-4 w-4" /> السجل الطبي
+          <Stethoscope className="h-4 w-4" /> {tProfile("medical")}
         </TabsTrigger>
         <TabsTrigger value="scoring" className="gap-1.5 text-xs sm:text-sm whitespace-nowrap">
-          <BarChart3 className="h-4 w-4" /> نتيجة التقييم
+          <BarChart3 className="h-4 w-4" /> {tProfile("scoring")}
         </TabsTrigger>
       </TabsList>
 
-      {/* ─────── TAB 1: Basic Info ─────── */}
+      {/* ─────── TAB 1: Basic Info — always mounted (default tab) ─────── */}
       <TabsContent value="basic">
         <BasicInfoTab family={family} />
       </TabsContent>
 
-      {/* ─────── TAB 2: Members ─────── */}
+      {/* ─────── TAB 2: Members — lazy mount ─────── */}
       <TabsContent value="members">
-        <MembersTab family={family} />
+        {mountedTabs.has("members") && <MembersTab family={family} />}
       </TabsContent>
 
-      {/* ─────── TAB 3: Income ─────── */}
+      {/* ─────── TAB 3: Income — lazy mount ─────── */}
       <TabsContent value="income">
-        <IncomeTab family={{ ...family, income: incomeList }} totalIncome={totalIncome} />
+        {mountedTabs.has("income") && (
+          <IncomeTab family={{ ...family, income: incomeList }} totalIncome={totalIncome} />
+        )}
       </TabsContent>
 
-      {/* ─────── TAB 4: Expenses ─────── */}
+      {/* ─────── TAB 4: Expenses — lazy mount ─────── */}
       <TabsContent value="expenses">
-        <ExpensesTab family={{ ...family, expenses: expenseList }} totalExpenses={totalExpenses} netBalance={netBalance} />
+        {mountedTabs.has("expenses") && (
+          <ExpensesTab family={{ ...family, expenses: expenseList }} totalExpenses={totalExpenses} netBalance={netBalance} />
+        )}
       </TabsContent>
 
-      {/* ─────── TAB 5: Medical ─────── */}
+      {/* ─────── TAB 5: Medical — lazy mount ─────── */}
       <TabsContent value="medical">
-        <MedicalTab family={{ ...family, medicalRecords: medicalList }} />
+        {mountedTabs.has("medical") && (
+          <MedicalTab family={{ ...family, medicalRecords: medicalList }} />
+        )}
       </TabsContent>
 
-      {/* ─────── TAB 6: Scoring ─────── */}
+      {/* ─────── TAB 6: Scoring — lazy mount ─────── */}
       <TabsContent value="scoring">
-        <ScoringTab
-          family={{ ...family, income: incomeList, medicalRecords: medicalList }}
-          totalIncome={totalIncome}
-          totalExpenses={totalExpenses}
-          totalMedicalCost={totalMedicalCost}
-          netBalance={netBalance}
-        />
+        {mountedTabs.has("scoring") && (
+          <ScoringTab
+            family={{ ...family, income: incomeList, medicalRecords: medicalList }}
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            totalMedicalCost={totalMedicalCost}
+            netBalance={netBalance}
+          />
+        )}
       </TabsContent>
     </Tabs>
   );
 }
 
+
 /* ═══════════════════════════════════════════════
    TAB 1: Basic Info
    ═══════════════════════════════════════════════ */
-function BasicInfoTab({ family }) {
+function BasicInfoTab({ family }: { family: any }) {
+  const tDomain = useTranslations("domain");
+  const tProfile = useTranslations("families.profile.basicInfo");
+  const tScore = useTranslations("families.profile.scoring");
+
+  const getDomainLabel = (group: string, val: string | null | undefined) => {
+    if (!val) return "---";
+    const mappedVal = group === "vulnerability" ? (legacyClassificationMap[val] || val) : val;
+    try {
+      const key = `${group}.${mappedVal}`;
+      return tDomain.has(key as any) ? tDomain(key as any) : mappedVal;
+    } catch {
+      return val;
+    }
+  };
+
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">البيانات الأساسية</CardTitle>
+        <CardTitle className="text-lg">{tProfile("title")}</CardTitle>
         <div className="flex items-center gap-2">
           {family.dataVerified && (
-            <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 gap-1">
-              <CheckCircle2 className="h-3 w-3" /> موثق
+            <Badge variant="outline" className="bg-success/12 text-success border-success/25 gap-1">
+              <CheckCircle2 className="h-3 w-3" /> {tProfile("verified")}
             </Badge>
           )}
           {family.fieldResearchDone && (
-            <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 gap-1">
-              <Shield className="h-3 w-3" /> بحث ميداني
+            <Badge variant="outline" className="bg-primary/12 text-primary border-primary/25 gap-1">
+              <Shield className="h-3 w-3" /> {tProfile("fieldResearch")}
             </Badge>
           )}
         </div>
@@ -166,17 +199,17 @@ function BasicInfoTab({ family }) {
       <CardContent className="space-y-6">
         {/* Personal Info */}
         <div>
-          <h4 className="text-sm font-semibold text-muted-foreground mb-3">بيانات الأسرة</h4>
+          <h4 className="text-sm font-semibold text-muted-foreground mb-3">{tProfile("familyData")}</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <InfoField icon={User} label="اسم رب الأسرة" value={family.headName} />
-            <InfoField icon={User} label="اسم الزوجة" value={family.wifeName || "---"} />
-            <InfoField icon={CreditCard} label="الرقم القومي" value={family.nationalId} dir="ltr" />
-            <InfoField icon={CreditCard} label="الرقم القومي للزوجة" value={family.wifeNationalId || "---"} dir="ltr" />
-            <InfoField icon={Phone} label="الهاتف" value={family.phone} dir="ltr" />
-            <InfoField icon={Phone} label="هاتف بديل" value={family.phone2 || "---"} dir="ltr" />
-            <InfoField icon={MapPin} label="العنوان" value={family.address} />
-            <InfoField icon={Calendar} label="تاريخ التسجيل" value={family.registrationDate} />
-            <InfoField icon={Users} label="عدد الأفراد" value={`${Array.isArray(family.members) ? family.members.length : family.members || 0} أفراد`} />
+            <InfoField icon={User} label={tProfile("headName")} value={family.headName} />
+            <InfoField icon={User} label={tProfile("wifeName")} value={family.wifeName || "---"} />
+            <InfoField icon={CreditCard} label={tProfile("nationalId")} value={family.nationalId} dir="ltr" />
+            <InfoField icon={CreditCard} label={tProfile("wifeNationalId")} value={family.wifeNationalId || "---"} dir="ltr" />
+            <InfoField icon={Phone} label={tProfile("phone")} value={family.phone} dir="ltr" />
+            <InfoField icon={Phone} label={tProfile("phone2")} value={family.phone2 || "---"} dir="ltr" />
+            <InfoField icon={MapPin} label={tProfile("address")} value={family.address} />
+            <InfoField icon={Calendar} label={tProfile("registrationDate")} value={family.registrationDate} />
+            <InfoField icon={Users} label={tProfile("membersCount")} value={`${Array.isArray(family.members) ? family.members.length : family.members || 0} ${tProfile("membersSuffix")}`} />
           </div>
         </div>
 
@@ -184,37 +217,28 @@ function BasicInfoTab({ family }) {
 
         {/* Financial Info */}
         <div>
-          <h4 className="text-sm font-semibold text-muted-foreground mb-3">البيانات المالية والإدارية</h4>
+          <h4 className="text-sm font-semibold text-muted-foreground mb-3">{tProfile("financialData")}</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <InfoField icon={CreditCard} label="رقم بطاقة ميزة" value={family.meezaCard || "لم يتم التسجيل"} dir="ltr" />
+            <InfoField icon={CreditCard} label={tProfile("meezaCard")} value={family.meezaCard || tProfile("notRegistered")} dir="ltr" />
             <div className="space-y-1.5">
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <FileText className="h-3 w-3" /> تصنيف الحالة
+                <FileText className="h-3 w-3" /> {tProfile("classification")}
               </p>
               <Badge variant="outline" className={classificationColors[family.classification] || ""}>
-                {classificationLabelsMap[family.classification] || family.classification}
+                {getDomainLabel("vulnerability", family.classification)}
               </Badge>
             </div>
             <div className="space-y-1.5">
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Heart className="h-3 w-3" /> نوع الحالة
+                <Heart className="h-3 w-3" /> {tProfile("caseCategory")}
               </p>
-              <Badge variant="secondary">{{
-                NEEDY: 'محتاج',
-                ORPHAN: 'يتيم',
-                WIDOW: 'أرملة',
-                DIVORCED: 'مطلقة',
-                DISABLED: 'إعاقة',
-                ELDERLY: 'كبار سن',
-                CHRONIC_ILLNESS: 'أمراض مزمنة',
-                PRISONER_FAMILY: 'أسر سجناء',
-                STUDENT: 'طالب علم',
-                OTHER: 'أخرى',
-              }[family.category] || family.category}</Badge>
+              <Badge variant="secondary">
+                {getDomainLabel("social_status", family.category)}
+              </Badge>
             </div>
-            <InfoField icon={FileText} label="سبب التصنيف" value={family.categoryReason || "---"} />
-            <InfoField icon={HandCoins} label="قرار المساعدة" value={family.aidDecision || "---"} />
-            <InfoField icon={HandCoins} label="مبلغ المساعدة الشهرية" value={family.monthlyAidAmount ? `${family.monthlyAidAmount} ج.م` : "---"} />
+            <InfoField icon={FileText} label={tProfile("categoryReason")} value={family.categoryReason || "---"} />
+            <InfoField icon={HandCoins} label={tProfile("aidDecision")} value={family.aidDecision || "---"} />
+            <InfoField icon={HandCoins} label={tProfile("monthlyAid")} value={family.monthlyAidAmount ? `${family.monthlyAidAmount} ${tScore("currency")}` : "---"} />
           </div>
         </div>
 
@@ -223,7 +247,7 @@ function BasicInfoTab({ family }) {
           <>
             <Separator />
             <div>
-              <h4 className="text-sm font-semibold text-muted-foreground mb-2">ملاحظات البحث الميداني</h4>
+              <h4 className="text-sm font-semibold text-muted-foreground mb-2">{tProfile("fieldResearchNotes")}</h4>
               <p className="text-sm text-foreground bg-secondary/50 p-3 rounded-xl leading-relaxed">{family.fieldResearchNotes}</p>
             </div>
           </>
@@ -233,7 +257,7 @@ function BasicInfoTab({ family }) {
           <>
             <Separator />
             <div>
-              <h4 className="text-sm font-semibold text-muted-foreground mb-2">ملاحظات عامة</h4>
+              <h4 className="text-sm font-semibold text-muted-foreground mb-2">{tProfile("generalNotes")}</h4>
               <p className="text-sm text-foreground bg-secondary/50 p-3 rounded-xl leading-relaxed">{family.notes}</p>
             </div>
           </>
@@ -246,15 +270,15 @@ function BasicInfoTab({ family }) {
 /* ═══════════════════════════════════════════════
    TAB 2: Members + Add Member Form
    ═══════════════════════════════════════════════ */
-const memberSchema = z.object({
-  name: z.string().min(3, "الاسم مطلوب (3 أحرف على الأقل)"),
+const createMemberSchema = (tV: any) => z.object({
+  name: z.string().min(3, tV("nameMin")),
   nationalId: z.string().optional().refine(
     (val) => !val || (val.length === 14 && /^\d+$/.test(val)),
-    "الرقم القومي يجب أن يكون 14 رقم"
+    tV("nationalId14")
   ),
-  relation: z.string().min(1, "اختر صلة القرابة"),
-  birthDate: z.string().min(1, "تاريخ الميلاد مطلوب"),
-  gender: z.string().min(1, "اختر النوع"),
+  relation: z.string().min(1, tV("relationRequired")),
+  birthDate: z.string().min(1, tV("birthRequired")),
+  gender: z.string().min(1, tV("genderRequired")),
   education: z.string().optional(),
   job: z.string().optional(),
   jobIncome: z.coerce.number().min(0),
@@ -268,17 +292,34 @@ const memberSchema = z.object({
   notes: z.string().optional(),
 });
 
-function MembersTab({ family }) {
+function MembersTab({ family }: { family: any }) {
   const [open, setOpen] = useState(false);
   const members = Array.isArray(family.members) ? family.members : [];
-  const { addMember, deleteMember } = useFamiliesStore();
+  const addMember = useFamiliesStore(state => state.addMember);
+  const deleteMember = useFamiliesStore(state => state.deleteMember);
+  const t = useTranslations("families");
+  const tDomain = useTranslations("domain");
+  const tM = useTranslations("families.profile.members");
+  const tV = useTranslations("validation.member");
+
+  const memberSchema = React.useMemo(() => createMemberSchema(tV), [tV]);
+
+  const getDomainLabel = (group: string, val: string | null | undefined) => {
+    if (!val) return "---";
+    try {
+      const key = `${group}.${val}`;
+      return tDomain.has(key as any) ? tDomain(key as any) : val;
+    } catch {
+      return val;
+    }
+  };
 
   const {
     register, handleSubmit, setValue, watch, formState: { errors }, reset,
   } = useForm({
     resolver: zodResolver(memberSchema),
     defaultValues: {
-      name: "", nationalId: "", relation: "", birthDate: "", gender: "ذكر",
+      name: "", nationalId: "", relation: "", birthDate: "", gender: "male",
       education: "", job: "", jobIncome: 0, maritalStatus: "",
       hasDisability: false, disabilityClass: null, disabilityDescription: "",
       hasChronicIllness: false, chronicIllness: "", chronicSeverity: null, notes: "",
@@ -288,11 +329,11 @@ function MembersTab({ family }) {
   const hasDisability = watch("hasDisability");
   const hasChronicIllness = watch("hasChronicIllness");
 
-  const onSubmit = (data) => {
+  const onSubmit = (data: any) => {
     const birthYear = new Date(data.birthDate).getFullYear();
     const age = new Date().getFullYear() - birthYear;
     addMember(family.id, { ...data, age });
-    toast.success("تم إضافة الفرد بنجاح");
+    toast.success(tM("addSuccess"));
     reset();
     setOpen(false);
   };
@@ -300,50 +341,57 @@ function MembersTab({ family }) {
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">أفراد الأسرة ({members.length})</CardTitle>
+        <CardTitle className="text-lg">{tM("title")} ({members.length})</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1"><Plus className="h-3.5 w-3.5" /> إضافة فرد</Button>
+            <Button size="sm" className="gap-1"><Plus className="h-3.5 w-3.5" /> {tM("addMember")}</Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>إضافة فرد جديد</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{tM("dialogTitle")}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>الاسم الكامل *</Label>
-                  <Input {...register("name")} placeholder="الاسم الرباعي" />
-                  {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+                  <Label>{tM("fullName")} *</Label>
+                  <Input {...register("name")} placeholder={tM("fullNamePh")} />
+                  {errors.name && <p className="text-xs text-destructive">{errors.name.message as string}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>الرقم القومي</Label>
-                  <Input {...register("nationalId")} placeholder="14 رقم" dir="ltr" className="text-right" />
-                  {errors.nationalId && <p className="text-xs text-destructive">{errors.nationalId.message}</p>}
+                  <Label>{tM("nationalId")}</Label>
+                  <Input {...register("nationalId")} placeholder={tM("nationalIdPh")} dir="ltr" className="text-right" />
+                  {errors.nationalId && <p className="text-xs text-destructive">{errors.nationalId.message as string}</p>}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <Label>صلة القرابة *</Label>
+                  <Label>{tM("relation")} *</Label>
                   <Select onValueChange={(v) => setValue("relation", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={tM("selectPh")} /></SelectTrigger>
                     <SelectContent>
-                      {MEMBER_RELATIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                      {MEMBER_RELATIONS.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>
+                          {dictLabel(t, "memberRelations", r)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  {errors.relation && <p className="text-xs text-destructive">{errors.relation.message}</p>}
+                  {errors.relation && <p className="text-xs text-destructive">{errors.relation.message as string}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>تاريخ الميلاد *</Label>
+                  <Label>{tM("birthDate")} *</Label>
                   <Input type="date" {...register("birthDate")} dir="ltr" className="text-right" />
-                  {errors.birthDate && <p className="text-xs text-destructive">{errors.birthDate.message}</p>}
+                  {errors.birthDate && <p className="text-xs text-destructive">{errors.birthDate.message as string}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>النوع *</Label>
-                  <Select defaultValue="ذكر" onValueChange={(v) => setValue("gender", v)}>
+                  <Label>{tM("gender")} *</Label>
+                  <Select defaultValue={GENDER_OPTIONS[0]?.value} onValueChange={(v) => setValue("gender", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ذكر">ذكر</SelectItem>
-                      <SelectItem value="أنثى">أنثى</SelectItem>
+                      {GENDER_OPTIONS.map((g) => (
+                        <SelectItem key={g.value} value={g.value}>
+                          {dictLabel(t, "gender", g)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -351,37 +399,43 @@ function MembersTab({ family }) {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <Label>المستوى التعليمي</Label>
+                  <Label>{tM("education")}</Label>
                   <Select onValueChange={(v) => setValue("education", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={tM("selectPh")} /></SelectTrigger>
                     <SelectContent>
-                      {EDUCATION_LEVELS.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                      {EDUCATION_LEVELS.map((e) => (
+                        <SelectItem key={e.value} value={e.value}>
+                          {dictLabel(t, "educationLevels", e)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  {errors.education && <p className="text-xs text-destructive">{errors.education.message}</p>}
+                  {errors.education && <p className="text-xs text-destructive">{errors.education.message as string}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>الوظيفة / العمل</Label>
-                  <Input {...register("job")} placeholder="طالب، عامل يومي، ربة منزل..." />
-                  {errors.job && <p className="text-xs text-destructive">{errors.job.message}</p>}
+                  <Label>{tM("job")}</Label>
+                  <Input {...register("job")} placeholder={tM("jobPh")} />
+                  {errors.job && <p className="text-xs text-destructive">{errors.job.message as string}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>دخل العمل (ج.م)</Label>
+                  <Label>{tM("jobIncome")}</Label>
                   <Input type="number" {...register("jobIncome")} min={0} dir="ltr" className="text-right" />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label>الحالة الاجتماعية</Label>
+                <Label>{tM("maritalStatus")}</Label>
                 <Select onValueChange={(v) => setValue("maritalStatus", v, { shouldValidate: true })}>
-                  <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="اختر" /></SelectTrigger>
-                  <SelectContent>
-                    {["أعزب", "متزوج", "متزوجة", "مطلق", "مطلقة", "أرمل", "أرملة", "غير متزوجة"].map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder={tM("selectPh")} /></SelectTrigger>
+                    <SelectContent>
+                      {MARITAL_OPTIONS.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {dictLabel(t, "marital", s)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                 </Select>
-                {errors.maritalStatus && <p className="text-xs text-destructive">{errors.maritalStatus.message}</p>}
+                {errors.maritalStatus && <p className="text-xs text-destructive">{errors.maritalStatus.message as string}</p>}
               </div>
 
               <Separator />
@@ -389,32 +443,36 @@ function MembersTab({ family }) {
               {/* Disability Section */}
               <div className="space-y-3 rounded-xl bg-secondary/50 p-4">
                 <div className="flex items-center justify-between">
-                  <Label className="font-medium">هل يعاني من إعاقة؟</Label>
+                  <Label className="font-medium">{tM("hasDisability")}</Label>
                   <Switch checked={hasDisability} onCheckedChange={(v) => setValue("hasDisability", v)} />
                 </div>
                 {hasDisability && (
                   <div className="space-y-3 pt-2">
                     <div className="space-y-1.5">
-                      <Label>تصنيف الإعاقة</Label>
+                      <Label>{tM("disabilityClass")}</Label>
                       <Select onValueChange={(v) => setValue("disabilityClass", v)}>
-                        <SelectTrigger><SelectValue placeholder="اختر الفئة" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={tM("selectClass")} /></SelectTrigger>
                         <SelectContent>
                           {DISABILITY_CLASSES.map((d) => (
                             <SelectItem key={d.code} value={d.code}>
-                              <span className="font-medium">فئة {d.code}</span> - {d.label} ({d.score} نقطة)
+                              <span className="font-medium">{t("profile.misc.tier", { code: d.code })}</span>
+                              {" — "}
+                              {t(`dictionaries.disability.${d.key}_label`)} ({d.score} {t("profile.misc.points")})
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       {DISABILITY_CLASSES.map((d) =>
                         watch("disabilityClass") === d.code ? (
-                          <p key={d.code} className="text-[11px] text-muted-foreground">{d.description}</p>
+                          <p key={d.code} className="text-[11px] text-muted-foreground">
+                            {t(`dictionaries.disability.${d.key}_desc`)}
+                          </p>
                         ) : null
                       )}
                     </div>
                     <div className="space-y-1.5">
-                      <Label>وصف الإعاقة</Label>
-                      <Textarea {...register("disabilityDescription")} placeholder="وصف تفصيلي للإعاقة..." rows={2} />
+                      <Label>{tM("disabilityDesc")}</Label>
+                      <Textarea {...register("disabilityDescription")} placeholder={tM("disabilityDescPh")} rows={2} />
                     </div>
                   </div>
                 )}
@@ -423,23 +481,24 @@ function MembersTab({ family }) {
               {/* Chronic Illness Section */}
               <div className="space-y-3 rounded-xl bg-secondary/50 p-4">
                 <div className="flex items-center justify-between">
-                  <Label className="font-medium">هل يعاني من مرض مزمن؟</Label>
+                  <Label className="font-medium">{tM("hasChronicIllness")}</Label>
                   <Switch checked={hasChronicIllness} onCheckedChange={(v) => setValue("hasChronicIllness", v)} />
                 </div>
                 {hasChronicIllness && (
                   <div className="space-y-3 pt-2">
                     <div className="space-y-1.5">
-                      <Label>اسم المرض</Label>
-                      <Input {...register("chronicIllness")} placeholder="مثال: سكري، ضغط دم، قلب..." />
+                      <Label>{tM("illnessName")}</Label>
+                      <Input {...register("chronicIllness")} placeholder={tM("illnessNamePh")} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label>درجة الخطورة</Label>
+                      <Label>{tM("severity")}</Label>
                       <Select onValueChange={(v) => setValue("chronicSeverity", v)}>
-                        <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={tM("selectPh")} /></SelectTrigger>
                         <SelectContent>
                           {CHRONIC_SEVERITY.map((s) => (
                             <SelectItem key={s.code} value={s.code}>
-                              {s.code} ({s.score} نقطة) - {s.description}
+                              {t(`dictionaries.chronicSeverity.${s.key}`)} ({s.score} {t("profile.misc.points")}) —{" "}
+                              {t(`dictionaries.chronicSeverity.${s.key}_desc`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -450,62 +509,81 @@ function MembersTab({ family }) {
               </div>
 
               <div className="space-y-1.5">
-                <Label>ملاحظات</Label>
-                <Textarea {...register("notes")} placeholder="ملاحظات إضافية..." rows={2} />
+                <Label>{tM("notes")}</Label>
+                <Textarea {...register("notes")} placeholder={tM("notesPh")} rows={2} />
               </div>
 
-              <Button type="submit" className="w-full bg-primary text-primary-foreground">حفظ الفرد</Button>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground">{tM("saveMember")}</Button>
             </form>
           </DialogContent>
         </Dialog>
       </CardHeader>
       <CardContent>
         {members.length === 0 ? (
-          <EmptyState icon={Users} message="لا يوجد أفراد مسجلون بعد" />
+          <EmptyState icon={Users} message={tM("emptyState")} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {members.map((member) => (
-              <Card key={member.id} className="shadow-none border">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-foreground">{member.name}</h4>
-                      <p className="text-xs text-muted-foreground">{member.relation} - {member.age} سنة</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {member.hasDisability && (
-                        <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200 text-[10px]">
-                          إعاقة {member.disabilityClass}
-                        </Badge>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {members.map((member: any) => (
+              <Card key={member.id} className="shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 border-border/40 hover:border-primary/30 overflow-hidden bg-card/60 backdrop-blur-sm rounded-2xl">
+                <CardContent className="p-5 flex flex-col gap-4">
+                  {/* Header Area */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex flex-col gap-1.5">
+                      <h4 className="font-bold text-foreground text-[15px] flex items-center gap-2">
+                        {member.name}
+                        {member.gender === "FEMALE" || member.gender === "أنثى" || member.gender === "female" ? (
+                          <span className="text-[10px] bg-pink-500/10 text-pink-600 border border-pink-500/20 px-2 py-0.5 rounded-full font-medium">{tM("female")}</span>
+                        ) : (
+                          <span className="text-[10px] bg-blue-500/10 text-blue-600 border border-blue-500/20 px-2 py-0.5 rounded-full font-medium">{tM("male")}</span>
+                        )}
+                      </h4>
+                      <p className="text-[13px] font-medium text-primary bg-primary/10 w-fit px-2 py-0.5 rounded-md">
+                        {getDomainLabel("role", member.relation)} • {member.age} {tM("years")}
+                      </p>
+                      
+                      {/* Health Badges */}
+                      {(member.hasDisability || member.hasChronicIllness) && (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {member.hasDisability && (
+                            <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 text-[10px] font-semibold">
+                              {tM("disability")} {getDomainLabel("disabilitySeverities", member.disabilityClass)}
+                            </Badge>
+                          )}
+                          {member.hasChronicIllness && (
+                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] font-semibold">
+                              {tM("chronicIllness")}
+                            </Badge>
+                          )}
+                        </div>
                       )}
-                      {member.hasChronicIllness && (
-                        <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 text-[10px]">
-                          مرض مزمن
-                        </Badge>
-                      )}
-                      <Button
-                        variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => {
-                          deleteMember(family.id, member.id);
-                          toast.success("تم حذف الفرد");
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
                     </div>
+                    
+                    <Button
+                      variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
+                      onClick={() => {
+                        deleteMember(family.id, member.id);
+                        toast.success(tM("deleteSuccess"));
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                    <MiniField label="الرقم القومي" value={member.nationalId} dir="ltr" />
-                    <MiniField label="النوع" value={member.gender} />
-                    <MiniField label="التعليم" value={member.education} />
-                    <MiniField label="العمل" value={member.job} />
-                    <MiniField label="دخل العمل" value={member.jobIncome > 0 ? `${member.jobIncome} ج.م` : "بدون دخل"} />
-                    <MiniField label="الحالة الاجتماعية" value={member.maritalStatus} />
+
+                  <Separator className="opacity-50" />
+
+                  {/* Data Grid Area */}
+                  <div className="grid grid-cols-2 gap-y-4 gap-x-4">
+                    <MiniField label={tM("nationalId")} value={member.nationalId || tM("notRegistered")} dir="ltr" />
+                    <MiniField label={tM("maritalStatus")} value={getDomainLabel("maritalStatus", member.maritalStatus)} />
+                    <MiniField label={tM("education")} value={getDomainLabel("education", member.education)} />
+                    <MiniField label={tM("currentJob")} value={member.job || tM("noJob")} />
+                    <MiniField label={tM("jobIncome")} value={member.jobIncome > 0 ? `${member.jobIncome} ${t("profile.scoring.currency")}` : tM("noIncome")} />
+                    
                     {member.hasDisability && (
-                      <MiniField label="تفاصيل الإعاقة" value={member.disabilityDescription || `فئة ${member.disabilityClass}`} />
+                      <MiniField label={tM("disabilityDesc")} value={member.disabilityDescription && member.disabilityDescription !== "undefined" ? member.disabilityDescription : `${t("profile.misc.tier", { code: getDomainLabel("disabilitySeverities", member.disabilityClass) })}`} />
                     )}
                     {member.hasChronicIllness && (
-                      <MiniField label="المرض المزمن" value={`${member.chronicIllness} (${member.chronicSeverity})`} />
+                      <MiniField label={tM("illnessName")} value={`${member.chronicIllness} (${getDomainLabel("chronicSeverities", member.chronicSeverity)})`} />
                     )}
                   </div>
                 </CardContent>
@@ -521,130 +599,144 @@ function MembersTab({ family }) {
 /* ═══════════════════════════════════════════════
    TAB 3: Income + Add Income Form
    ═══════════════════════════════════════════════ */
-const incomeSchema = z.object({
-  source: z.string().min(1, "اختر مصدر الدخل"),
-  amount: z.coerce.number().min(1, "المبلغ مطلوب"),
-  frequency: z.string().min(1, "اختر التكرار"),
+const createIncomeSchema = (tV: any) => z.object({
+  source: z.string().min(1, tV("sourceRequired")),
+  amount: z.coerce.number().min(1, tV("amountRequired")),
+  frequency: z.string().min(1, tV("frequencyRequired")),
   verified: z.boolean(),
   notes: z.string().optional(),
 });
 
-function IncomeTab({ family, totalIncome }) {
+function IncomeTab({ family, totalIncome }: { family: any; totalIncome: number }) {
   const [open, setOpen] = useState(false);
-  const { addIncome, deleteIncome } = useFamiliesStore();
+  const addIncome = useFamiliesStore(state => state.addIncome);
+  const deleteIncome = useFamiliesStore(state => state.deleteIncome);
+
+  const getIncomeSourceKey = (raw: string) => {
+    if (!raw) return "other";
+    if (raw === "SALARY") return "fixed_salary";
+    if (raw === "TAKAFUL_KARAMA") return "takafol";
+    if (raw === "PENSION") return "pension";
+    if (raw === "PROJECT") return "project_income";
+    if (raw === "PROPERTY") return "real_estate_income";
+    if (raw === "RATION_CARD") return "ration_card";
+    const found = INCOME_SOURCES.find((x) => x.value === raw || x.key === raw);
+    return found ? found.key : "other";
+  };
+
   const incomes = family.income || [];
+  const t = useTranslations("families");
+  const tInc = useTranslations("families.profile.income");
+  const tV = useTranslations("validation.member");
+  const tM = useTranslations("families.profile.members");
+  const incomeSchema = React.useMemo(() => createIncomeSchema(tV), [tV]);
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, reset } = useForm({
     resolver: zodResolver(incomeSchema),
-    defaultValues: { source: "", amount: 0, frequency: "شهري", verified: false, notes: "" },
+    defaultValues: { source: "", amount: 0, frequency: "monthly", verified: false, notes: "" },
   });
 
   const onSubmit = async (data: any) => {
     try {
       await addIncome(family.id, data);
-      toast.success("تم إضافة مصدر الدخل");
+      toast.success(tInc("addSuccess"));
       reset();
       setOpen(false);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "فشل إضافة مصدر الدخل");
+      toast.error(error?.response?.data?.message || tInc("addError"));
     }
   };
 
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">مصادر الدخل ({incomes.length})</CardTitle>
+        <CardTitle className="text-lg">{tInc("title")} ({incomes.length})</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1"><Plus className="h-3.5 w-3.5" /> إضافة دخل</Button>
+            <Button size="sm" className="gap-1"><Plus className="h-3.5 w-3.5" /> {tInc("addIncome")}</Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>إضافة مصدر دخل</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{tInc("dialogTitle")}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">
-                <Label>مصدر الدخل *</Label>
+                <Label>{tInc("source")} *</Label>
                 <Select onValueChange={(v) => setValue("source", v, { shouldValidate: true })}>
-                  <SelectTrigger><SelectValue placeholder="اختر المصدر" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={tInc("sourcePh")} /></SelectTrigger>
                   <SelectContent>
-                    {INCOME_SOURCES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    {INCOME_SOURCES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {dictLabel(t, "incomeSources", s)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {errors.source && <p className="text-xs text-destructive">{errors.source.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>المبلغ (ج.م) *</Label>
+                  <Label>{tInc("amount")} *</Label>
                   <Input type="number" {...register("amount")} min={0} dir="ltr" className="text-right" />
-                  {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
+                  {errors.amount && <p className="text-xs text-destructive">{errors.amount.message as string}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>التكرار</Label>
-                  <Select defaultValue="شهري" onValueChange={(v) => setValue("frequency", v)}>
+                  <Label>{tInc("frequency")}</Label>
+                  <Select defaultValue="monthly" onValueChange={(v) => setValue("frequency", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="شهري">شهري</SelectItem>
-                      <SelectItem value="يومي">يومي</SelectItem>
-                      <SelectItem value="أسبوعي">أسبوعي</SelectItem>
-                      <SelectItem value="موسمي">موسمي</SelectItem>
+                      <SelectItem value="monthly">{tInc("monthly")}</SelectItem>
+                      <SelectItem value="daily">{tInc("daily")}</SelectItem>
+                      <SelectItem value="weekly">{tInc("weekly")}</SelectItem>
+                      <SelectItem value="seasonal">{tInc("seasonal")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-xl bg-secondary/50 p-3">
-                <Label>موثق (تم التحقق)</Label>
+                <Label>{tInc("verified")}</Label>
                 <Switch checked={watch("verified")} onCheckedChange={(v) => setValue("verified", v)} />
               </div>
               <div className="space-y-1.5">
-                <Label>ملاحظات</Label>
-                <Input {...register("notes")} placeholder="مثال: رقم بطاقة، اسم الجهة..." />
+                <Label>{tM("notes")}</Label>
+                <Input {...register("notes")} placeholder={tM("notesPh")} />
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground">حفظ</Button>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground">{tInc("save")}</Button>
             </form>
           </DialogContent>
         </Dialog>
       </CardHeader>
       <CardContent className="space-y-3">
         {incomes.length === 0 ? (
-          <EmptyState icon={Wallet} message="لا توجد مصادر دخل مسجلة" />
+          <EmptyState icon={Wallet} message={tInc("emptyState")} />
         ) : (
           <>
-            {incomes.map((inc) => (
-              <div key={inc.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
+            {incomes.map((inc: any) => (
+              <div key={inc.id} className="group flex items-center justify-between p-3 rounded-xl border border-transparent bg-secondary/40 hover:bg-secondary/60 hover:border-border/50 hover:shadow-sm transition-all duration-300">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Wallet className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">{inc.source}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-muted-foreground">{inc.frequency}</span>
-                      {inc.notes && <span className="text-xs text-muted-foreground">- {inc.notes}</span>}
-                    </div>
+                    <p className="text-sm font-medium text-foreground">
+                      {dictLabel(t, "incomeSources", { key: getIncomeSourceKey(inc.source), value: inc.source })}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{inc.amount.toLocaleString()} {tInc("currency")}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-foreground">{inc.amount.toLocaleString("ar-EG")} ج.م</span>
-                  {inc.verified ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-muted-foreground/40" />
-                  )}
-                  <Button
-                    variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
-                    onClick={() => {
-                      deleteIncome(family.id, inc.id);
-                      toast.success("تم حذف مصدر الدخل");
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                  onClick={() => {
+                    deleteIncome(family.id, inc.id);
+                    toast.success(tInc("deleteSuccess"));
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
             ))}
             <Separator />
             <div className="flex justify-between items-center pt-1">
-              <span className="font-semibold text-foreground">إجمالي الدخل الشهري</span>
-              <span className="font-bold text-lg text-primary">{totalIncome.toLocaleString("ar-EG")} ج.م</span>
+              <span className="font-semibold text-foreground">{tInc("total")}</span>
+              <span className="font-bold text-lg text-primary">{totalIncome.toLocaleString()} {tInc("currency")}</span>
             </div>
           </>
         )}
@@ -656,127 +748,138 @@ function IncomeTab({ family, totalIncome }) {
 /* ═══════════════════════════════════════════════
    TAB 4: Expenses + Add Expense Form
    ═══════════════════════════════════════════════ */
-const expenseSchema = z.object({
-  item: z.string().min(1, "اختر بند المصروف"),
-  amount: z.coerce.number().min(1, "المبلغ مطلوب"),
-  priority: z.string().min(1, "اختر الأولوية"),
+const createExpenseSchema = (tV: any) => z.object({
+  item: z.string().min(1, tV("expenseCategoryRequired")),
+  amount: z.coerce.number().min(1, tV("amountRequired")),
+  priority: z.string().optional(),
   notes: z.string().optional(),
 });
 
 function ExpensesTab({ family, totalExpenses, netBalance }: any) {
   const [open, setOpen] = useState(false);
-  const { addExpense, deleteExpense } = useFamiliesStore();
+  const addExpense = useFamiliesStore(state => state.addExpense);
+  const deleteExpense = useFamiliesStore((s) => s.deleteExpense);
   const expenses = family.expenses || [];
+  const t = useTranslations("families");
+  const tExp = useTranslations("families.profile.expenses");
+  const tM = useTranslations("families.profile.members");
+  const tV = useTranslations("validation.member");
+
+  const expenseSchema = React.useMemo(() => createExpenseSchema(tV), [tV]);
 
   const { register, handleSubmit, setValue, formState: { errors }, reset } = useForm({
     resolver: zodResolver(expenseSchema),
-    defaultValues: { item: "", amount: 0, priority: "أساسي", notes: "" },
+    defaultValues: { item: "", amount: 0, priority: "basic", notes: "" },
   });
 
   const onSubmit = async (data: any) => {
     try {
       await addExpense(family.id, data);
-      toast.success("تم إضافة المصروف");
+      toast.success(tExp("addSuccess"));
       reset();
       setOpen(false);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "فشل إضافة المصروف");
+      toast.error(error?.response?.data?.message || tExp("addError"));
     }
+  };
+
+  const getExpenseCategoryKey = (raw: string) => {
+    if (!raw) return "other";
+    const found = EXPENSE_CATEGORIES.find((x) => x.value === raw || x.key === raw);
+    return found ? found.key : "other";
   };
 
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">المصروفات الشهرية ({expenses.length})</CardTitle>
+        <CardTitle className="text-lg">{tExp("title")} ({expenses.length})</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1"><Plus className="h-3.5 w-3.5" /> إضافة مصروف</Button>
+            <Button size="sm" className="gap-1"><Plus className="h-3.5 w-3.5" /> {tExp("addExpense")}</Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>إضافة مصروف</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{tExp("dialogTitle")}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">
-                <Label>بند المصروف *</Label>
+                <Label>{tExp("category")} *</Label>
                 <Select onValueChange={(v) => setValue("item", v, { shouldValidate: true })}>
-                  <SelectTrigger><SelectValue placeholder="اختر البند" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={tExp("categoryPh")} /></SelectTrigger>
                   <SelectContent>
-                    {EXPENSE_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {EXPENSE_CATEGORIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {dictLabel(t, "expenseCategories", c)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {errors.item && <p className="text-xs text-destructive">{errors.item.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>المبلغ (ج.م) *</Label>
+                  <Label>{tExp("amount")} *</Label>
                   <Input type="number" {...register("amount")} min={0} dir="ltr" className="text-right" />
-                  {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
+                  {errors.amount && <p className="text-xs text-destructive">{errors.amount.message as string}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>الأولوية</Label>
-                  <Select defaultValue="أساسي" onValueChange={(v) => setValue("priority", v)}>
+                  <Label>Priority</Label>
+                  <Select defaultValue="basic" onValueChange={(v) => setValue("priority", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="أساسي">أساسي</SelectItem>
-                      <SelectItem value="ثانوي">ثانوي</SelectItem>
-                      <SelectItem value="كمالي">كمالي</SelectItem>
+                      <SelectItem value="basic">Basic</SelectItem>
+                      <SelectItem value="secondary">Secondary</SelectItem>
+                      <SelectItem value="luxury">Luxury</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>ملاحظات</Label>
-                <Input {...register("notes")} placeholder="تفاصيل إضافية..." />
+                <Label>{tExp("notes")}</Label>
+                <Input {...register("notes")} placeholder={tM("notesPh")} />
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground">حفظ</Button>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground">{tExp("save")}</Button>
             </form>
           </DialogContent>
         </Dialog>
       </CardHeader>
       <CardContent className="space-y-3">
         {expenses.length === 0 ? (
-          <EmptyState icon={Receipt} message="لا توجد مصروفات مسجلة" />
+          <EmptyState icon={Receipt} message={tExp("emptyState")} />
         ) : (
           <>
-            {expenses.map((exp) => (
-              <div key={exp.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
+            {expenses.map((exp: any) => (
+              <div key={exp.id} className="group flex items-center justify-between p-3 rounded-xl border border-transparent bg-secondary/40 hover:bg-secondary/60 hover:border-border/50 hover:shadow-sm transition-all duration-300">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
                     <Receipt className="h-5 w-5 text-destructive" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">{exp.item}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <Badge variant="outline" className="text-[10px]">{exp.priority}</Badge>
-                      {exp.notes && <span className="text-xs text-muted-foreground">{exp.notes}</span>}
-                    </div>
+                    <p className="text-sm font-medium text-foreground">{dictLabel(t, "expenseCategories", { key: getExpenseCategoryKey(exp.item), value: exp.item })}</p>
+                    <p className="text-xs text-muted-foreground">{exp.amount.toLocaleString()} {tExp("currency")}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-foreground">{exp.amount.toLocaleString("ar-EG")} ج.م</span>
-                  <Button
-                    variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
-                    onClick={() => {
-                      deleteExpense(family.id, exp.id);
-                      toast.success("تم حذف المصروف");
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                  onClick={() => {
+                    deleteExpense(family.id, exp.id);
+                    toast.success(tExp("deleteSuccess"));
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
             ))}
             <Separator />
             <div className="flex justify-between items-center pt-1">
-              <span className="font-semibold text-foreground">إجمالي المصروفات</span>
-              <span className="font-bold text-lg text-destructive">{totalExpenses.toLocaleString("ar-EG")} ج.م</span>
+              <span className="font-semibold text-foreground">{tExp("total")}</span>
+              <span className="font-bold text-lg text-destructive">{totalExpenses.toLocaleString()} {tExp("currency")}</span>
             </div>
             <div className={`flex justify-between items-center p-3 rounded-xl border ${netBalance < 0 ? 'bg-destructive/5 border-destructive/20' : 'bg-primary/5 border-primary/20'}`}>
               <span className={`font-semibold flex items-center gap-1 ${netBalance < 0 ? 'text-destructive' : 'text-primary'}`}>
                 {netBalance < 0 ? <AlertTriangle className="h-4 w-4" /> : <Wallet className="h-4 w-4" />}
-                الرصيد المتبقي
+                {tExp("netBalance")}
               </span>
               <span className={`font-bold text-lg ${netBalance < 0 ? 'text-destructive' : 'text-primary'}`}>
-                {Math.abs(netBalance).toLocaleString("ar-EG")} ج.م {netBalance < 0 ? '(عجز)' : '(فائض)'}
+                {Math.abs(netBalance).toLocaleString()} {tExp("currency")} {netBalance < 0 ? '(-)' : '(+)'}
               </span>
             </div>
           </>
@@ -805,14 +908,28 @@ const medicalSchema = z.object({
 
 function MedicalTab({ family }) {
   const [open, setOpen] = useState(false);
-  const { addMedicalRecord, deleteMedicalRecord } = useFamiliesStore();
+  const addMedicalRecord = useFamiliesStore(state => state.addMedicalRecord);
+  const deleteMedicalRecord = useFamiliesStore(state => state.deleteMedicalRecord);
   const records = family.medicalRecords || [];
   const members = family.members || [];
+  const t = useTranslations("families");
+  const tMed = useTranslations("families.profile.medical");
+  const tM = useTranslations("families.profile.members");
+
+  const getChronicSeverityKey = (raw: string) => {
+    if (!raw) return "moderate";
+    if (raw === "CRITICAL") return "critical";
+    if (raw === "SEVERE") return "severe";
+    if (raw === "MODERATE") return "moderate";
+    if (raw === "MILD") return "mild";
+    const found = CHRONIC_SEVERITY.find((x) => x.code === raw || x.key === raw);
+    return found ? found.key : "moderate";
+  };
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, reset } = useForm({
     resolver: zodResolver(medicalSchema),
     defaultValues: {
-      memberName: "", type: "مرض مزمن", condition: "", severity: "",
+      memberName: "", type: "chronic", condition: "", severity: "",
       disabilityClass: null, treatment: "", monthlyCost: 0,
       hospital: "", startDate: "", needsFollowup: true, notes: "",
     },
@@ -822,11 +939,11 @@ function MedicalTab({ family }) {
 
   const onSubmit = async (data: any) => {
     if (!data.memberName) {
-      toast.error("برجاء اختيار واسم الفرد صاحب السجل الطبي أولاً");
+      toast.error(tMed("personRequired"));
       return;
     }
 
-    const severityObj = recordType === "إعاقة"
+    const severityObj = recordType === "disability"
       ? DISABILITY_CLASSES.find((d) => d.code === data.disabilityClass)
       : CHRONIC_SEVERITY.find((s) => s.code === data.severity);
     const matchedMember = members.find((m: any) => m.name === data.memberName);
@@ -836,11 +953,11 @@ function MedicalTab({ family }) {
         ...data,
         severityScore: severityObj?.score || 0,
       });
-      toast.success("تم إضافة السجل الطبي");
+      toast.success(tMed("addSuccess"));
       reset();
       setOpen(false);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "فشل إضافة السجل الطبي");
+      toast.error(error?.response?.data?.message || tMed("addError"));
     }
   };
 
@@ -849,82 +966,86 @@ function MedicalTab({ family }) {
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">السجل الطبي ({records.length})</CardTitle>
+        <CardTitle className="text-lg">{tMed("title")} ({records.length})</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1"><Plus className="h-3.5 w-3.5" /> إضافة سجل</Button>
+            <Button size="sm" className="gap-1"><Plus className="h-3.5 w-3.5" /> {tMed("addRecord")}</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>إضافة سجل طبي</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{tMed("dialogTitle")}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">
-                <Label>اسم الفرد</Label>
+                <Label>{tMed("patientName")}</Label>
                 {members.length > 0 ? (
                   <Select onValueChange={(v) => setValue("memberName", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="اختر الفرد" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={tM("selectPh")} /></SelectTrigger>
                     <SelectContent>
-                      {members.map((m) => <SelectItem key={m.id} value={m.name}>{m.name} ({m.relation})</SelectItem>)}
+                      {members.map((m: any) => <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Input {...register("memberName")} placeholder="اكتب اسم الفرد" />
+                  <Input {...register("memberName")} placeholder={tM("fullNamePh")} />
                 )}
                 {errors.memberName && <p className="text-xs text-destructive">{errors.memberName.message}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>نوع الحالة</Label>
-                  <Select defaultValue="مرض مزمن" onValueChange={(v) => setValue("type", v)}>
+                  <Label>{tMed("conditionType")}</Label>
+                  <Select defaultValue="chronic" onValueChange={(v) => setValue("type", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="مرض مزمن">مرض مزمن</SelectItem>
-                      <SelectItem value="إعاقة">إعاقة</SelectItem>
-                      <SelectItem value="إصابة مؤقتة">إصابة مؤقتة</SelectItem>
-                      <SelectItem value="عملية جراحية">عملية جراحية</SelectItem>
+                      <SelectItem value="chronic">{tMed("typechronic")}</SelectItem>
+                      <SelectItem value="disability">{tMed("typedisability")}</SelectItem>
+                      <SelectItem value="temp_injury">{tMed("typetemp_injury")}</SelectItem>
+                      <SelectItem value="surgery">{tMed("typesurgery")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>اسم المرض / الحالة</Label>
-                  <Input {...register("condition")} placeholder="مثال: سكري، شلل نصفي..." />
+                  <Label>{tMed("diagnosis")}</Label>
+                  <Input {...register("condition")} placeholder={tMed("diagnosisPh")} />
                   {errors.condition && <p className="text-xs text-destructive">{errors.condition.message}</p>}
                 </div>
               </div>
 
               {/* Severity selection based on type */}
-              {recordType === "إعاقة" ? (
+              {recordType === "disability" ? (
                 <div className="space-y-1.5">
-                  <Label>تصنيف الإعاقة</Label>
+                  <Label>{tM("disabilityClass")}</Label>
                   <Select onValueChange={(v) => {
                     setValue("disabilityClass", v);
                     setValue("severity", v, { shouldValidate: true });
                   }}>
-                    <SelectTrigger><SelectValue placeholder="اختر الفئة" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={tM("selectClass")} /></SelectTrigger>
                     <SelectContent>
                       {DISABILITY_CLASSES.map((d) => (
                         <SelectItem key={d.code} value={d.code}>
-                          فئة {d.code} - {d.label} ({d.score} نقطة)
+                          {t("profile.misc.tier", { code: d.code })} — {t(`dictionaries.disability.${d.key}_label`)} (
+                          {d.score} {t("profile.misc.points")})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   {DISABILITY_CLASSES.map((d) =>
                     watch("disabilityClass") === d.code ? (
-                      <p key={d.code} className="text-[11px] text-muted-foreground bg-secondary/50 p-2 rounded-lg">{d.description}</p>
+                      <p key={d.code} className="text-[11px] text-muted-foreground bg-secondary/50 p-2 rounded-lg">
+                        {t(`dictionaries.disability.${d.key}_desc`)}
+                      </p>
                     ) : null
                   )}
                   {errors.severity && <p className="text-xs text-destructive">{errors.severity.message}</p>}
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <Label>درجة الخطورة</Label>
+                  <Label>{tM("severity")}</Label>
                   <Select onValueChange={(v) => setValue("severity", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={tM("selectPh")} /></SelectTrigger>
                     <SelectContent>
                       {CHRONIC_SEVERITY.map((s) => (
                         <SelectItem key={s.code} value={s.code}>
-                          {s.code} ({s.score} نقطة) - {s.description}
+                          {t(`dictionaries.chronicSeverity.${s.key}`)} ({s.score} {t("profile.misc.points")}) —{" "}
+                          {t(`dictionaries.chronicSeverity.${s.key}_desc`)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -934,99 +1055,72 @@ function MedicalTab({ family }) {
               )}
 
               <div className="space-y-1.5">
-                <Label>العلاج الحالي</Label>
-                <Input {...register("treatment")} placeholder="مثال: أنسولين + أدوية، علاج طبيعي..." />
+                <Label>{tMed("treatment")}</Label>
+                <Input {...register("treatment")} placeholder={tMed("treatmentPh")} />
                 {errors.treatment && <p className="text-xs text-destructive">{errors.treatment.message}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>التكلفة الشهرية (ج.م)</Label>
+                  <Label>{tMed("monthlyCost")}</Label>
                   <Input type="number" {...register("monthlyCost")} min={0} dir="ltr" className="text-right" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>تاريخ البداية</Label>
+                  <Label>{tMed("startDate")}</Label>
                   <Input type="date" {...register("startDate")} dir="ltr" className="text-right" />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label>المستشفى / المكان</Label>
-                <Input {...register("hospital")} placeholder="اسم المستشفى أو الوحدة الصحية" />
+                <Label>{tMed("hospital")}</Label>
+                <Input {...register("hospital")} placeholder={tMed("hospitalPh")} />
               </div>
 
               <div className="flex items-center justify-between rounded-xl bg-secondary/50 p-3">
-                <Label>يحتاج متابعة دورية</Label>
+                <Label>{tMed("needsFollowup")}</Label>
                 <Switch checked={watch("needsFollowup")} onCheckedChange={(v) => setValue("needsFollowup", v)} />
               </div>
 
               <div className="space-y-1.5">
-                <Label>ملاحظات</Label>
-                <Textarea {...register("notes")} placeholder="ملاحظات إضافية..." rows={2} />
+                <Label>{tMed("notes")}</Label>
+                <Textarea {...register("notes")} placeholder={tM("notesPh")} rows={2} />
               </div>
 
-              <Button type="submit" className="w-full bg-primary text-primary-foreground">حفظ السجل</Button>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground">{tMed("save")}</Button>
             </form>
           </DialogContent>
         </Dialog>
       </CardHeader>
       <CardContent>
         {records.length === 0 ? (
-          <EmptyState icon={Stethoscope} message="لا توجد سجلات طبية" />
+          <EmptyState icon={Stethoscope} message={tMed("emptyState")} />
         ) : (
-          <div className="space-y-4">
-            {records.map((record) => (
-              <Card key={record.id} className="shadow-none border">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {records.map((record: any) => (
+              <Card key={record.id} className="shadow-sm hover:shadow-md transition-all duration-300 border-border/40 hover:border-primary/30 bg-card/60 backdrop-blur-sm">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <h4 className="font-semibold text-foreground">{record.condition}</h4>
-                      <p className="text-xs text-muted-foreground">{record.memberName} - {record.type}</p>
+                      <p className="text-xs text-muted-foreground">{record.memberName}</p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Badge variant="outline" className={
-                        record.severity === "حرج" || record.severity === "د"
-                          ? "bg-red-50 text-red-600 border-red-200"
-                          : record.severity === "شديد" || record.severity === "ج"
-                            ? "bg-orange-50 text-orange-600 border-orange-200"
-                            : record.severity === "متوسط" || record.severity === "ب"
-                              ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                              : "bg-blue-50 text-blue-600 border-blue-200"
-                      }>
-                        {record.type === "إعاقة" ? `فئة ${record.disabilityClass || record.severity}` : record.severity}
-                        {record.severityScore ? ` (${record.severityScore})` : ""}
-                      </Badge>
-                      {record.needsFollowup && (
-                        <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200 text-[10px]">
-                          متابعة
-                        </Badge>
-                      )}
-                      <Button
-                        variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => {
-                          deleteMedicalRecord(family.id, record.id);
-                          toast.success("تم حذف السجل");
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={() => {
+                        deleteMedicalRecord(family.id, record.id);
+                        toast.success(tMed("deleteSuccess"));
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-                    <MiniField label="العلاج" value={record.treatment} />
-                    <MiniField label="التكلفة الشهرية" value={`${record.monthlyCost} ج.م`} />
-                    {record.hospital && <MiniField label="المستشفى" value={record.hospital} />}
-                    {record.startDate && <MiniField label="تاريخ البداية" value={record.startDate} />}
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <MiniField label={tMed("treatment")} value={record.treatment} />
+                    <MiniField label={tMed("monthlyCost")} value={`${record.monthlyCost} ${tMed("currency")}`} />
                   </div>
-                  {record.notes && <p className="text-xs text-muted-foreground mt-2 bg-secondary/50 p-2 rounded-lg">{record.notes}</p>}
                 </CardContent>
               </Card>
             ))}
-            <Separator />
-            <div className="flex justify-between items-center pt-1">
-              <span className="font-semibold text-foreground">إجمالي تكلفة العلاج الشهرية</span>
-              <span className="font-bold text-lg text-destructive">{totalMedicalCost.toLocaleString("ar-EG")} ج.م</span>
-            </div>
           </div>
         )}
       </CardContent>
@@ -1039,24 +1133,37 @@ function MedicalTab({ family }) {
    ═══════════════════════════════════════════════ */
 function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netBalance }: any) {
   const [recalcLoading, setRecalcLoading] = useState(false);
-  const { fetchFamilyDetails } = useFamiliesStore();
+  const fetchFamilyDetails = useFamiliesStore(state => state.fetchFamilyDetails);
   const members = Array.isArray(family.members) ? family.members : [];
   const records = Array.isArray(family.medicalRecords) ? family.medicalRecords : [];
   const vi = parseFloat(family.vulnerabilityIndex) || 0; // scale 0-10
+  const t = useTranslations("families");
+  const tScore = useTranslations("families.profile.scoring");
+  const tDomain = useTranslations("domain");
+
+  const getDomainLabel = (group: string, val: string | null | undefined) => {
+    if (!val) return "---";
+    const mappedVal = group === "classification" ? (legacyClassificationMap[val] || val) : val;
+    try {
+      const key = `${group}.${mappedVal}`;
+      return tDomain.has(key as any) ? tDomain(key as any) : mappedVal;
+    } catch {
+      return val;
+    }
+  };
 
   const handleRecalculate = async () => {
     try {
       setRecalcLoading(true);
       const { default: api } = await import("@/lib/api");
       await api.post(`/v1/scoring/${family.id}/recalculate`);
-      // Refresh family data to get new scoring
       await fetchFamilyDetails(family.id);
       const { toast } = await import("sonner");
-      toast.success("تم إعادة حساب التقييم بنجاح");
+      toast.success(tScore("recalculateSuccess"));
     } catch (err: any) {
       console.error("Recalculate error", err);
       const { toast } = await import("sonner");
-      toast.error(err?.response?.data?.message || "فشل إعادة حساب التقييم");
+      toast.error(err?.response?.data?.message || tScore("recalculateError"));
     } finally {
       setRecalcLoading(false);
     }
@@ -1064,15 +1171,15 @@ function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netB
 
   // Calculate disability & chronic scores from members
   const disabilityScores = members
-    .filter((m) => m.hasDisability && m.disabilityClass)
-    .map((m) => {
+    .filter((m: any) => m.hasDisability && m.disabilityClass)
+    .map((m: any) => {
       const cls = DISABILITY_CLASSES.find((d) => d.code === m.disabilityClass);
-      return { name: m.name, score: cls?.score || 0, label: cls?.label || "" };
+      return { name: m.name, score: cls?.score || 0, disabilityKey: cls?.key };
     });
 
   const chronicScores = members
-    .filter((m) => m.hasChronicIllness && m.chronicSeverity)
-    .map((m) => {
+    .filter((m: any) => m.hasChronicIllness && m.chronicSeverity)
+    .map((m: any) => {
       const sev = CHRONIC_SEVERITY.find((s) => s.code === m.chronicSeverity);
       return { name: m.name, illness: m.chronicIllness, score: sev?.score || 0 };
     });
@@ -1086,22 +1193,22 @@ function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netB
       {/* Financial Summary */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">الملخص المالي</CardTitle>
+          <CardTitle className="text-lg">{tScore("financialSummary")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            <SummaryRow label="إجمالي الدخل الشهري" value={`${totalIncome.toLocaleString("ar-EG")} ج.م`} color="text-primary" />
-            <SummaryRow label="إجمالي المصروفات" value={`${totalExpenses.toLocaleString("ar-EG")} ج.م`} color="text-destructive" />
-            <SummaryRow label="تكلفة العلاج الشهرية" value={`${totalMedicalCost.toLocaleString("ar-EG")} ج.م`} color="text-destructive" />
+            <SummaryRow label={tScore("totalIncome")} value={`${totalIncome.toLocaleString()} ${tScore("currency")}`} color="text-primary" />
+            <SummaryRow label={tScore("totalExpenses")} value={`${totalExpenses.toLocaleString()} ${tScore("currency")}`} color="text-destructive" />
+            <SummaryRow label={tScore("medicalCost")} value={`${totalMedicalCost.toLocaleString()} ${tScore("currency")}`} color="text-destructive" />
             <Separator />
             <SummaryRow
-              label="الصافي (عجز / فائض)"
-              value={`${Math.abs(netBalance).toLocaleString("ar-EG")} ج.م ${netBalance < 0 ? '(عجز)' : '(فائض)'}`}
+              label={tScore("netBalance")}
+              value={`${Math.abs(netBalance).toLocaleString()} ${tScore("currency")} ${netBalance < 0 ? '(-)' : '(+)'}`}
               color={netBalance < 0 ? "text-destructive" : "text-primary"}
               bold
             />
             {family.monthlyAidAmount > 0 && (
-              <SummaryRow label="المساعدة الشهرية المقررة" value={`${family.monthlyAidAmount} ج.م`} color="text-primary" />
+              <SummaryRow label={tScore("monthlyAidApproved")} value={`${family.monthlyAidAmount} ${tScore("currency")}`} color="text-primary" />
             )}
           </div>
 
@@ -1109,14 +1216,17 @@ function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netB
           {disabilityScores.length > 0 && (
             <>
               <Separator />
-              <h4 className="text-sm font-semibold text-muted-foreground">نقاط الإعاقة (من الأفراد)</h4>
+              <h4 className="text-sm font-semibold text-muted-foreground">{tScore("disabilityPointsTitle")}</h4>
               {disabilityScores.map((d, i) => (
                 <div key={i} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{d.name} - {d.label}</span>
+                  <span className="text-muted-foreground">
+                    {d.name} —{" "}
+                    {d.disabilityKey ? t(`dictionaries.disability.${d.disabilityKey}_label`) : ""}
+                  </span>
                   <span className="font-bold text-foreground">{d.score}</span>
                 </div>
               ))}
-              <SummaryRow label="إجمالي نقاط الإعاقة" value={memberDisabilityTotal.toFixed(1)} color="text-foreground" bold />
+              <SummaryRow label={tScore("disabilityPointsTotal")} value={memberDisabilityTotal.toFixed(1)} color="text-foreground" bold />
             </>
           )}
 
@@ -1124,14 +1234,14 @@ function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netB
           {chronicScores.length > 0 && (
             <>
               <Separator />
-              <h4 className="text-sm font-semibold text-muted-foreground">نقاط الأمراض المزمنة (من الأفراد)</h4>
+              <h4 className="text-sm font-semibold text-muted-foreground">{tScore("membersChronicTitle")}</h4>
               {chronicScores.map((c, i) => (
                 <div key={i} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{c.name} - {c.illness}</span>
                   <span className="font-bold text-foreground">{c.score}</span>
                 </div>
               ))}
-              <SummaryRow label="إجمالي نقاط الأمراض" value={memberChronicTotal.toFixed(1)} color="text-foreground" bold />
+              <SummaryRow label={tScore("membersChronicTotal")} value={memberChronicTotal.toFixed(1)} color="text-foreground" bold />
             </>
           )}
 
@@ -1139,7 +1249,7 @@ function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netB
           {medicalScoreFromRecords > 0 && (
             <>
               <Separator />
-              <SummaryRow label="نقاط السجلات الطبية" value={medicalScoreFromRecords.toFixed(1)} color="text-foreground" bold />
+              <SummaryRow label={tScore("medicalRecordsScore")} value={medicalScoreFromRecords.toFixed(1)} color="text-foreground" bold />
             </>
           )}
         </CardContent>
@@ -1148,12 +1258,12 @@ function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netB
       {/* Vulnerability Index */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">مؤشر الهشاشة والتصنيف</CardTitle>
+          <CardTitle className="text-lg">{tScore("classificationTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-foreground">مؤشر الهشاشة</span>
+              <span className="text-sm font-medium text-foreground">{tScore("vulnerabilityIndex")}</span>
               <span className="text-2xl font-bold text-foreground">
                 {Math.min(vi * 10, 100).toFixed(0)}%
               </span>
@@ -1162,10 +1272,10 @@ function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netB
               <Progress value={Math.min(vi * 10, 100)} className="h-4 rounded-full" />
             </div>
             <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>خارج الأولوية (0%)</span>
-              <span>متوسط (15%)</span>
-              <span>ضعيف (30%)</span>
-              <span>هش (50%+)</span>
+              <span>{tScore("outOfPriority")}</span>
+              <span>{tScore("moderate")}</span>
+              <span>{tScore("weak")}</span>
+              <span>{tScore("fragile")}</span>
             </div>
           </div>
 
@@ -1173,14 +1283,14 @@ function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netB
           <div className="flex flex-col items-center justify-center py-6 gap-4">
             <div
               className={`h-28 w-28 rounded-full flex items-center justify-center border-4 ${vi >= 8
-                ? "border-red-400 bg-red-50"
+                ? "border-destructive/80 bg-destructive/12"
                 : vi >= 5
-                  ? "border-red-300 bg-red-50"
+                  ? "border-destructive/50 bg-destructive/8"
                   : vi >= 3
-                    ? "border-orange-400 bg-orange-50"
+                    ? "border-warning/70 bg-warning/12"
                     : vi >= 1.5
-                      ? "border-blue-400 bg-blue-50"
-                      : "border-gray-300 bg-gray-50"
+                      ? "border-primary/60 bg-primary/10"
+                      : "border-border bg-muted/40"
                 }`}
             >
               <span className="text-3xl font-bold text-foreground">
@@ -1191,18 +1301,18 @@ function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netB
               variant="outline"
               className={`text-base px-4 py-1 ${classificationColors[family.classification] || ""}`}
             >
-              {classificationLabelsMap[family.classification] || family.classification}
+              {getDomainLabel("vulnerability", family.classification)}
             </Badge>
             <p className="text-sm text-muted-foreground text-center max-w-xs leading-relaxed">
               {vi >= 8
-                ? "هذه الأسرة في حاجة ماسة وعاجلة للدعم المادي والعيني"
+                ? tScore("descCritical")
                 : vi >= 5
-                  ? "هذه الأسرة هشة وتحتاج لدعم مستمر ومتابعة دورية"
+                  ? tScore("descFragile")
                   : vi >= 3
-                    ? "هذه الأسرة ضعيفة وتحتاج لدعم ومتابعة"
+                    ? tScore("descWeak")
                     : vi >= 1.5
-                      ? "هذه الأسرة تحتاج لمساعدة موسمية ومتابعة"
-                      : "هذه الأسرة خارج الأولوية حالياً"}
+                      ? tScore("descModerate")
+                      : tScore("descOutOfPriority")}
             </p>
           </div>
 
@@ -1211,10 +1321,10 @@ function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netB
             <>
               <Separator />
               <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 text-center">
-                <p className="text-xs text-muted-foreground mb-1">قرار المساعدة</p>
+                <p className="text-xs text-muted-foreground mb-1">{tScore("aidDecision")}</p>
                 <p className="font-bold text-primary text-lg">{family.aidDecision}</p>
                 {family.monthlyAidAmount > 0 && (
-                  <p className="text-sm text-foreground mt-1">{family.monthlyAidAmount} ج.م شهريًا</p>
+                  <p className="text-sm text-foreground mt-1">{family.monthlyAidAmount} {tScore("currency")} {tScore("monthlyAid")}</p>
                 )}
               </div>
             </>
@@ -1228,9 +1338,9 @@ function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netB
             disabled={recalcLoading}
           >
             {recalcLoading ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> جاري إعادة الحساب...</>
+              <><Loader2 className="h-4 w-4 animate-spin" /> {tScore("recalculating")}</>
             ) : (
-              <><BarChart3 className="h-4 w-4" /> إعادة حساب التقييم</>
+              <><BarChart3 className="h-4 w-4" /> {tScore("recalculate")}</>
             )}
           </Button>
         </CardContent>
@@ -1255,9 +1365,9 @@ function InfoField({ icon: Icon, label, value, dir }: { icon: any, label: string
 
 function MiniField({ label, value, dir }: { label: string, value: any, dir?: string }) {
   return (
-    <div>
-      <span className="text-muted-foreground text-xs">{label}: </span>
-      <span className="text-foreground text-sm" dir={dir}>{value}</span>
+    <div className="flex flex-col gap-1.5">
+      <span className="text-muted-foreground text-[11px] font-medium uppercase tracking-wider">{label}</span>
+      <span className="text-foreground text-sm font-semibold" dir={dir}>{value}</span>
     </div>
   );
 }

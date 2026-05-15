@@ -1,0 +1,91 @@
+{
+  "vulnerability": {
+    "VERY_FRAGILE": "هش للغاية (حرج)",
+    "FRAGILE": "هش للغاية",
+    "WEAK": "ضعيف",
+    "MODERATE": "متوسط",
+    "OUT_OF_PRIORITY": "خارج الأولوية"
+  },
+  "social_status": {
+    "NEEDY": "محتاج",
+    "ORPHAN": "يتيم",
+    "WIDOW": "أرملة",
+    "DIVORCED": "مطلقة",
+    "DISABLED": "إعاقة",
+    "ELDERLY": "كبار سن",
+    "CHRONIC_ILLNESS": "أمراض مزمنة",
+    "PRISONER_FAMILY": "أسرة سجين",
+    "STUDENT": "طالب علم",
+    "ORPHANS": "أيتام",
+    "POOR": "فقير",
+    "DISABILITY": "إعاقة",
+    "PRISONER": "سجين",
+    "ABANDONMENT": "هجر",
+    "CHRONIC_DISEASE": "أمراض مزمنة",
+    "TEMPORARY_INJURY": "إصابة مؤقتة",
+    "OTHER": "أخرى"
+  },
+  "eligibility": {
+    "ELIGIBLE": "مستفيد",
+    "INELIGIBLE": "غير مستفيد",
+    "PENDING": "قيد المراجعة",
+    "SUSPENDED": "موقوف"
+  },
+  "role": {
+    "HUSBAND": "رب الأسرة",
+    "WIFE": "الزوجة",
+    "CHILD": "ابن/ابنة",
+    "FATHER": "الأب",
+    "MOTHER": "الأم",
+    "BROTHER": "أخ",
+    "SISTER": "أخت",
+    "GRANDSON": "حفيد",
+    "GRANDDAUGHTER": "حفيدة",
+    "OTHER_RELATIVE": "قريب آخر",
+    "OTHER": "أخرى"
+  },
+  "gender": {
+    "MALE": "ذكر",
+    "FEMALE": "أنثى"
+  },
+  "education": {
+    "NONE": "بدون تعليم (أمي)",
+    "NURSERY": "حضانة",
+    "ILLITERATE": "أمي (لا يقرأ ولا يكتب)",
+    "LITERATE": "يقرأ ويكتب",
+    "PRIMARY": "ابتدائي",
+    "PREPARATORY": "إعدادي",
+    "SECONDARY": "ثانوي عام",
+    "TECHNICAL_SECONDARY": "ثانوي فني",
+    "DIPLOMA": "دبلوم",
+    "UNIVERSITY": "جامعي",
+    "POSTGRADUATE": "دراسات عليا",
+    "KINDERGARTEN": "حضانة",
+    "NOT_APPLICABLE": "لا ينطبق (رضيع)"
+  },
+  "maritalStatus": {
+    "SINGLE": "أعزب/عزباء",
+    "MARRIED": "متزوج/ة",
+    "DIVORCED": "مطلق/ة",
+    "WIDOWED": "أرمل/ة",
+    "SEPARATED": "منفصل/ة",
+    "MARRIED_FEMALE": "متزوجة",
+    "DIVORCED_FEMALE": "مطلقة",
+    "WIDOWER": "أرمل",
+    "WIDOW": "أرملة",
+    "UNMARRIED_FEMALE": "غير متزوجة"
+  },
+  "disabilitySeverities": {
+    "A": "إعاقة خفيفة",
+    "B": "إعاقة متوسطة",
+    "C": "إعاقة شديدة",
+    "D": "إعاقة كاملة"
+  },
+  "chronicSeverities": {
+    "MILD": "خفيف",
+    "MODERATE": "متوسط",
+    "SEVERE": "شديد",
+    "CRITICAL": "حرج"
+  },
+  "unknown": "غير محدد"
+}

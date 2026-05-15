@@ -10,7 +10,9 @@ const { requirePermission } = require('../../middleware/rbac')
 
 router.use(requireAuth)
 
-// GET /api/v1/dashboard/stats
 router.get('/stats', requirePermission('VIEW_SCORING'), dashboardController.getStats)
+router.get('/prediction', requirePermission('VIEW_SCORING'), dashboardController.getPrediction)
+router.get('/regions-overview', requirePermission('VIEW_SCORING'), dashboardController.getRegionsOverviewHandler)
+router.get('/workflow', requirePermission('VIEW_SCORING'), dashboardController.getWorkflow)
 
 module.exports = router

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
-import Link from "next/link";
+import { Link, usePathname } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   Users,
@@ -22,17 +22,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 const menuItems = [
-  { label: "لوحة التحكم", href: "/dashboard", icon: LayoutDashboard },
-  { label: "الأسر", href: "/dashboard/families", icon: Users },
-  { label: "السجل الطبي", href: "/dashboard/medical", icon: Stethoscope },
-  { label: "التعليم", href: "/dashboard/education", icon: GraduationCap },
-  { label: "المتطوعين", href: "/dashboard/volunteers", icon: Heart },
-  { label: "التقارير", href: "/dashboard/reports", icon: FileBarChart },
-  { label: "سجل التعديلات", href: "/dashboard/audit", icon: History },
-  { label: "المستخدمين والصلاحيات", href: "/dashboard/users", icon: Shield },
+  { key: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { key: "families", href: "/dashboard/families", icon: Users },
+  { key: "medical_record", href: "/dashboard/medical", icon: Stethoscope },
+  { key: "education", href: "/dashboard/education", icon: GraduationCap },
+  { key: "volunteers", href: "/dashboard/volunteers", icon: Heart },
+  { key: "reports", href: "/dashboard/reports", icon: FileBarChart },
+  { key: "audit_log", href: "/dashboard/audit", icon: History },
+  { key: "users_permissions", href: "/dashboard/users", icon: Shield },
 ];
 
-function SidebarContent({ collapsed, pathname }) {
+function SidebarContent({ collapsed }: { collapsed: boolean }) {
+  const pathname = usePathname();
+  const t = useTranslations("common");
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-center p-6 border-b border-sidebar-border">
@@ -47,7 +50,7 @@ function SidebarContent({ collapsed, pathname }) {
             </div>
             <div>
               <h1 className="text-sidebar-foreground font-bold text-lg leading-tight">CharityHub</h1>
-              <p className="text-sidebar-foreground/60 text-xs">نظام إدارة الجمعيات</p>
+              <p className="text-sidebar-foreground/60 text-xs" suppressHydrationWarning>{t('sidebar.system_title')}</p>
             </div>
           </div>
         )}
@@ -56,7 +59,8 @@ function SidebarContent({ collapsed, pathname }) {
       <ScrollArea className="flex-1 py-4">
         <nav className="flex flex-col gap-1 px-3">
           {menuItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname?.startsWith(item.href));
+            const isActive =
+              pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
             const Icon = item.icon;
             return (
               <Link
@@ -69,10 +73,9 @@ function SidebarContent({ collapsed, pathname }) {
                     ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
-                dir="rtl"
               >
                 <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span className="flex-1 text-start">{item.label}</span>}
+                {!collapsed && <span className="flex-1 text-start" suppressHydrationWarning>{t(`sidebar.${item.key}`)}</span>}
               </Link>
             );
           })}
@@ -91,8 +94,6 @@ function SidebarContent({ collapsed, pathname }) {
 }
 
 export function AppSidebar({ collapsed, setCollapsed }) {
-  const pathname = usePathname();
-
   return (
     <>
       {/* Desktop sidebar */}
@@ -102,7 +103,7 @@ export function AppSidebar({ collapsed, setCollapsed }) {
           collapsed ? "w-[72px]" : "w-[260px]"
         )}
       >
-        <SidebarContent collapsed={collapsed} pathname={pathname} />
+        <SidebarContent collapsed={collapsed} />
         <Button
           variant="ghost"
           size="icon"
@@ -117,8 +118,9 @@ export function AppSidebar({ collapsed, setCollapsed }) {
 }
 
 export function MobileSidebar() {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const locale = useLocale();
+  const t = useTranslations("common");
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -127,12 +129,12 @@ export function MobileSidebar() {
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
-          <span className="sr-only">فتح القائمة</span>
+          <span className="sr-only">{t("mobile.open_menu")}</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[260px] p-0 bg-sidebar">
-        <SheetTitle className="sr-only">القائمة الرئيسية</SheetTitle>
-        <SidebarContent collapsed={false} pathname={pathname} />
+      <SheetContent side={locale === "ar" ? "right" : "left"} className="w-[260px] p-0 bg-sidebar">
+        <SheetTitle className="sr-only">{t("mobile.menu_title")}</SheetTitle>
+        <SidebarContent collapsed={false} />
       </SheetContent>
     </Sheet>
   );

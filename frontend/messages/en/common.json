@@ -1,0 +1,69 @@
+{
+  "app_name": "Charity Hub",
+  "search_placeholder": "Search...",
+  "filters": "Filters",
+  "actions": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "view": "View",
+    "confirm": "Confirm"
+  },
+  "states": {
+    "loading": "Loading...",
+    "error": "An unexpected error occurred",
+    "no_data": "No data available",
+    "not_found": "Requested item not found"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "families": "Families",
+    "medical_record": "Medical Record",
+    "education": "Education",
+    "volunteers": "Volunteers",
+    "reports": "Reports",
+    "audit_log": "Audit Log",
+    "users_permissions": "Users & Permissions",
+    "system_title": "Charity Management"
+  },
+  "topbar": {
+    "search_placeholder": "Search by National ID or phone...",
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "logout": "Logout",
+    "admin": "System Admin"
+  },
+  "theme": {
+    "label": "Color theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "menu_label": "Interface language",
+    "ar": "Arabic",
+    "en": "English",
+    "ar_hint": "RTL · العربية",
+    "en_hint": "LTR · English"
+  },
+  "mobile": {
+    "open_menu": "Open menu",
+    "menu_title": "Navigation"
+  },
+  "demo_notifications": {
+    "n1": "New family registered — Mohammed Ahmed family",
+    "n2": "Critical medical status update — Fatima Al-Sayed",
+    "n3": "Field research completed — Hassan Ali family",
+    "n4": "Evaluation committee meeting scheduled for tomorrow",
+    "t1": "5 minutes ago",
+    "t2": "1 hour ago",
+    "t3": "3 hours ago",
+    "t4": "5 hours ago"
+  },
+  "metadata": {
+    "title": "CharityHub — Charity management",
+    "description": "Manage families, aid distributions, and field operations."
+  }
+}

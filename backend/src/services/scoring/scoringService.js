@@ -221,11 +221,23 @@ function calculateTotalActualIncome(incomes) {
 }
 
 /**
- * Get baseline coefficient from ScoringRule table
+ * Module-level cache for baseline coefficient — fetched once, reused for 10 minutes.
+ * The coefficient almost never changes, so querying it on every scoring call is wasteful.
+ */
+const _coefficientCache = { value: null, expiresAt: 0 };
+const COEFFICIENT_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+/**
+ * Get baseline coefficient from ScoringRule table (cached)
  * @param {string} ruleKey - Rule key (default: 'BASELINE_COEFFICIENT')
  * @returns {Promise<number>} Baseline coefficient value
  */
 async function getBaselineCoefficient(ruleKey = 'BASELINE_COEFFICIENT', tx = null) {
+  // Use cache only for the default key and when not inside a transaction
+  if (!tx && ruleKey === 'BASELINE_COEFFICIENT' && Date.now() < _coefficientCache.expiresAt && _coefficientCache.value !== null) {
+    return _coefficientCache.value;
+  }
+
   const client = tx || prisma
   try {
     const rule = await client.scoringRule.findUnique({
@@ -235,19 +247,25 @@ async function getBaselineCoefficient(ruleKey = 'BASELINE_COEFFICIENT', tx = nul
       },
     })
 
+    const coeff = rule ? rule.coefficient : 1.0;
+
     if (!rule) {
-      // Default fallback coefficient if rule not found
       console.warn(`ScoringRule with key '${ruleKey}' not found. Using default coefficient: 1.0`)
-      return 1.0
     }
 
-    return rule.coefficient
+    // Store in cache (only for default key, not inside transactions)
+    if (!tx && ruleKey === 'BASELINE_COEFFICIENT') {
+      _coefficientCache.value = coeff;
+      _coefficientCache.expiresAt = Date.now() + COEFFICIENT_TTL_MS;
+    }
+
+    return coeff;
   } catch (error) {
     console.error('Error fetching baseline coefficient:', error)
-    // Fallback to default
     return 1.0
   }
 }
+
 
 /**
  * Calculate vulnerability index
@@ -327,7 +345,7 @@ async function calculateFamilyScore(familyId, options = {}, tx = null) {
 
   try {
     // Fetch all required data in parallel for performance
-    const [family, persons, incomes, medicalCases, expenses] = await Promise.all([
+    const [family, persons, incomes, expenses] = await Promise.all([
       client.family.findUnique({
         where: { id: familyId },
         select: {
@@ -336,6 +354,7 @@ async function calculateFamilyScore(familyId, options = {}, tx = null) {
           housing_type: true,
         },
       }),
+      // Fetch persons first, then use their IDs for medical cases (avoids nested join scan)
       client.person.findMany({
         where: { family_id: familyId },
         select: {
@@ -358,19 +377,6 @@ async function calculateFamilyScore(familyId, options = {}, tx = null) {
           verified: true,
         },
       }),
-      client.medicalCase.findMany({
-        where: {
-          person: {
-            family_id: familyId,
-          },
-        },
-        select: {
-          id: true,
-          person_id: true,
-          medical_category: true,
-          chronic: true,
-        },
-      }),
       client.expense.findMany({
         where: { family_id: familyId },
         select: {
@@ -384,6 +390,20 @@ async function calculateFamilyScore(familyId, options = {}, tx = null) {
     if (!family) {
       throw new AppError(`Family with ID ${familyId} not found`, 404, 'NOT_FOUND')
     }
+
+    // Fetch medical cases using person IDs (direct index lookup, no join)
+    const personIds = persons.map(p => p.id)
+    const medicalCases = personIds.length > 0
+      ? await client.medicalCase.findMany({
+          where: { person_id: { in: personIds } },
+          select: {
+            id: true,
+            person_id: true,
+            medical_category: true,
+            chronic: true,
+          },
+        })
+      : [];
 
     // Identify head of family (prefer HUSBAND/WIFE, fallback to first person)
     const headPerson =

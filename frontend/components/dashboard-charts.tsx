@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDashboardStore } from "@/lib/store";
+import { useTranslations } from "next-intl";
 import {
   PieChart,
   Pie,
@@ -36,13 +37,14 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 
 export function DashboardCharts() {
   const { familyClassification, classificationExpenses, monthlyRegistrations } = useDashboardStore();
+  const tCharts = useTranslations("dashboard.charts");
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Pie Chart - Family Classification */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">تصنيف الأسر</CardTitle>
+          <CardTitle className="text-base font-semibold">{tCharts("classification_distribution")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-64">
@@ -77,7 +79,7 @@ export function DashboardCharts() {
       {/* Bar Chart - Classification Expenses */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">إجمالي المصروفات لكل تصنيف</CardTitle>
+          <CardTitle className="text-base font-semibold">{tCharts("expenses_by_class")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-64">
@@ -97,7 +99,7 @@ export function DashboardCharts() {
                   tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" fill="var(--primary)" radius={[6, 6, 0, 0]} name="المصروفات">
+                <Bar dataKey="value" fill="var(--primary)" radius={[6, 6, 0, 0]} name={tCharts("series_expenses")}>
                   {classificationExpenses?.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
@@ -111,7 +113,7 @@ export function DashboardCharts() {
       {/* Line Chart - Monthly Registrations */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">تسجيل الأسر شهريًا</CardTitle>
+          <CardTitle className="text-base font-semibold">{tCharts("registrations_series")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-64">
@@ -137,7 +139,7 @@ export function DashboardCharts() {
                   strokeWidth={2.5}
                   dot={{ fill: "var(--primary)", r: 4, strokeWidth: 0 }}
                   activeDot={{ r: 6, fill: "var(--primary)", strokeWidth: 0 }}
-                  name="الأسر"
+                  name={tCharts("families_axis")}
                 />
               </LineChart>
             </ResponsiveContainer>
