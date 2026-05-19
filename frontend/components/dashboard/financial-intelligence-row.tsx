@@ -39,7 +39,7 @@ export function FinancialIntelligenceRow({
   predictionFailed,
 }: FinancialIntelligenceRowProps) {
   const t = useTranslations("dashboard");
-  const series = monthlySeries ?? [];
+  const series = React.useMemo(() => monthlySeries ?? [], [monthlySeries]);
   const cur = t("stats.currency").trim();
   const tail = React.useMemo(() => {
     const s = series.slice(-8);

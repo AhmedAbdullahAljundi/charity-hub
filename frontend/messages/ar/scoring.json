@@ -1,0 +1,62 @@
+{
+  "layers": {
+    "L1": "العائل",
+    "L2": "السكن",
+    "L3": "الدخل",
+    "L4": "الهشاشة الاجتماعية",
+    "L5": "الأعباء المؤقتة",
+    "L6": "الصحة",
+    "L7": "التخفيضات",
+    "L8": "مخاطر الاحتيال"
+  },
+  "eligibility": {
+    "CRITICAL": "حالة حرجة",
+    "HIGH_NEED": "احتياج شديد",
+    "MODERATE_NEED": "احتياج متوسط",
+    "LOW_NEED": "احتياج منخفض",
+    "NOT_ELIGIBLE": "غير مؤهل"
+  },
+  "warnings": {
+    "LOW_VERIFICATION_PENALTY": "توثيق ناقص — يؤثر على درجة الثقة",
+    "PENSION_UNVERIFIED": "المعاش غير موثق",
+    "FEW_VERIFIED_CHANNELS": "أقل من ٣ قنوات دخل موثقة"
+  },
+  "engines": {
+    "vulnerability": "الهشاشة",
+    "reduction": "التخفيض",
+    "confidence": "الثقة",
+    "fraud": "الاحتيال"
+  },
+  "panel": {
+    "recalculate": "إعادة الحساب",
+    "calculating": "جاري الحساب...",
+    "warnings": "تحذيرات",
+    "noScore": "احفظ الخطوة ثم احسب النتيجة",
+    "percent": "النسبة المعيارية"
+  },
+  "wizard": {
+    "title": "استمارة الأسرة",
+    "step": "الخطوة {current} من {total}",
+    "savedAgo": "تم الحفظ منذ {seconds} ثانية",
+    "saving": "جاري الحفظ...",
+    "saved": "تم الحفظ",
+    "error": "فشل الحفظ",
+    "dirtyLeave": "لديك تغييرات غير محفوظة. هل تريد المغادرة؟",
+    "next": "التالي",
+    "prev": "السابق",
+    "calculate": "احسب النتيجة"
+  },
+  "tree": {
+    "head": "عائل",
+    "spouse": "زوج/ة",
+    "child": "طفل",
+    "dependent": "معال",
+    "sick": "مريض",
+    "disabled": "معاق",
+    "student": "طالب",
+    "prisoner": "سجين",
+    "widow": "أرملة",
+    "contribution": "مساهمة في الدرجة",
+    "rulesFired": "القواعد المفعّلة"
+  }
+}

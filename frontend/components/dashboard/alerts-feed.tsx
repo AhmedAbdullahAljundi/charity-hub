@@ -33,7 +33,7 @@ export function AlertsFeed({
   const t = useTranslations("dashboard");
   const [hydrated, setHydrated] = React.useState(false);
   React.useEffect(() => {
-    setHydrated(true);
+    setTimeout(() => setHydrated(true), 0);
   }, []);
 
   const Chevron = locale === "ar" ? ChevronLeft : ChevronRight;

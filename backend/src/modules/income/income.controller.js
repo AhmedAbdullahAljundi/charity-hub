@@ -1,157 +1,66 @@
-/**
- * Income Sources Controller
- */
-
-const prisma = require('../../config/prisma')
-const { AppError, NotFoundError } = require('../../utils/errors')
+const incomeService = require('./income.service');
+const { logFieldChanges } = require('../../shared/audit/auditLogger');
 
 const incomeController = {
-  /**
-   * List all income sources for a family
-   */
-  list: async (req, res, next) => {
-    try {
-      const { familyId } = req.params
-
-      const incomeSources = await prisma.incomeSource.findMany({
-        where: { family_id: familyId },
-        orderBy: { created_at: 'desc' },
-      })
-
-      const total = incomeSources.reduce((sum, source) => {
-        return sum + parseFloat(source.amount)
-      }, 0)
-
-      res.json({
-        success: true,
-        data: incomeSources,
-        total,
-      })
-    } catch (error) {
-      next(error)
-    }
-  },
-
-  /**
-   * Get income source by ID
-   */
-  getById: async (req, res, next) => {
-    try {
-      const { id } = req.params
-
-      const incomeSource = await prisma.incomeSource.findUnique({
-        where: { id },
-        include: {
-          family: true,
-        },
-      })
-
-      if (!incomeSource) {
-        throw new NotFoundError('Income Source')
-      }
-
-      res.json({
-        success: true,
-        data: incomeSource,
-      })
-    } catch (error) {
-      next(error)
-    }
-  },
-
-  /**
-   * Create income source
-   */
   create: async (req, res, next) => {
     try {
-      const { familyId } = req.params
-      const data = req.body
-
-      // Verify family exists
-      const family = await prisma.family.findUnique({
-        where: { id: familyId },
-      })
-
-      if (!family) {
-        throw new NotFoundError('Family')
-      }
-
-      const incomeSource = await prisma.incomeSource.create({
-        data: {
-          ...data,
-          family_id: familyId,
-          amount: parseFloat(data.amount),
-        },
-        include: {
-          family: true,
-        },
-      })
-
-      res.status(201).json({
-        success: true,
-        data: incomeSource,
-        message: 'تم إضافة مصدر الدخل بنجاح',
-      })
-    } catch (error) {
-      next(error)
+      const data = await incomeService.create(req.user, req.params.id, req.body);
+      res.status(201).json({ success: true, data });
+    } catch (e) {
+      next(e);
     }
   },
 
-  /**
-   * Update income source
-   */
   update: async (req, res, next) => {
     try {
-      const { id } = req.params
-      const data = req.body
-
-      if (data.amount) {
-        data.amount = parseFloat(data.amount)
-      }
-
-      const incomeSource = await prisma.incomeSource.update({
-        where: { id },
-        data,
-        include: {
-          family: true,
-        },
-      })
-
-      res.json({
-        success: true,
-        data: incomeSource,
-        message: 'تم تحديث مصدر الدخل بنجاح',
-      })
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundError('Income Source')
-      }
-      next(error)
+      const data = await incomeService.update(req.user, req.params.id, req.params.iid, req.body);
+      res.json({ success: true, data });
+    } catch (e) {
+      next(e);
     }
   },
 
-  /**
-   * Delete income source
-   */
-  delete: async (req, res, next) => {
+  remove: async (req, res, next) => {
     try {
-      const { id } = req.params
-
-      await prisma.incomeSource.delete({
-        where: { id },
-      })
-
-      res.json({
-        success: true,
-        message: 'تم حذف مصدر الدخل بنجاح',
-      })
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundError('Income Source')
-      }
-      next(error)
+      await incomeService.remove(req.user, req.params.id, req.params.iid);
+      res.json({ success: true });
+    } catch (e) {
+      next(e);
     }
   },
-}
 
-module.exports = incomeController
+  verify: async (req, res, next) => {
+    try {
+      const { before, after } = await incomeService.verify(
+        req.user,
+        req.params.id,
+        req.params.iid,
+        req.body
+      );
+      await logFieldChanges({
+        userId: req.user.userId,
+        householdId: req.params.id,
+        action: 'VERIFY_INCOME',
+        entity: 'IncomeSource',
+        entityId: after.id,
+        changes: [
+          {
+            fieldName: 'verified',
+            before: before.verified,
+            after: after.verified,
+          },
+        ],
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+      });
+      res.json({
+        success: true,
+        data: { ...after, monthlyAmount: after.monthlyAmount.toString() },
+      });
+    } catch (e) {
+      next(e);
+    }
+  },
+};
+
+module.exports = incomeController;

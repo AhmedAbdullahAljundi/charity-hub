@@ -22,6 +22,7 @@ function errorHandler(err, req, res, next) {
     code,
     message,
     details,
+    traceId: req.traceId,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   })
 }

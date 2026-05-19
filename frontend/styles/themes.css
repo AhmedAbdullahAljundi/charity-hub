@@ -4,6 +4,14 @@
  */
 
 :root {
+  --color-primary: #14b8a6;
+  --color-alert: #f59e0b;
+  --color-critical: #e11d48;
+  --color-safe: #10b981;
+  --color-bg-dark: #020617;
+  --color-bg-light: #f8fafc;
+  --color-text-dark: #f1f5f9;
+  --color-text-light: #0f172a;
   --background: oklch(0.98 0.002 155);
   --foreground: oklch(0.17 0.02 155);
   --card: oklch(1 0 0);

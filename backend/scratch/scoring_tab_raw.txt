@@ -1,0 +1,252 @@
+﻿        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+   TAB 6: Scoring / PMT Assessment
+   â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ */
+function ScoringTab({ family, totalIncome, totalExpenses, totalMedicalCost, netBalance }: any) {
+  const [recalcLoading, setRecalcLoading] = useState(false);
+  const { fetchFamilyDetails } = useFamiliesStore();
+  const members = Array.isArray(family.members) ? family.members : [];
+  const records = Array.isArray(family.medicalRecords) ? family.medicalRecords : [];
+  const vi = parseFloat(family.vulnerabilityIndex) || 0; // scale 0-10
+
+  const handleRecalculate = async () => {
+    try {
+      setRecalcLoading(true);
+      const { default: api } = await import("@/lib/api");
+      await api.post(`/v1/scoring/${family.id}/recalculate`);
+      // Refresh family data to get new scoring
+      await fetchFamilyDetails(family.id);
+      const { toast } = await import("sonner");
+      toast.success("طھظ… ط¥ط¹ط§ط¯ط© ط­ط³ط§ط¨ ط§ظ„طھظ‚ظٹظٹظ… ط¨ظ†ط¬ط§ط­");
+    } catch (err: any) {
+      console.error("Recalculate error", err);
+      const { toast } = await import("sonner");
+      toast.error(err?.response?.data?.message || "ظپط´ظ„ ط¥ط¹ط§ط¯ط© ط­ط³ط§ط¨ ط§ظ„طھظ‚ظٹظٹظ…");
+    } finally {
+      setRecalcLoading(false);
+    }
+  };
+
+  // Calculate disability & chronic scores from members
+  const disabilityScores = members
+    .filter((m) => m.hasDisability && m.disabilityClass)
+    .map((m) => {
+      const cls = DISABILITY_CLASSES.find((d) => d.code === m.disabilityClass);
+      return { name: m.name, score: cls?.score || 0, label: cls?.label || "" };
+    });
+
+  const chronicScores = members
+    .filter((m) => m.hasChronicIllness && m.chronicSeverity)
+    .map((m) => {
+      const sev = CHRONIC_SEVERITY.find((s) => s.code === m.chronicSeverity);
+      return { name: m.name, illness: m.chronicIllness, score: sev?.score || 0 };
+    });
+
+  const medicalScoreFromRecords = records.reduce((s, r) => s + (r.severityScore || 0), 0);
+  const memberDisabilityTotal = disabilityScores.reduce((s, d) => s + d.score, 0);
+  const memberChronicTotal = chronicScores.reduce((s, c) => s + c.score, 0);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Financial Summary */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">ط§ظ„ظ…ظ„ط®طµ ط§ظ„ظ…ط§ظ„ظٹ</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <SummaryRow label="ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط¯ط®ظ„ ط§ظ„ط´ظ‡ط±ظٹ" value={`${totalIncome.toLocaleString("ar-EG")} ط¬.ظ…`} color="text-primary" />
+            <SummaryRow label="ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ظ…طµط±ظˆظپط§طھ" value={`${totalExpenses.toLocaleString("ar-EG")} ط¬.ظ…`} color="text-destructive" />
+            <SummaryRow label="طھظƒظ„ظپط© ط§ظ„ط¹ظ„ط§ط¬ ط§ظ„ط´ظ‡ط±ظٹط©" value={`${totalMedicalCost.toLocaleString("ar-EG")} ط¬.ظ…`} color="text-destructive" />
+            <Separator />
+            <SummaryRow
+              label="ط§ظ„طµط§ظپظٹ (ط¹ط¬ط² / ظپط§ط¦ط¶)"
+              value={`${Math.abs(netBalance).toLocaleString("ar-EG")} ط¬.ظ… ${netBalance < 0 ? '(ط¹ط¬ط²)' : '(ظپط§ط¦ط¶)'}`}
+              color={netBalance < 0 ? "text-destructive" : "text-primary"}
+              bold
+            />
+            {family.monthlyAidAmount > 0 && (
+              <SummaryRow label="ط§ظ„ظ…ط³ط§ط¹ط¯ط© ط§ظ„ط´ظ‡ط±ظٹط© ط§ظ„ظ…ظ‚ط±ط±ط©" value={`${family.monthlyAidAmount} ط¬.ظ…`} color="text-primary" />
+            )}
+          </div>
+
+          {/* Disability Scores */}
+          {disabilityScores.length > 0 && (
+            <>
+              <Separator />
+              <h4 className="text-sm font-semibold text-muted-foreground">ظ†ظ‚ط§ط· ط§ظ„ط¥ط¹ط§ظ‚ط© (ظ…ظ† ط§ظ„ط£ظپط±ط§ط¯)</h4>
+              {disabilityScores.map((d, i) => (
+                <div key={i} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{d.name} - {d.label}</span>
+                  <span className="font-bold text-foreground">{d.score}</span>
+                </div>
+              ))}
+              <SummaryRow label="ط¥ط¬ظ…ط§ظ„ظٹ ظ†ظ‚ط§ط· ط§ظ„ط¥ط¹ط§ظ‚ط©" value={memberDisabilityTotal.toFixed(1)} color="text-foreground" bold />
+            </>
+          )}
+
+          {/* Chronic Scores */}
+          {chronicScores.length > 0 && (
+            <>
+              <Separator />
+              <h4 className="text-sm font-semibold text-muted-foreground">ظ†ظ‚ط§ط· ط§ظ„ط£ظ…ط±ط§ط¶ ط§ظ„ظ…ط²ظ…ظ†ط© (ظ…ظ† ط§ظ„ط£ظپط±ط§ط¯)</h4>
+              {chronicScores.map((c, i) => (
+                <div key={i} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{c.name} - {c.illness}</span>
+                  <span className="font-bold text-foreground">{c.score}</span>
+                </div>
+              ))}
+              <SummaryRow label="ط¥ط¬ظ…ط§ظ„ظٹ ظ†ظ‚ط§ط· ط§ظ„ط£ظ…ط±ط§ط¶" value={memberChronicTotal.toFixed(1)} color="text-foreground" bold />
+            </>
+          )}
+
+          {/* Medical records score */}
+          {medicalScoreFromRecords > 0 && (
+            <>
+              <Separator />
+              <SummaryRow label="ظ†ظ‚ط§ط· ط§ظ„ط³ط¬ظ„ط§طھ ط§ظ„ط·ط¨ظٹط©" value={medicalScoreFromRecords.toFixed(1)} color="text-foreground" bold />
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Vulnerability Index */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">ظ…ط¤ط´ط± ط§ظ„ظ‡ط´ط§ط´ط© ظˆط§ظ„طھطµظ†ظٹظپ</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-foreground">ظ…ط¤ط´ط± ط§ظ„ظ‡ط´ط§ط´ط©</span>
+              <span className="text-2xl font-bold text-foreground">
+                {Math.min(vi * 10, 100).toFixed(0)}%
+              </span>
+            </div>
+            <div className="relative">
+              <Progress value={Math.min(vi * 10, 100)} className="h-4 rounded-full" />
+            </div>
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>ط®ط§ط±ط¬ ط§ظ„ط£ظˆظ„ظˆظٹط© (0%)</span>
+              <span>ظ…طھظˆط³ط· (15%)</span>
+              <span>ط¶ط¹ظٹظپ (30%)</span>
+              <span>ظ‡ط´ (50%+)</span>
+            </div>
+          </div>
+
+          {/* Visual Classification */}
+          <div className="flex flex-col items-center justify-center py-6 gap-4">
+            <div
+              className={`h-28 w-28 rounded-full flex items-center justify-center border-4 ${vi >= 8
+                ? "border-red-400 bg-red-50"
+                : vi >= 5
+                  ? "border-red-300 bg-red-50"
+                  : vi >= 3
+                    ? "border-orange-400 bg-orange-50"
+                    : vi >= 1.5
+                      ? "border-blue-400 bg-blue-50"
+                      : "border-gray-300 bg-gray-50"
+                }`}
+            >
+              <span className="text-3xl font-bold text-foreground">
+                {Math.min(vi * 10, 100).toFixed(0)}%
+              </span>
+            </div>
+            <Badge
+              variant="outline"
+              className={`text-base px-4 py-1 ${classificationColors[family.classification] || ""}`}
+            >
+              {classificationLabelsMap[family.classification] || family.classification}
+            </Badge>
+            <p className="text-sm text-muted-foreground text-center max-w-xs leading-relaxed">
+              {vi >= 8
+                ? "ظ‡ط°ظ‡ ط§ظ„ط£ط³ط±ط© ظپظٹ ط­ط§ط¬ط© ظ…ط§ط³ط© ظˆط¹ط§ط¬ظ„ط© ظ„ظ„ط¯ط¹ظ… ط§ظ„ظ…ط§ط¯ظٹ ظˆط§ظ„ط¹ظٹظ†ظٹ"
+                : vi >= 5
+                  ? "ظ‡ط°ظ‡ ط§ظ„ط£ط³ط±ط© ظ‡ط´ط© ظˆطھط­طھط§ط¬ ظ„ط¯ط¹ظ… ظ…ط³طھظ…ط± ظˆظ…طھط§ط¨ط¹ط© ط¯ظˆط±ظٹط©"
+                  : vi >= 3
+                    ? "ظ‡ط°ظ‡ ط§ظ„ط£ط³ط±ط© ط¶ط¹ظٹظپط© ظˆطھط­طھط§ط¬ ظ„ط¯ط¹ظ… ظˆظ…طھط§ط¨ط¹ط©"
+                    : vi >= 1.5
+                      ? "ظ‡ط°ظ‡ ط§ظ„ط£ط³ط±ط© طھط­طھط§ط¬ ظ„ظ…ط³ط§ط¹ط¯ط© ظ…ظˆط³ظ…ظٹط© ظˆظ…طھط§ط¨ط¹ط©"
+                      : "ظ‡ط°ظ‡ ط§ظ„ط£ط³ط±ط© ط®ط§ط±ط¬ ط§ظ„ط£ظˆظ„ظˆظٹط© ط­ط§ظ„ظٹط§ظ‹"}
+            </p>
+          </div>
+
+          {/* Aid Decision */}
+          {family.aidDecision && (
+            <>
+              <Separator />
+              <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 text-center">
+                <p className="text-xs text-muted-foreground mb-1">ظ‚ط±ط§ط± ط§ظ„ظ…ط³ط§ط¹ط¯ط©</p>
+                <p className="font-bold text-primary text-lg">{family.aidDecision}</p>
+                {family.monthlyAidAmount > 0 && (
+                  <p className="text-sm text-foreground mt-1">{family.monthlyAidAmount} ط¬.ظ… ط´ظ‡ط±ظٹظ‹ط§</p>
+                )}
+              </div>
+            </>
+          )}
+          {/* Recalculate Button */}
+          <Separator />
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            onClick={handleRecalculate}
+            disabled={recalcLoading}
+          >
+            {recalcLoading ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> ط¬ط§ط±ظٹ ط¥ط¹ط§ط¯ط© ط§ظ„ط­ط³ط§ط¨...</>
+            ) : (
+              <><BarChart3 className="h-4 w-4" /> ط¥ط¹ط§ط¯ط© ط­ط³ط§ط¨ ط§ظ„طھظ‚ظٹظٹظ…</>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+   Helper Components
+   â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ */
+function InfoField({ icon: Icon, label, value, dir }: { icon: any, label: string, value: any, dir?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs text-muted-foreground flex items-center gap-1">
+        <Icon className="h-3 w-3" /> {label}
+      </p>
+      <p className="text-sm font-medium text-foreground" dir={dir}>{value}</p>
+    </div>
+  );
+}
+
+function MiniField({ label, value, dir }: { label: string, value: any, dir?: string }) {
+  return (
+    <div>
+      <span className="text-muted-foreground text-xs">{label}: </span>
+      <span className="text-foreground text-sm" dir={dir}>{value}</span>
+    </div>
+  );
+}
+
+function EmptyState({ icon: Icon, message }: { icon: any, message: string }) {
+  return (
+    <div className="text-center py-12">
+      <Icon className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+      <p className="text-muted-foreground">{message}</p>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value, color = "text-foreground", bold = false }: { label: string, value: any, color?: string, bold?: boolean }) {
+  return (
+    <div className="flex justify-between text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={`${bold ? "font-bold" : "font-medium"} ${color}`}>{value}</span>
+    </div>
+  );
+}
+ي *cascade08يِ*cascade08ِ¾ *cascade08¾ظ*cascade08ظَ *cascade08َ‹*cascade08‹ڈ *cascade08ڈ¶*cascade08¶¯ *cascade08¯آ*cascade08آؤ *cascade08ؤس*cascade08سص *cascade08صظ*cascade08ظع *cascade08ع‎*cascade08‎‏ *cascade08‏‚*cascade08‚ƒ *cascade08ƒˆ*cascade08ˆ‰ *cascade08‰چ*cascade08چژ *cascade08ژگ*cascade08گ‘ *cascade08‘”*cascade08”™ *cascade08™ئ*cascade08ئذ *cascade08ذش*cascade08شص *cascade08صâ*cascade08âن *cascade08نè*cascade08èê *cascade08ê‹*cascade08‹‘ *cascade08‘´*cascade08´ت *cascade08تض*cascade08ضق *cascade08قه*cascade08هٹ *cascade08ٹŒ*cascade08Œچ *cascade08چ¹*cascade08¹½ *cascade08½آ*cascade08آأ *cascade08أë*cascade08ë÷ *cascade08÷ّ*cascade08ّپ *cascade08پ†*cascade08†‡ *cascade08‡ژ*cascade08ژ“ *cascade08“،*cascade08،§ *cascade08§¨*cascade08¨ھ *cascade08ھ­ *cascade08­¹*cascade08¹¾ *cascade08¾آ*cascade08آؤ *cascade08ؤئ*cascade08ئد *cascade08دف*cascade08فْ *cascade08ْ‎*cascade08‎‏ *cascade08‏€*cascade08€پ *cascade08پ…*cascade08…ˆ *cascade08ˆٹ*cascade08ٹŒ *cascade08Œژ*cascade08ژ— *cascade08—›*cascade08›œ *cascade08œ±*cascade08±³ *cascade08³ب*cascade08بت *cascade08تق*cascade08قç *cascade08çè*cascade08èë *cascade08ëَ *cascade08َ÷*cascade08÷ّ *cascade08ّû*cascade08û‏ *cascade08‏ے *cascade08ےپ*cascade08پ‚ *cascade08‚‹*cascade08‹چ *cascade08چ› *cascade08›­ *cascade08­®*cascade08®•, *cascade08•,ڑ,*cascade08ڑ, , *cascade08 ,¶,*cascade08¶,÷- *cascade08÷-ü-*cascade08ü-‚. *cascade08‚.›.*cascade08›.½. *cascade08½.ؤ.*cascade08ؤ.ة. *cascade08ة.ذ.*cascade08ذ.ُ/ *cascade08ُ/ْ/*cascade08ْ/€0 *cascade08€0ں0*cascade08ں0؛1 *cascade08؛1ؤ1*cascade08ؤ1ح1 *cascade08ح1ز1*cascade08ز1ط1 *cascade08ط1ٹ2*cascade08ٹ2‹2 *cascade08‹2–2*cascade08–2°2 *cascade08°2؛2*cascade08؛2ط2 *cascade08ط2گ3*cascade08گ3“3 *cascade08“3ڑ3*cascade08ڑ3ں3 *cascade08ں3¦3*cascade08¦3¨3 *cascade08¨3°3*cascade08°3ذL *cascade08ذL‚M*cascade08‚MہO *cascade08ہOچS*cascade08چS‏ص *cascade08‏ص„ض*cascade08„ض‰ض *cascade08‰ضژض*cascade08ژض™ض *cascade08™ض«ض*cascade08«ضاض *cascade08اضةض*cascade08ةضƒ× *cascade08ƒ×…×*cascade08…×–× *cascade08–×ک×*cascade08ک×§× *cascade08§×¦ط*cascade08¦طأ‡ *cascade08أ‡إ‡*cascade08إ‡ئ‡ *cascade08ئ‡ث‡*cascade08ث‡ح‡ *cascade08ح‡ز‡*cascade08ز‡زٹ *cascade08زٹطٹ*cascade08طٹفٹ *cascade08فٹâٹ*cascade08âٹيٹ *cascade08يٹےٹ*cascade08ےٹœ‹ *cascade08œ‹‍‹*cascade08‍‹س‹ *cascade08س‹ش‹*cascade08ش‹ط‹ *cascade08ط‹ظ‹*cascade08ظ‹â‹ *cascade08â‹ن‹*cascade08ن‹÷‹ *cascade08÷‹ٌŒ*cascade08ٌŒں² *cascade08ں²،²*cascade08،²س² *cascade08س²î²*cascade08î²“³ *cascade08“³؛³*cascade08؛³ع³ *cascade08ع³ـ³*cascade08ـ³ê³ *cascade08ê³–´*cascade08–´¦´ *cascade08¦´§´*cascade08§´¨´ *cascade08¨´©´*cascade08©´ھ´ *cascade08ھ´«´*cascade08«´­´ *cascade08­´®´*cascade08®´¯´ *cascade08¯´±´*cascade08±´²´ *cascade08²´´´*cascade08´´µ´ *cascade08µ´»´*cascade08»´ح´ *cascade08ح´ط´*cascade08ط´ظ´ *cascade08ظ´ق´*cascade08ق´…µ *cascade08…µ¶µ*cascade08¶µ»µ *cascade08»µؤµ*cascade08ؤµئµ *cascade08ئµتµ*cascade08تµجµ *cascade08جµذµ*cascade08ذµ‡¶ *cascade08‡¶‰¶*cascade08‰¶›¶ *cascade08›¶¯¶*cascade08¯¶؟¶ *cascade08؟¶ش¶*cascade08ش¶ص¶ *cascade08ص¶و¶*cascade08و¶ç¶ *cascade08ç¶ً¶*cascade08ً¶ٍ¶ *cascade08ٍ¶ô¶*cascade08ô¶ُ¶ *cascade08ُ¶û¶*cascade08û¶ڑ· *cascade08ڑ·¢·*cascade08¢·¤· *cascade08¤·ا·*cascade08ا·ط· *cascade08ط·ـ·*cascade08ـ·ê· *cascade08ê·ً·*cascade08ً·وأ *cascade08وأىأ*cascade08ىأٌأ *cascade08ٌأِأ*cascade08ِأعئ *cascade08عئكا*cascade08كاٌا*cascade08ٌاٹب *cascade08ٹب”ب*cascade08”بںب *cascade08ںب،ب*cascade08،بھب *cascade08ھب¬ب*cascade08¬بعب *cascade08عبغب*cascade08غبكب *cascade08كبàب*cascade08àبنب *cascade08نبوب*cascade08وب¢ة *cascade08¢ة£ة*cascade08£ة§ة *cascade08§ة¨ة*cascade08¨ة±ة *cascade08±ة³ة*cascade08³ةئة *cascade08ئةات*cascade08ات¥‍ *cascade08¥‍·‍*cascade08·‍¹‍ *cascade08¹‍ہ‍*cascade08ہ‍أ‍ *cascade08أ‍ب‍*cascade08ب‍ش‍ *cascade08ش‍ئں*cascade08ئںع  *cascade08ع  ، *cascade08 ،س¦*cascade08س¦ش¦ *cascade08ش¦گ´ *cascade08گ´‍´*cascade08‍´ھ´ *cascade08ھ´¬´*cascade08¬´®´ *cascade08®´°´*cascade08°´²´ *cascade08²´¶´*cascade08¶´¸´ *cascade08¸´ئ´*cascade08ئ´ا´ *cascade08ا´ص´*cascade08ص´à´ *cascade08à´é´*cascade08é´ë´ *cascade08ë´ï´*cascade08ï´ٌ´ *cascade08ٌ´ٍ´*cascade08ٍ´َ´ *cascade08َ´ô´*cascade08ô´“µ *cascade08“µءµ*cascade08ءµأµ *cascade08أµرµ*cascade08رµطµ *cascade08طµêµ*cascade08êµ‎µ *cascade08‎µ‌¶*cascade08‌¶،¶ *cascade08،¶­¶*cascade08­¶نت *cascade08نتىت*cascade08ىتïت *cascade08ïتùت*cascade08ùتƒث *cascade08ƒث„ث*cascade08„ث†ث *cascade08†ث‡ث*cascade08‡ث÷ث *cascade08÷ث€ج *cascade08€ج‚ج *cascade08‚جƒج *cascade08ƒج‡ج *cascade08‡جٹج*cascade08ٹج‹ج *cascade08‹جچج*cascade08چجؤح *cascade08ؤحاح *cascade08احبح*cascade08بحةح *cascade08ةحïح *cascade08ïحَح *cascade08َحôح*cascade08ôحُح *cascade08ُح™خ *cascade08™خœخ *cascade08œخ‍خ*cascade08‍خںخ *cascade08ںخہخ *cascade08ہخآخ *cascade08آخؤخ*cascade08ؤخئخ *cascade08ئخ،ر *cascade08،ر¢ر*cascade08¢ر£ر *cascade08£رآر*cascade08آرؤر *cascade08ؤرار*cascade08اربر *cascade08بررر*cascade08ررزر *cascade08زرîر*cascade08îرٍر *cascade08ٍرَر*cascade08َرôر *cascade08ôرِر*cascade08ِر½ز *cascade08½ز؟ز*cascade08؟زاز *cascade08ازبز*cascade08بزثز *cascade08ثزحز*cascade08حز€س *cascade08€س‚س*cascade08‚س¬ش *cascade08¬شµش*cascade08µش·ش *cascade08·شآش*cascade08آشثش *cascade08ثشجش*cascade08جشخش *cascade08خشدش*cascade08دش®ض *cascade08®ضàض*cascade08àضچظ *cascade08چظژظ*cascade08ژظ¸ظ *cascade08¸ظءظ*cascade08ءظ‘ع *cascade08‘عٹغ*cascade08ٹغڈغ *cascade08ڈغگغ*cascade08گغ“غ *cascade08“غ•غ*cascade08•غ‹ـ *cascade08‹ـچـ*cascade08چـ¤ـ *cascade08¤ـ¦ـ*cascade08¦ـ¨ـ *cascade08¨ـھـ*cascade08ھـ­ـ *cascade08­ـ¯ـ*cascade08¯ـ±ـ *cascade08±ـµـ*cascade08µـ·ـ *cascade08·ـ¹ـ*cascade08¹ـ»ـ *cascade08»ـ½ـ*cascade08½ـبـ *cascade08بـتـ*cascade08تـمل *cascade08ملقه*cascade08قهêٍ *cascade082Bfile:///d:/Charity_Hub/frontend/components/family-profile-tabs.tsx

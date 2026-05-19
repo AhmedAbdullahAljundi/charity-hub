@@ -2,7 +2,7 @@
  * Medical Records Controller
  */
 
-const prisma = require('../../config/prisma')
+const medicalRepository = require('./medical.repository')
 const { evaluateFamilyMedicalEligibility } = require('../../services/eligibility/medicalEligibilityService')
 const { AppError, NotFoundError } = require('../../utils/errors')
 
@@ -15,18 +15,7 @@ const medicalController = {
       const { familyId } = req.params
 
       // Get family with members and their medical records
-      const family = await prisma.family.findUnique({
-        where: { id: familyId },
-        include: {
-          members: {
-            include: {
-              medicalRecords: {
-                orderBy: { created_at: 'desc' },
-              },
-            },
-          },
-        },
-      })
+      const family = await medicalRepository.findFamilyWithMedicalRecords(familyId)
 
       if (!family) {
         throw new NotFoundError('Family')
@@ -60,16 +49,7 @@ const medicalController = {
     try {
       const { id } = req.params
 
-      const medicalRecord = await prisma.medicalRecord.findUnique({
-        where: { id },
-        include: {
-          member: {
-            include: {
-              family: true,
-            },
-          },
-        },
-      })
+      const medicalRecord = await medicalRepository.findById(id)
 
       if (!medicalRecord) {
         throw new NotFoundError('Medical Record')
@@ -93,9 +73,7 @@ const medicalController = {
       const data = req.body
 
       // Verify member exists
-      const member = await prisma.member.findUnique({
-        where: { id: memberId },
-      })
+      const member = await medicalRepository.checkMemberExists(memberId)
 
       if (!member) {
         throw new NotFoundError('Member')
@@ -132,16 +110,7 @@ const medicalController = {
         member_id: memberId,
       }
 
-      const medicalRecord = await prisma.medicalRecord.create({
-        data: recordData,
-        include: {
-          member: {
-            include: {
-              family: true,
-            },
-          },
-        },
-      })
+      const medicalRecord = await medicalRepository.create(recordData)
 
       res.status(201).json({
         success: true,
@@ -163,9 +132,7 @@ const medicalController = {
 
       // Recalculate next_allowed_date if category or last_service_date changed
       if (data.last_service_date || data.medical_category || data.chronic !== undefined) {
-        const existing = await prisma.medicalRecord.findUnique({
-          where: { id },
-        })
+        const existing = await medicalRepository.getExistingRecordForUpdate(id)
 
         const lastServiceDate = data.last_service_date
           ? new Date(data.last_service_date)
@@ -193,17 +160,7 @@ const medicalController = {
         }
       }
 
-      const medicalRecord = await prisma.medicalRecord.update({
-        where: { id },
-        data,
-        include: {
-          member: {
-            include: {
-              family: true,
-            },
-          },
-        },
-      })
+      const medicalRecord = await medicalRepository.update(id, data)
 
       res.json({
         success: true,
@@ -225,9 +182,7 @@ const medicalController = {
     try {
       const { id } = req.params
 
-      await prisma.medicalRecord.delete({
-        where: { id },
-      })
+      await medicalRepository.delete(id)
 
       res.json({
         success: true,

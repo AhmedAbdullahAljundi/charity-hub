@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { useLocale } from "next-intl";
 import { AppSidebar } from "@/components/app-sidebar";
+import { cn } from "@/lib/utils";
 
 const Topbar = dynamic(() => import("@/components/topbar").then((m) => m.Topbar), {
   ssr: false,

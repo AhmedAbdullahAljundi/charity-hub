@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useForm } from "react-hook-form";
@@ -10,27 +10,24 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore } from "@/lib/stores/authStore";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { ThemeToggle } from "@/components/common/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function LoginPage() {
   const router = useRouter();
   const ta = useTranslations("auth");
   const tv = useTranslations("validation.login");
-  const { login } = useAuthStore();
+  const login = useAuthStore((s) => s.login);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const loginSchema = useMemo(
-    () =>
-      z.object({
-        email: z.string().email(tv("email")),
-        password: z.string().min(6, tv("passwordMin")),
-      }),
-    [tv]
-  );
+  const loginSchema = z.object({
+    email: z.string().email(tv("email")),
+    password: z.string().min(6, tv("passwordMin")),
+  });
 
   type LoginValues = z.infer<typeof loginSchema>;
 
@@ -40,29 +37,17 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "admin@system.local", password: "SeedPass123!" },
   });
 
   const onSubmit = async (data: LoginValues) => {
     setLoading(true);
     setError("");
     try {
-      await new Promise((r) => setTimeout(r, 1200));
-
-      if (data.email === "admin@charityhub.org" && data.password === "123456") {
-        login(
-          { name: ta("demoAdminName"), email: data.email, role: "admin" },
-          "demo-jwt-token-" + Date.now()
-        );
-        router.push("/dashboard");
-      } else {
-        setError(ta("errorInvalid"));
-      }
+      await login(data.email, data.password);
+      router.push("/dashboard");
     } catch {
-      setError(ta("errorNetwork"));
+      setError(ta("errorInvalid"));
     } finally {
       setLoading(false);
     }
@@ -70,7 +55,8 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="absolute top-4 end-4 z-10">
+      <div className="absolute top-4 end-4 z-10 flex gap-2">
+        <LanguageSwitcher />
         <ThemeToggle />
       </div>
       <div className="w-full max-w-md space-y-6">
@@ -96,17 +82,8 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="email">{ta("email")}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...register("email")}
-                  placeholder="admin@charityhub.org"
-                  dir="ltr"
-                  className="text-start"
-                />
-                {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email.message}</p>
-                )}
+                <Input id="email" type="email" {...register("email")} dir="ltr" className="text-start" />
+                {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
               </div>
 
               <div className="space-y-2">
@@ -116,7 +93,6 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     {...register("password")}
-                    placeholder={ta("passwordPlaceholder")}
                     dir="ltr"
                     className="text-start pe-10"
                   />
@@ -128,14 +104,9 @@ export default function LoginPage() {
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    <span className="sr-only">
-                      {showPassword ? ta("toggleHidePassword") : ta("toggleShowPassword")}
-                    </span>
                   </Button>
                 </div>
-                {errors.password && (
-                  <p className="text-xs text-destructive">{errors.password.message}</p>
-                )}
+                {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
@@ -147,7 +118,7 @@ export default function LoginPage() {
             <div className="mt-4 p-3 rounded-xl bg-muted text-xs text-muted-foreground">
               <p className="font-medium mb-1">{ta("demoHintTitle")}</p>
               <p dir="ltr" className="text-start">
-                admin@charityhub.org / 123456
+                admin@system.local / SeedPass123!
               </p>
             </div>
           </CardContent>

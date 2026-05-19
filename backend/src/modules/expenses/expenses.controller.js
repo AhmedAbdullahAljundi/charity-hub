@@ -2,7 +2,7 @@
  * Expenses Controller
  */
 
-const prisma = require('../../config/prisma')
+const expensesRepository = require('./expenses.repository')
 const { AppError, NotFoundError } = require('../../utils/errors')
 
 const expensesController = {
@@ -13,10 +13,7 @@ const expensesController = {
     try {
       const { familyId } = req.params
 
-      const expenses = await prisma.expense.findMany({
-        where: { family_id: familyId },
-        orderBy: { created_at: 'desc' },
-      })
+      const expenses = await expensesRepository.findByFamilyId(familyId)
 
       const total = expenses.reduce((sum, expense) => {
         return sum + parseFloat(expense.amount)
@@ -39,12 +36,7 @@ const expensesController = {
     try {
       const { id } = req.params
 
-      const expense = await prisma.expense.findUnique({
-        where: { id },
-        include: {
-          family: true,
-        },
-      })
+      const expense = await expensesRepository.findById(id)
 
       if (!expense) {
         throw new NotFoundError('Expense')
@@ -68,24 +60,13 @@ const expensesController = {
       const data = req.body
 
       // Verify family exists
-      const family = await prisma.family.findUnique({
-        where: { id: familyId },
-      })
+      const family = await expensesRepository.checkFamilyExists(familyId)
 
       if (!family) {
         throw new NotFoundError('Family')
       }
 
-      const expense = await prisma.expense.create({
-        data: {
-          ...data,
-          family_id: familyId,
-          amount: parseFloat(data.amount),
-        },
-        include: {
-          family: true,
-        },
-      })
+      const expense = await expensesRepository.create(familyId, data)
 
       res.status(201).json({
         success: true,
@@ -109,13 +90,7 @@ const expensesController = {
         data.amount = parseFloat(data.amount)
       }
 
-      const expense = await prisma.expense.update({
-        where: { id },
-        data,
-        include: {
-          family: true,
-        },
-      })
+      const expense = await expensesRepository.update(id, data)
 
       res.json({
         success: true,
@@ -137,9 +112,7 @@ const expensesController = {
     try {
       const { id } = req.params
 
-      await prisma.expense.delete({
-        where: { id },
-      })
+      await expensesRepository.delete(id)
 
       res.json({
         success: true,

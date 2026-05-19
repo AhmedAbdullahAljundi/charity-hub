@@ -2,8 +2,9 @@
  * Families Controller
  */
 
-const prisma = require('../../config/prisma')
-const { calculateFamilyScore } = require('../../services/scoring/scoringService')
+const familiesRepository = require('./families.repository')
+const familiesHelpers = require('./families.helpers')
+const scoringService = require('../scoring/scoring.service')
 const { AppError, NotFoundError } = require('../../utils/errors')
 const { registerFamily } = require('./families.service')
 const { validateRegistrationPayload } = require('./families.validator')
@@ -67,30 +68,8 @@ const familiesController = {
       }
 
       const [families, total] = await Promise.all([
-        prisma.family.findMany({
-          where,
-          skip,
-          take: parseInt(limit),
-          orderBy: { created_at: 'desc' },
-          include: {
-            persons: {
-              where: {
-                OR: [{ role_in_family: 'HUSBAND' }, { role_in_family: 'WIFE' }],
-              },
-              take: 1,
-            },
-            scoringRecords: {
-              orderBy: { calculated_at: 'desc' },
-              take: 1,
-            },
-            _count: {
-              select: {
-                persons: true,
-              },
-            },
-          },
-        }),
-        prisma.family.count({ where }),
+        familiesRepository.findMany(where, skip, parseInt(limit)),
+        familiesRepository.count(where),
       ]);
 
       // Map to a more frontend-friendly format
@@ -108,6 +87,8 @@ const familiesController = {
           totalIncome: latestScoring ? parseFloat(latestScoring.total_income) : 0,
           vulnerabilityIndex: latestScoring ? parseFloat(latestScoring.vulnerability_index) : 0,
           classification: latestScoring ? latestScoring.classification : 'MODERATE',
+          systemRecommendation: latestScoring ? latestScoring.system_recommendation : null,
+          normalizedPercent: latestScoring && latestScoring.normalized_percent ? parseFloat(latestScoring.normalized_percent) : null,
         };
       });
 
@@ -133,23 +114,7 @@ const familiesController = {
     try {
       const { id } = req.params
 
-      const family = await prisma.family.findUnique({
-        where: { id },
-        include: {
-          persons: {
-            include: {
-              medicalCases: true,
-              educationRecords: true,
-            }
-          },
-          incomes: true,
-          expenses: true,
-          scoringRecords: {
-            orderBy: { calculated_at: "desc" },
-            take: 1
-          }
-        },
-      })
+      const family = await familiesRepository.findById(id)
 
       if (!family) {
         throw new NotFoundError('Family')
@@ -159,12 +124,9 @@ const familiesController = {
       let latestScoring = family.scoringRecords[0];
       if (!latestScoring) {
         try {
-          await familiesController._recalculateAndSaveScore(id);
+          await familiesHelpers.recalculateAndSaveScore(id);
           // Re-fetch the scoring record
-          const freshScoring = await prisma.scoring.findFirst({
-            where: { family_id: id },
-            orderBy: { calculated_at: 'desc' }
-          });
+          const freshScoring = await familiesRepository.getLatestScoring(id);
           latestScoring = freshScoring;
         } catch (err) {
           console.error('Auto-scoring failed for family', id, err.message);
@@ -196,6 +158,21 @@ const familiesController = {
         classification: latestScoring ? latestScoring.classification : "OUT_OF_PRIORITY",
         vulnerabilityIndex: latestScoring ? parseFloat(latestScoring.vulnerability_index) : 0,
         totalIncome: calculatedTotalIncome,
+        // New 4-engine scoring fields
+        systemRecommendation: latestScoring ? latestScoring.system_recommendation : null,
+        humanDecision: latestScoring ? latestScoring.human_decision : null,
+        reviewStatus: latestScoring ? latestScoring.review_status : null,
+        vulnerabilityScore: latestScoring && latestScoring.vulnerability_score ? parseFloat(latestScoring.vulnerability_score) : null,
+        reductionScore: latestScoring && latestScoring.reduction_score ? parseFloat(latestScoring.reduction_score) : null,
+        confidenceScore: latestScoring && latestScoring.confidence_score ? parseFloat(latestScoring.confidence_score) : null,
+        fraudRiskScore: latestScoring && latestScoring.fraud_risk_score ? parseFloat(latestScoring.fraud_risk_score) : null,
+        finalScore: latestScoring && latestScoring.final_score ? parseFloat(latestScoring.final_score) : null,
+        normalizedPercent: latestScoring && latestScoring.normalized_percent ? parseFloat(latestScoring.normalized_percent) : null,
+        layerBreakdown: latestScoring ? latestScoring.layer_breakdown : null,
+        topPositiveFactors: latestScoring ? latestScoring.top_positive_factors : null,
+        topNegativeFactors: latestScoring ? latestScoring.top_negative_factors : null,
+        scoringRecommendations: latestScoring ? latestScoring.recommendations : null,
+        scoringWarnings: latestScoring ? latestScoring.warnings : null,
 
 
         // Members mapping
@@ -301,16 +278,9 @@ const familiesController = {
       const { id } = req.params
       const data = req.body
 
-      const family = await prisma.family.update({
-        where: { id },
-        data,
-        include: {
-          persons: true,
-          incomes: true,
-        },
-      })
+      const family = await familiesRepository.update(id, data)
 
-      await familiesController._recalculateAndSaveScore(id);
+      await familiesHelpers.recalculateAndSaveScore(id);
 
       res.json({
         success: true,
@@ -332,9 +302,7 @@ const familiesController = {
     try {
       const { id } = req.params
 
-      await prisma.family.delete({
-        where: { id },
-      })
+      await familiesRepository.delete(id)
 
       res.json({
         success: true,
@@ -348,113 +316,27 @@ const familiesController = {
     }
   },
 
-  // Helper to recalculate and persist the score in the database
-  _recalculateAndSaveScore: async (familyId) => {
-    const scoreResult = await calculateFamilyScore(familyId);
-    const { totalWeightedNeed, totalActualIncome, vulnerabilityIndex, classification, breakdown } = scoreResult.scoring;
-
-    // Map classification back to Enum
-    const enumMap = {
-      'VERY_FRAGILE': 'VERY_FRAGILE',
-      'FRAGILE': 'FRAGILE',
-      'WEAK': 'WEAK',
-      'MODERATE': 'MODERATE',
-      'OUT_OF_PRIORITY': 'OUT_OF_PRIORITY'
-    };
-
-    await prisma.scoring.create({
-      data: {
-        family_id: familyId,
-        total_need: totalWeightedNeed,
-        total_income: totalActualIncome,
-        vulnerability_index: vulnerabilityIndex,
-        classification: enumMap[classification.code] || 'MODERATE',
-        breakdown: breakdown,
-      },
-    });
-
-    return scoreResult;
-  },
-
-  // Helper mappings for frontend to backend enums
-  _mapRole: (role) => {
-    const map = {
-      'رب الأسرة': 'HUSBAND',
-      'الزوجة': 'WIFE',
-      'ابن': 'CHILD',
-      'ابنة': 'CHILD'
-    }
-    return map[role] || 'OTHER'
-  },
-
-  _mapEducation: (level) => {
-    if (!level) return 'NONE'
-    if (level.includes('ابتدائي')) return 'PRIMARY'
-    if (level.includes('إعدادي')) return 'PREPARATORY'
-    if (level.includes('ثانوي') || level.includes('دبلوم')) return 'SECONDARY'
-    if (level.includes('جامعي') || level.includes('دراسات')) return 'UNIVERSITY'
-    if (level.includes('حضانة')) return 'NURSERY'
-    return 'NONE'
-  },
-
-  _mapMaritalStatus: (status) => {
-    const map = {
-      'متزوج': 'MARRIED',
-      'متزوجة': 'MARRIED',
-      'أعزب': 'SINGLE',
-      'آنسة': 'SINGLE',
-      'مطلق': 'DIVORCED',
-      'مطلقة': 'DIVORCED',
-      'أرمل': 'WIDOWED',
-      'أرملة': 'WIDOWED'
-    }
-    return map[status] || 'SINGLE'
-  },
-
-  _mapIncomeSource: (source) => {
-    const map = {
-      'راتب ثابت': 'SALARY',
-      'عمل يومي': 'SALARY',
-      'عمل حر': 'SALARY',
-      'معاش تأميني': 'PENSION',
-      'تكافل وكرامة': 'TAKAFUL_KARAMA',
-      'نفقة': 'NAFAKA',
-      'مساعدات أهالي 1': 'FAMILY_SUPPORT',
-      'مساعدات أهالي 2': 'FAMILY_SUPPORT',
-      'مساعدات أهالي 3': 'FAMILY_SUPPORT',
-      'مساعدات جمعية خيرية 1': 'CHARITY',
-      'مساعدات جمعية خيرية 2': 'CHARITY',
-      'بطاقة التموين': 'RATION_CARD',
-      'دخل من مشاريع': 'PROJECT',
-      'دخل من عقارات': 'PROPERTY',
-      'شهريات الأبناء العاملين': 'CHILDREN_INCOME',
-    }
-    return map[source] || 'OTHER'
-  },
-
   addPerson: async (req, res, next) => {
     try {
       const { id } = req.params;
       const data = req.body;
 
-      const person = await prisma.person.create({
-        data: {
+      const person = await familiesRepository.createPerson({
           family_id: id,
           full_name: data.name,
           national_id: data.nationalId || null,
-          role_in_family: familiesController._mapRole(data.relation),
+          role_in_family: familiesHelpers.mapRole(data.relation),
           gender: data.gender === "ذكر" ? "MALE" : "FEMALE",
           birth_date: data.birthDate ? new Date(data.birthDate) : null,
-          education_level: familiesController._mapEducation(data.education),
+          education_level: familiesHelpers.mapEducation(data.education),
           occupation: data.job || null,
-          marital_status: familiesController._mapMaritalStatus(data.maritalStatus),
+          marital_status: familiesHelpers.mapMaritalStatus(data.maritalStatus),
           disability: data.hasDisability || false,
           notes: data.notes || null,
-        }
       });
 
       // Recalculate and persist score
-      await familiesController._recalculateAndSaveScore(id);
+      await familiesHelpers.recalculateAndSaveScore(id);
 
       res.status(201).json({
         success: true,
@@ -468,8 +350,8 @@ const familiesController = {
   deletePerson: async (req, res, next) => {
     try {
       const personId = req.params.personId;
-      const person = await prisma.person.delete({ where: { id: personId } });
-      await familiesController._recalculateAndSaveScore(person.family_id);
+      const person = await familiesRepository.deletePerson(personId);
+      await familiesHelpers.recalculateAndSaveScore(person.family_id);
       res.json({ success: true });
     } catch (error) {
       next(error);
@@ -481,18 +363,16 @@ const familiesController = {
       const { id } = req.params;
       const data = req.body;
 
-      const income = await prisma.income.create({
-        data: {
+      const income = await familiesRepository.createIncome({
           family_id: id,
-          source_type: familiesController._mapIncomeSource(data.source),
+          source_type: familiesHelpers.mapIncomeSource(data.source),
           amount: parseFloat(data.amount),
           verified: data.verified || false,
           notes: data.notes || null
-        }
       });
 
       // Recalculate and persist score
-      await familiesController._recalculateAndSaveScore(id);
+      await familiesHelpers.recalculateAndSaveScore(id);
 
       res.status(201).json({
         success: true,
@@ -506,8 +386,8 @@ const familiesController = {
   deleteIncome: async (req, res, next) => {
     try {
       const incomeId = req.params.incomeId;
-      const income = await prisma.income.delete({ where: { id: incomeId } });
-      await familiesController._recalculateAndSaveScore(income.family_id);
+      const income = await familiesRepository.deleteIncome(incomeId);
+      await familiesHelpers.recalculateAndSaveScore(income.family_id);
       res.json({ success: true });
     } catch (error) {
       next(error);
@@ -520,16 +400,14 @@ const familiesController = {
     try {
       const { id } = req.params;
       const data = req.body;
-      const expense = await prisma.expense.create({
-        data: {
+      const expense = await familiesRepository.createExpense({
           family_id: id,
           amount: parseFloat(data.amount),
           description: data.notes || data.description || null,
           category: data.item || data.category || null,
           date: data.date ? new Date(data.date) : undefined,
-        },
       });
-      await familiesController._recalculateAndSaveScore(id);
+      await familiesHelpers.recalculateAndSaveScore(id);
       res.status(201).json({ success: true, data: expense });
     } catch (error) {
       next(error);
@@ -539,8 +417,8 @@ const familiesController = {
   deleteExpense: async (req, res, next) => {
     try {
       const expenseId = req.params.expenseId;
-      const expense = await prisma.expense.delete({ where: { id: expenseId } });
-      await familiesController._recalculateAndSaveScore(expense.family_id);
+      const expense = await familiesRepository.deleteExpense(expenseId);
+      await familiesHelpers.recalculateAndSaveScore(expense.family_id);
       res.json({ success: true });
     } catch (error) {
       next(error);
@@ -548,26 +426,6 @@ const familiesController = {
   },
 
   // ---------- Medical Cases ----------
-  _mapSeverity(severity) {
-    if (!severity) return null;
-    const text = severity.toString().trim();
-    if (text.includes('خفيف') || text.includes('أ') || text.includes('A')) return 'MILD';
-    if (text.includes('متوسط') || text.includes('ب') || text.includes('B')) return 'MODERATE';
-    if (text.includes('شديد') || text.includes('ج') || text.includes('C')) return 'SEVERE';
-    if (text.includes('حرج') || text.includes('متقدم') || text.includes('د') || text.includes('D')) return 'CRITICAL';
-    return null;
-  },
-
-  _mapDisabilityClass(code) {
-    if (!code) return null;
-    const text = code.toString().trim().toUpperCase();
-    if (text.includes('أ') || text.includes('A')) return 'A';
-    if (text.includes('ب') || text.includes('B')) return 'B';
-    if (text.includes('ج') || text.includes('C')) return 'C';
-    if (text.includes('د') || text.includes('D')) return 'D';
-    return null;
-  },
-
   addMedicalCase: async (req, res, next) => {
     try {
       const { personId } = req.params;
@@ -577,13 +435,12 @@ const familiesController = {
       const isChronic = data.type === 'مرض مزمن' || data.chronic === true;
       const isDisability = data.type === 'إعاقة';
 
-      const diseaseSeverity = familiesController._mapSeverity(data.severity);
+      const diseaseSeverity = familiesHelpers.mapSeverity(data.severity);
       const medicalCategory = isDisability
-        ? familiesController._mapDisabilityClass(data.disabilityClass || data.severity)
+        ? familiesHelpers.mapDisabilityClass(data.disabilityClass || data.severity)
         : null;
 
-      const medical = await prisma.medicalCase.create({
-        data: {
+      const medical = await familiesRepository.createMedicalCase({
           person_id: personId,
           disease_name: data.condition || data.disease_name || 'غير محدد',
           disease_severity: diseaseSeverity,
@@ -592,18 +449,14 @@ const familiesController = {
           treatment_cost: data.monthlyCost ? parseFloat(data.monthlyCost) : null,
           doctor_name: data.hospital || null,
           notes: data.notes || null,
-        },
       });
 
       if (isDisability) {
-        await prisma.person.update({
-          where: { id: personId },
-          data: { disability: true }
-        });
+        await familiesRepository.updatePerson(personId, { disability: true });
       }
 
-      const person = await prisma.person.findUnique({ where: { id: personId } });
-      await familiesController._recalculateAndSaveScore(person.family_id);
+      const person = await familiesRepository.getPersonById(personId);
+      await familiesHelpers.recalculateAndSaveScore(person.family_id);
       res.status(201).json({ success: true, data: medical });
     } catch (error) {
       next(error);
@@ -613,9 +466,9 @@ const familiesController = {
   deleteMedicalCase: async (req, res, next) => {
     try {
       const { medicalId } = req.params;
-      const medical = await prisma.medicalCase.delete({ where: { id: medicalId } });
-      const person = await prisma.person.findUnique({ where: { id: medical.person_id } });
-      await familiesController._recalculateAndSaveScore(person.family_id);
+      const medical = await familiesRepository.deleteMedicalCase(medicalId);
+      const person = await familiesRepository.getPersonById(medical.person_id);
+      await familiesHelpers.recalculateAndSaveScore(person.family_id);
       res.json({ success: true });
     } catch (error) {
       next(error);
@@ -624,10 +477,10 @@ const familiesController = {
   getScore: async (req, res, next) => {
     try {
       const { id } = req.params
-      const score = await calculateFamilyScore(id)
+      const result = await scoringService.calculateScore(id)
       res.json({
         success: true,
-        data: score,
+        data: result,
       })
     } catch (error) {
       next(error)
@@ -636,3 +489,5 @@ const familiesController = {
 };
 
 module.exports = familiesController
+
+

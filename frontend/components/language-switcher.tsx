@@ -23,6 +23,9 @@ export function LanguageSwitcher() {
 
   const setLocale = (next: "ar" | "en") => {
     if (next === locale) return;
+    if (typeof window !== "undefined") {
+      localStorage.setItem("charityhub_lang", next);
+    }
     router.replace(pathname, { locale: next });
   };
 

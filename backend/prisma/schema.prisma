@@ -1,12 +1,6 @@
 // =============================================================================
-// CharityHub - Normalized PostgreSQL Schema
-// =============================================================================
-// Senior Data Architect Design
-// Converts legacy Excel structure to clean, normalized relational model
-// - No duplicated columns (children, income, medical)
-// - Unified Person model (Husband, Wife, Children)
-// - Separated financial, medical, education domains
-// - Optimized for PMT scoring
+// Social Assistance Targeting Platform — Phase 1 Schema
+// Single source of truth. Decimal for all scores/weights/monetary values.
 // =============================================================================
 
 generator client {
@@ -18,22 +12,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// =============================================================================
-// ENUMS
-// =============================================================================
+// ── CRITICAL ─────────────────────────────────────────────────────
+// Use Decimal for ALL weights, scores, and monetary values.
+// Never use Float for anything that affects scoring calculations.
+// ─────────────────────────────────────────────────────────────────
 
-enum HousingType {
-  OWNED
-  RENT
-  SHARED
-}
-
-enum RoleInFamily {
-  HUSBAND
-  WIFE
-  CHILD
-  OTHER
-}
+// ════ ENUMS ══════════════════════════════════════════════════════
 
 enum Gender {
   MALE
@@ -41,381 +25,426 @@ enum Gender {
 }
 
 enum MaritalStatus {
-  SINGLE
   MARRIED
   DIVORCED
   WIDOWED
-  SEPARATED
+  SINGLE
+}
+
+enum ResidencyStatus {
+  RESIDENT
+  ABSENT_DEATH
+  ABSENT_PRISON
+  ABSENT_DIVORCE
+  ABSENT_OTHER
+}
+
+enum EmploymentType {
+  NONE
+  WEAK
+  SEASONAL
+  REGULAR
+  ABROAD_WEAK
+  ABROAD_MEDIUM
+  ABROAD_REGULAR
+}
+
+enum EmploymentQuality {
+  SUFFICIENT
+  UNSTABLE
+  WEAK
 }
 
 enum EducationLevel {
-  NONE
-  NURSERY
+  ILLITERATE
+  MEDIUM
+  HIGHER_LIMITED
+  HIGHER_STABLE
+}
+
+enum StudentLevel {
+  CHILD
+  KINDERGARTEN
   PRIMARY
   PREPARATORY
-  SECONDARY
-  UNIVERSITY
+  SECONDARY_GENERAL
+  SECONDARY_VOCATIONAL_FEMALE
+  SECONDARY_VOCATIONAL_MALE
+  UNIVERSITY_SCIENTIFIC
+  UNIVERSITY_HUMANITIES
 }
 
-enum EducationStage {
-  NURSERY
-  PRIMARY
-  PREPARATORY
-  SECONDARY
-  UNIVERSITY
-}
-
-enum AcademicStatus {
-  ENROLLED
-  DROPPED
-  GRADUATED
-  SUSPENDED
-}
-
-enum IncomeSourceType {
-  SALARY
-  PENSION
-  AID
-  NAFAKA
-  FAMILY_SUPPORT
-  CHARITY
-  TAKAFUL_KARAMA
-  PROJECT
-  PROPERTY
-  CHILDREN_INCOME
-  RATION_CARD
+enum PersonRole {
+  HEAD
+  SPOUSE
+  CHILD
+  DEPENDENT_ADULT
   OTHER
 }
 
-enum MedicalCategory {
+enum AlimonyStatus {
+  FORMAL
+  INFORMAL_SUFFICIENT
+  INFORMAL_INSUFFICIENT
+  NONE
+}
+
+enum PrisonTerm {
+  SHORT
+  MEDIUM
+  LONG
+}
+
+enum HousingType {
+  OWNED
+  SHARED
+  DONATED_RENT
+  RENTED
+}
+
+enum SeverityGrade {
   A
   B
   C
   D
+  E
+  F
 }
 
-enum DiseaseSeverity {
-  MILD
-  MODERATE
-  SEVERE
+enum DiseaseTreatmentCost {
+  NONE
+  PERIODIC_CHEAP
+  PERIODIC_EXPENSIVE
+  VERY_EXPENSIVE
+}
+
+enum DiseaseFollowup {
+  NONE_OR_RARE
+  REGULAR
+  EXPENSIVE
+}
+
+enum DiseaseWorkImpact {
+  NONE
+  MINOR
+  MAJOR_WORKS
+  CANNOT_WORK
+}
+
+enum DisabilityWorkImpact {
+  NONE
+  LIMITED
+  SPECIAL_WORK
+  CANNOT_WORK
+}
+
+enum DisabilityCompanion {
+  NONE
+  OUTSIDE_ONLY
+  FULLY_DEPENDENT
+}
+
+enum BurdenType {
+  DEBT
+  INJURY
+  SURGERY
+  BRIDE
+  SON_IN_PRISON
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+}
+
+enum IncomeChannel {
+  PENSION
+  TAKAFUL_KARAMA
+  CHARITY_1
+  CHARITY_2
+  CHARITY_3
+  DONOR_1
+  DONOR_2
+  ALIMONY
+}
+
+enum EligibilityLevel {
   CRITICAL
+  HIGH_NEED
+  MODERATE_NEED
+  LOW_NEED
+  NOT_ELIGIBLE
 }
 
-enum AssistanceType {
-  FINANCIAL
-  FOOD
-  CLOTHING
-  MEDICAL
-  EDUCATION
-  IN_KIND
+enum HumanDecision {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_REVIEW
+  ESCALATED
 }
 
-enum VulnerabilityClassification {
-  VERY_FRAGILE
-  FRAGILE
-  WEAK
-  MODERATE
-  OUT_OF_PRIORITY
+enum ReviewStatus {
+  AWAITING_SCORE
+  SCORE_READY
+  UNDER_REVIEW
+  FIELD_VISIT_REQUIRED
+  DECIDED
 }
 
-enum SocialStatus {
-  ORPHANS
-  DIVORCED
-  POOR
-  NEEDY
-  DISABILITY
-  STUDENT
-  PRISONER
-  ELDERLY
-  ABANDONMENT
-  CHRONIC_DISEASE
-  TEMPORARY_INJURY
-  OTHER
+enum UserRole {
+  ADMIN
+  SUPERVISOR
+  WORKER
+  VIEWER
 }
 
-enum AuditAction {
-  CREATE
-  UPDATE
-  DELETE
+enum Locale {
+  AR
+  EN
 }
 
-// =============================================================================
-// CORE MODELS
-// =============================================================================
-
-/// Family - Household unit. No person-specific data here.
-/// Links to registration_number for legacy Excel migration.
-model Family {
-  id                  String        @id @default(uuid()) @db.Uuid
-  registration_number String        @unique
-  social_status       SocialStatus?
-  address             String
-  region              String?
-  housing_type        HousingType
-  rent_value          Decimal?      @db.Decimal(12, 2)
-  phone               String?
-  notes               String?
-  created_at          DateTime      @default(now())
-  updated_at          DateTime      @updatedAt
-
-  persons        Person[]
-  incomes        Income[]
-  expenses       Expense[]
-  assistances    Assistance[]
-  scoringRecords Scoring[]
-
-  @@index([registration_number])
-  @@index([social_status])
-  @@index([region])
-  @@index([housing_type])
-  @@index([created_at(sort: Desc)])
-  @@map("families")
-}
-
-/// Expense - Family-level expenses. One row per expense item.
-model Expense {
-  id          String   @id @default(uuid()) @db.Uuid
-  family_id   String   @db.Uuid
-  amount      Decimal  @db.Decimal(12, 2)
-  description String?
-  category    String?
-  date        DateTime @default(now())
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  family Family @relation(fields: [family_id], references: [id], onDelete: Cascade)
-
-  @@index([family_id])
-  @@index([date])
-  @@map("expenses")
-}
-
-/// Person - Unified model for Husband, Wife, Children.
-/// Eliminates: Husband name, Wife name, Child1..Child6 columns.
-model Person {
-  id              String          @id @default(uuid()) @db.Uuid
-  family_id       String          @db.Uuid
-  full_name       String
-  national_id     String?         @unique
-  role_in_family  RoleInFamily
-  gender          Gender
-  birth_date      DateTime?
-  marital_status  MaritalStatus?
-  education_level EducationLevel?
-  occupation      String?
-  smoker          Boolean         @default(false)
-  disability      Boolean         @default(false)
-  deceased        Boolean         @default(false)
-  death_year      Int?
-  notes           String?
-  created_at      DateTime        @default(now())
-  updated_at      DateTime        @updatedAt
-
-  family           Family            @relation(fields: [family_id], references: [id], onDelete: Cascade)
-  medicalCases     MedicalCase[]
-  educationRecords EducationRecord[]
-
-  @@index([family_id])
-  @@index([national_id])
-  @@index([role_in_family])
-  @@index([gender])
-  @@index([birth_date])
-  @@index([family_id, role_in_family]) // for head-of-family lookup in list endpoint
-  @@index([full_name])                  // for name search
-  @@map("persons")
-}
-
-/// Income - Family-level financial. One row per source.
-/// Eliminates: Multiple income columns (Income1, Income2, ...).
-model Income {
-  id          String           @id @default(uuid()) @db.Uuid
-  family_id   String           @db.Uuid
-  source_type IncomeSourceType
-  amount      Decimal          @db.Decimal(12, 2)
-  verified    Boolean          @default(false)
-  notes       String?
-  created_at  DateTime         @default(now())
-  updated_at  DateTime         @updatedAt
-
-  family Family @relation(fields: [family_id], references: [id], onDelete: Cascade)
-
-  @@index([family_id])
-  @@index([source_type])
-  @@index([verified])
-  @@index([created_at])
-  @@map("incomes")
-}
-
-/// MedicalCase - Person-level medical. Separated from family data.
-/// Eliminates: Medical columns mixed with family rows.
-model MedicalCase {
-  id                String           @id @default(uuid()) @db.Uuid
-  person_id         String           @db.Uuid
-  disease_name      String
-  disease_severity  DiseaseSeverity?
-  chronic           Boolean          @default(false)
-  medical_category  MedicalCategory?
-  doctor_name       String?
-  treatment_cost    Decimal?         @db.Decimal(12, 2)
-  last_service_date DateTime?
-  next_allowed_date DateTime?
-  notes             String?
-  created_at        DateTime         @default(now())
-  updated_at        DateTime         @updatedAt
-
-  person Person @relation(fields: [person_id], references: [id], onDelete: Cascade)
-
-  @@index([person_id])
-  @@index([medical_category])
-  @@index([chronic])
-  @@index([last_service_date])
-  @@map("medical_cases")
-}
-
-/// EducationRecord - Person-level education. One row per enrollment.
-/// Eliminates: Repeated grade columns.
-
-model EducationRecord {
-  id                 String          @id @default(uuid()) @db.Uuid
-  person_id          String          @db.Uuid
-  school_name        String
-  stage              EducationStage?
-  grade              String?
-  academic_status    AcademicStatus?
-  memorization_level String?
-  performance_score  Float?
-  dropout_risk       Boolean         @default(false)
-  academic_year      Int?
-  created_at         DateTime        @default(now())
-  updated_at         DateTime        @updatedAt
-
-  person Person @relation(fields: [person_id], references: [id], onDelete: Cascade)
-
-  @@index([person_id])
-  @@index([academic_status])
-  @@index([stage])
-  @@map("education_records")
-}
-
-/// Assistance - Distribution/donation records.
-/// Tracks what was given to family, by whom, when.
-model Assistance {
-  id              String         @id @default(uuid()) @db.Uuid
-  family_id       String         @db.Uuid
-  assistance_type AssistanceType
-  provider_name   String?
-  amount          Decimal?       @db.Decimal(12, 2)
-  items           Json?
-  date            DateTime       @default(now())
-  notes           String?
-  created_at      DateTime       @default(now())
-
-  family Family @relation(fields: [family_id], references: [id], onDelete: Cascade)
-
-  @@index([family_id])
-  @@index([assistance_type])
-  @@index([date])
-  @@map("assistances")
-}
-
-/// Scoring - Cached PMT results. One row per calculation.
-/// Optimized for scoring queries: total_need, vulnerability_index.
-model Scoring {
-  id                  String                      @id @default(uuid()) @db.Uuid
-  family_id           String                      @db.Uuid
-  total_need          Decimal                     @db.Decimal(14, 4)
-  total_income        Decimal                     @db.Decimal(14, 4)
-  vulnerability_index Decimal                     @db.Decimal(10, 4)
-  classification      VulnerabilityClassification
-  breakdown           Json?
-  calculated_at       DateTime                    @default(now())
-
-  family Family @relation(fields: [family_id], references: [id], onDelete: Cascade)
-
-  @@index([family_id])
-  @@index([family_id, calculated_at(sort: Desc)]) // critical for DISTINCT ON latest score
-  @@index([classification])
-  @@index([vulnerability_index])
-  @@index([calculated_at(sort: Desc)])
-  @@map("scorings")
-}
-
-/// ScoringRule - PMT coefficients. Configurable per deployment.
-model ScoringRule {
-  id          String  @id @default(uuid()) @db.Uuid
-  rule_key    String  @unique
-  coefficient Float
-  description String?
-  active      Boolean @default(true)
-
-  @@index([active])
-  @@map("scoring_rules")
-}
-
-// =============================================================================
-// RBAC & AUDIT
-// =============================================================================
-
-model Role {
-  id              String           @id @default(uuid()) @db.Uuid
-  name            String           @unique
-  users           User[]
-  rolePermissions RolePermission[]
-
-  @@map("roles")
-}
-
-model Permission {
-  id              String           @id @default(uuid()) @db.Uuid
-  name            String           @unique
-  rolePermissions RolePermission[]
-
-  @@map("permissions")
-}
-
-model RolePermission {
-  role_id       String @db.Uuid
-  permission_id String @db.Uuid
-
-  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
-  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
-
-  @@id([role_id, permission_id])
-  @@index([permission_id])
-  @@map("role_permissions")
-}
+// ════ MODELS ═════════════════════════════════════════════════════
 
 model User {
-  id       String @id @default(uuid()) @db.Uuid
-  name     String
-  email    String @unique
-  password String
-  role_id  String @db.Uuid
+  id                  String         @id @default(cuid())
+  name                String
+  nameAr              String?
+  email               String         @unique
+  passwordHash        String
+  role                UserRole       @default(WORKER)
+  preferredLocale     Locale         @default(AR)
+  active              Boolean        @default(true)
+  assignedGovernorate String?
+  assignedDistrict    String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  households          Household[]    @relation("CreatedBy")
+  auditLogs           AuditLog[]
+  decisions           ScoreResult[]  @relation("DecidedBy")
+  refreshTokens       RefreshToken[]
 
-  role      Role       @relation(fields: [role_id], references: [id], onDelete: Restrict)
-  auditLogs AuditLog[] @relation("UserAuditLogs")
-
-  @@index([role_id])
   @@index([email])
-  @@map("users")
+  @@index([role])
+  @@index([assignedGovernorate, assignedDistrict])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Household {
+  id               String            @id @default(cuid())
+  code             String            @unique
+  governorate      String
+  district         String
+  village          String
+  address          String?
+  housingType      HousingType       @default(OWNED)
+  hasRationCard    Boolean           @default(true)
+  hasFamilySupport Boolean           @default(false)
+  hasFoodAid       Boolean           @default(false)
+  bankAssetGrade   SeverityGrade?
+  notes            String?
+  isDraft          Boolean           @default(true)
+  lastDraftSavedAt DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  createdById      String
+  createdBy        User              @relation("CreatedBy", fields: [createdById], references: [id])
+  persons          Person[]
+  incomeSources    IncomeSource[]
+  temporaryBurdens TemporaryBurden[]
+  scoreResults     ScoreResult[]
+  auditLogs        AuditLog[]
+
+  @@index([governorate, district])
+  @@index([isDraft])
+  @@index([createdById])
+  @@index([code])
+}
+
+model Person {
+  id                String             @id @default(cuid())
+  householdId       String
+  household         Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name              String
+  gender            Gender
+  birthDate         DateTime
+  role              PersonRole
+  maritalStatus     MaritalStatus      @default(SINGLE)
+  residencyStatus   ResidencyStatus    @default(RESIDENT)
+  isHead            Boolean            @default(false)
+  isStudent         Boolean            @default(false)
+  studentLevel      StudentLevel?
+  employmentType    EmploymentType     @default(NONE)
+  employmentQuality EmploymentQuality?
+  educationLevel    EducationLevel     @default(ILLITERATE)
+  alimonyStatus     AlimonyStatus?
+  isSonContributor  Boolean            @default(false)
+  sonMarried        Boolean            @default(false)
+  sonSameHouse      Boolean            @default(true)
+  isBride           Boolean            @default(false)
+  brideHasSponsor   Boolean            @default(false)
+  isPrisoner        Boolean            @default(false)
+  prisonTerm        PrisonTerm?
+  prisonSuspicion   Decimal?           @db.Decimal(4, 2)
+  isOrphan          Boolean            @default(false)
+  diseases          Disease[]
+  disabilities      Disability[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([householdId])
+  @@index([isHead])
+  @@index([role])
+  @@index([isStudent])
+}
+
+model Disease {
+  id            String               @id @default(cuid())
+  personId      String
+  person        Person               @relation(fields: [personId], references: [id], onDelete: Cascade)
+  name          String
+  treatmentCost DiseaseTreatmentCost @default(NONE)
+  followup      DiseaseFollowup      @default(NONE_OR_RARE)
+  workImpact    DiseaseWorkImpact    @default(NONE)
+  createdAt     DateTime             @default(now())
+
+  @@index([personId])
+}
+
+model Disability {
+  id            String               @id @default(cuid())
+  personId      String
+  person        Person               @relation(fields: [personId], references: [id], onDelete: Cascade)
+  description   String
+  workImpact    DisabilityWorkImpact @default(NONE)
+  companion     DisabilityCompanion  @default(NONE)
+  treatmentCost DiseaseTreatmentCost @default(NONE)
+  createdAt     DateTime             @default(now())
+
+  @@index([personId])
+}
+
+model TemporaryBurden {
+  id          String         @id @default(cuid())
+  householdId String
+  household   Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  type        BurdenType
+  grade       SeverityGrade?
+  description String?
+  createdAt   DateTime       @default(now())
+
+  @@index([householdId])
+}
+
+model IncomeSource {
+  id               String             @id @default(cuid())
+  householdId      String
+  household        Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  channel          IncomeChannel
+  monthlyAmount    Decimal            @db.Decimal(10, 2)
+  verified         VerificationStatus @default(UNVERIFIED)
+  verificationNote String?
+  verifiedAt       DateTime?
+  verifiedById     String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@unique([householdId, channel])
+  @@index([householdId])
+  @@index([verified])
+  @@index([channel, verified])
+}
+
+model ScoreResult {
+  id        String    @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+  calculatedAt DateTime @default(now())
+
+  engineVersion   String
+  ruleVersion     String
+  weightsSnapshot Json
+
+  vulnerabilityScore Decimal @db.Decimal(8, 4)
+  reductionScore     Decimal @db.Decimal(8, 4)
+  confidenceScore    Decimal @db.Decimal(4, 3)
+  fraudRiskScore     Decimal @db.Decimal(4, 3)
+
+  finalScore        Decimal @db.Decimal(8, 4)
+  normalizedPercent Decimal @db.Decimal(6, 3)
+
+  systemRecommendation EligibilityLevel
+  humanDecision        HumanDecision    @default(PENDING)
+  reviewStatus         ReviewStatus     @default(SCORE_READY)
+  decisionNote         String?
+  decidedById          String?
+  decidedBy            User?            @relation("DecidedBy", fields: [decidedById], references: [id])
+  decidedAt            DateTime?
+
+  previousScore Decimal? @db.Decimal(8, 4)
+  scoreDelta    Decimal? @db.Decimal(8, 4)
+
+  calculationSnapshot Json
+  layerBreakdown      Json
+  topPositiveFactors  Json
+  topNegativeFactors  Json
+  recommendations     Json
+  warnings            Json
+  rawInputSnapshot    Json
+
+  @@index([householdId])
+  @@index([calculatedAt])
+  @@index([systemRecommendation])
+  @@index([humanDecision])
+  @@index([householdId, calculatedAt])
+  @@index([calculatedAt, systemRecommendation])
+}
+
+model RuleOverride {
+  id            String    @id @default(cuid())
+  ruleId        String    @unique
+  overrideValue Decimal   @db.Decimal(6, 3)
+  reason        String
+  active        Boolean   @default(true)
+  setById       String
+  setAt         DateTime  @default(now())
+  expiresAt     DateTime?
+
+  @@index([active])
+  @@index([ruleId])
 }
 
 model AuditLog {
-  id         String      @id @default(uuid()) @db.Uuid
-  table_name String
-  record_id  String
-  action     AuditAction
-  changed_by String?     @db.Uuid
-  timestamp  DateTime    @default(now())
-  old_data   Json?
-  new_data   Json?
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  householdId String?
+  household   Household? @relation(fields: [householdId], references: [id])
+  action      String
+  entity      String
+  entityId    String?
+  fieldName   String?
+  before      Json?
+  after       Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime   @default(now())
 
-  changedBy User? @relation("UserAuditLogs", fields: [changed_by], references: [id], onDelete: SetNull)
-
-  @@index([table_name])
-  @@index([record_id])
-  @@index([timestamp])
-  @@index([changed_by])
-  @@index([table_name, record_id])
-  @@map("audit_logs")
+  @@index([householdId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([entity, entityId])
 }

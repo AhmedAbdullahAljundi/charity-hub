@@ -26,10 +26,27 @@
     "OTHER": "أخرى"
   },
   "eligibility": {
+    "CRITICAL_PRIORITY": "أولوية قصوى",
+    "HIGH_PRIORITY": "أولوية عالية",
+    "MEDIUM_PRIORITY": "أولوية متوسطة",
+    "LOW_PRIORITY": "أولوية منخفضة",
+    "NOT_ELIGIBLE": "غير مستحق",
     "ELIGIBLE": "مستفيد",
     "INELIGIBLE": "غير مستفيد",
     "PENDING": "قيد المراجعة",
     "SUSPENDED": "موقوف"
+  },
+  "decision": {
+    "PENDING": "قيد الانتظار",
+    "APPROVED": "مقبول",
+    "REJECTED": "مرفوض",
+    "NEEDS_MORE_INFO": "بحاجة لمعلومات"
+  },
+  "review": {
+    "PENDING_REVIEW": "في انتظار المراجعة",
+    "UNDER_REVIEW": "قيد المراجعة",
+    "FIELD_VISIT_REQUIRED": "مطلوب زيارة ميدانية",
+    "COMPLETED": "مكتملة"
   },
   "role": {
     "HUSBAND": "رب الأسرة",

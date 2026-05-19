@@ -1,22 +1,24 @@
-/**
- * Scoring Routes
- * 
- * Protected routes with authentication and permission checks
- */
+const express = require('express');
+const { requirePermission, requireRoles, PERMISSIONS } = require('../../shared/permissions');
+const { UserRole } = require('../../shared/constants/enums');
+const { calculateLimiter } = require('../../middleware/rateLimit');
+const controller = require('./scoring.controller');
 
-const express = require('express')
-const router = express.Router()
-const scoringController = require('./scoring.controller')
-const { requireAuth } = require('../../middleware/auth')
-const { requirePermission } = require('../../middleware/rbac')
+const router = express.Router({ mergeParams: true });
 
-// All routes require authentication
-router.use(requireAuth)
+router.post(
+  '/calculate',
+  calculateLimiter,
+  requirePermission(PERMISSIONS.SCORE_CALCULATE),
+  controller.calculate
+);
+router.get('/score-history', requirePermission(PERMISSIONS.SCORE_READ), controller.history);
+router.get('/score-latest', requirePermission(PERMISSIONS.SCORE_READ), controller.latest);
+router.patch(
+  '/score-latest/decide',
+  requireRoles(UserRole.ADMIN, UserRole.SUPERVISOR),
+  requirePermission(PERMISSIONS.SCORE_DECIDE),
+  controller.decide
+);
 
-// Calculate score for family - requires VIEW_SCORING permission
-router.get('/:familyId', requirePermission('VIEW_SCORING'), scoringController.calculate)
-
-// Recalculate and SAVE score - requires VIEW_SCORING permission
-router.post('/:familyId/recalculate', requirePermission('VIEW_SCORING'), scoringController.recalculate)
-
-module.exports = router
+module.exports = router;

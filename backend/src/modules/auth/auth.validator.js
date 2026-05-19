@@ -1,65 +1,26 @@
-/**
- * Authentication Validators
- * 
- * Input validation for authentication endpoints
- */
+const Joi = require('joi');
 
-const Joi = require('joi')
-
-/**
- * Login validation schema
- */
-const loginSchema = Joi.object({
-  email: Joi.string()
-    .email({ tlds: { allow: false } })
-    .required()
-    .messages({
-      'string.email': 'البريد الإلكتروني غير صحيح',
-      'any.required': 'البريد الإلكتروني مطلوب',
-      'string.empty': 'البريد الإلكتروني لا يمكن أن يكون فارغاً',
-    }),
-  password: Joi.string()
-    .min(6)
-    .required()
-    .messages({
-      'string.min': 'كلمة المرور يجب أن تكون على الأقل 6 أحرف',
-      'any.required': 'كلمة المرور مطلوبة',
-      'string.empty': 'كلمة المرور لا يمكن أن تكون فارغة',
-    }),
-})
-
-/**
- * Validate login request
- * @param {Object} data - Request body
- * @returns {Object} Validation result
- */
-function validateLogin(data) {
-  const { error, value } = loginSchema.validate(data, {
-    abortEarly: false,
-    stripUnknown: true,
-  })
-
+function validateLogin(body) {
+  const schema = Joi.object({
+    email: Joi.string()
+      .email({ tlds: { allow: false } })
+      .required(),
+    password: Joi.string().min(1).required(),
+  });
+  const { error, value } = schema.validate(body, { abortEarly: false });
   if (error) {
-    const errors = error.details.map((detail) => ({
-      field: detail.path.join('.'),
-      message: detail.message,
-    }))
-
-    return {
-      isValid: false,
-      errors,
-      value: null,
-    }
+    return { isValid: false, errors: error.details.map((d) => d.message) };
   }
-
-  return {
-    isValid: true,
-    errors: null,
-    value,
-  }
+  return { isValid: true, value };
 }
 
-module.exports = {
-  validateLogin,
-  loginSchema,
+function validateRefresh(body) {
+  const schema = Joi.object({
+    refreshToken: Joi.string().required(),
+  });
+  const { error, value } = schema.validate(body);
+  if (error) return { isValid: false, errors: error.details.map((d) => d.message) };
+  return { isValid: true, value };
 }
+
+module.exports = { validateLogin, validateRefresh };

@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/popover";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { useAuthStore, useFamiliesStore } from "@/lib/store";
+import { useAuthStore } from "@/lib/stores/authStore";
+import { useFamiliesStore } from "@/lib/store";
 import { MobileSidebar } from "@/components/app-sidebar";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/common/theme-toggle";
@@ -38,7 +39,8 @@ export function Topbar() {
   );
 
   const user = useAuthStore(state => state.user);
-  const logout = useAuthStore(state => state.logout);
+  const logout = useAuthStore((state) => state.logout);
+  const role = user?.role;
   const filters = useFamiliesStore(state => state.filters);
   const setFilters = useFamiliesStore(state => state.setFilters);
   const [searchValue, setSearchValue] = useState(filters.search || "");
@@ -113,7 +115,14 @@ export function Topbar() {
                   {user?.name?.[0] || t("topbar.admin").charAt(0)}
                 </span>
               </div>
-              <span className="hidden md:inline text-sm font-medium">{user?.name || t("topbar.admin")}</span>
+              <span className="hidden md:inline text-sm font-medium">
+                {user?.name || t("topbar.admin")}
+                {role && (
+                  <Badge variant="outline" className="ms-2 text-[10px] py-0">
+                    {role}
+                  </Badge>
+                )}
+              </span>
               <ChevronDown className="h-4 w-4 text-muted-foreground hidden md:inline" />
             </Button>
           </DropdownMenuTrigger>
@@ -123,7 +132,10 @@ export function Topbar() {
               <span>{t("topbar.profile")}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 cursor-pointer text-destructive" onClick={logout}>
+            <DropdownMenuItem
+              className="gap-2 cursor-pointer text-destructive"
+              onClick={() => void logout()}
+            >
               <LogOut className="h-4 w-4" />
               <span>{t("topbar.logout")}</span>
             </DropdownMenuItem>

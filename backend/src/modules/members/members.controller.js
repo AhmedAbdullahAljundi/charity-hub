@@ -2,7 +2,7 @@
  * Members Controller
  */
 
-const prisma = require('../../config/prisma')
+const membersRepository = require('./members.repository')
 const { AppError, NotFoundError } = require('../../utils/errors')
 
 const membersController = {
@@ -13,14 +13,7 @@ const membersController = {
     try {
       const { familyId } = req.params
 
-      const members = await prisma.member.findMany({
-        where: { family_id: familyId },
-        orderBy: { created_at: 'desc' },
-        include: {
-          medicalRecords: true,
-          educationalTracks: true,
-        },
-      })
+      const members = await membersRepository.findByFamilyId(familyId)
 
       res.json({
         success: true,
@@ -38,14 +31,7 @@ const membersController = {
     try {
       const { id } = req.params
 
-      const member = await prisma.member.findUnique({
-        where: { id },
-        include: {
-          family: true,
-          medicalRecords: true,
-          educationalTracks: true,
-        },
-      })
+      const member = await membersRepository.findById(id)
 
       if (!member) {
         throw new NotFoundError('Member')
@@ -69,9 +55,7 @@ const membersController = {
       const body = req.body
 
       // Verify family exists
-      const family = await prisma.family.findUnique({
-        where: { id: familyId },
-      })
+      const family = await membersRepository.checkFamilyExists(familyId)
 
       if (!family) {
         throw new NotFoundError('Family')
@@ -95,12 +79,7 @@ const membersController = {
         family_id: familyId,
       }
 
-      const member = await prisma.member.create({
-        data: memberData,
-        include: {
-          family: true,
-        },
-      })
+      const member = await membersRepository.create(memberData)
 
       res.status(201).json({
         success: true,
@@ -120,13 +99,7 @@ const membersController = {
       const { id } = req.params
       const data = req.body
 
-      const member = await prisma.member.update({
-        where: { id },
-        data,
-        include: {
-          family: true,
-        },
-      })
+      const member = await membersRepository.update(id, data)
 
       res.json({
         success: true,
@@ -148,9 +121,7 @@ const membersController = {
     try {
       const { id } = req.params
 
-      await prisma.member.delete({
-        where: { id },
-      })
+      await membersRepository.delete(id)
 
       res.json({
         success: true,

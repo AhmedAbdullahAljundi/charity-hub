@@ -12,6 +12,7 @@ import { RegionalCompactTable } from "@/components/dashboard/regional-compact-ta
 import { RecentFamiliesTable, type RecentFamilyRow } from "@/components/dashboard/recent-families-table";
 import { PriorityFamiliesTable, type PriorityFamilyRow } from "@/components/dashboard/priority-families-table";
 import { AlertsFeed } from "@/components/dashboard/alerts-feed";
+import { MainChartsGrid } from "@/components/dashboard/main-charts-grid";
 import type { RegionDatum } from "@/components/dashboard/region-overview-card";
 import type { PredictionPayload } from "@/components/dashboard/financial-forecast-strip";
 import type { WorkflowQueueRow } from "@/components/dashboard/workflow-queue-card";
@@ -58,7 +59,7 @@ export default function DashboardPage() {
 
   const predictionPayload = prediction as PredictionPayload | null;
 
-  const regionData: RegionDatum[] = Array.isArray(regionsOverview) ? regionsOverview : [];
+  const regionData: RegionDatum[] = useMemo(() => Array.isArray(regionsOverview) ? regionsOverview : [], [regionsOverview]);
 
   const recentRows: RecentFamilyRow[] = Array.isArray((workflow as Record<string, unknown> | null)?.recentFamilies)
     ? (workflow as { recentFamilies: RecentFamilyRow[] }).recentFamilies
@@ -162,6 +163,14 @@ export default function DashboardPage() {
         monthlySeries={monthlySeries ?? []}
         loading={statsLoading}
       />
+
+      <section className="space-y-4 pt-4 border-t">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-foreground">تحليلات الأداء الشاملة</h2>
+          <p className="text-sm text-muted-foreground">التوزيع الجغرافي واتجاهات الاستحقاق</p>
+        </div>
+        <MainChartsGrid />
+      </section>
 
       <RegionalCompactTable regions={regionData} loading={loadingDashboard && !dashboardErrors.regions} />
 

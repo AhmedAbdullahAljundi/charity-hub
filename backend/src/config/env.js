@@ -1,66 +1,56 @@
 /**
- * Environment Configuration
- * 
- * Loads and validates environment variables
+ * Environment configuration
  */
 
-require('dotenv').config()
+require('dotenv').config();
 
 const config = {
-  // App
   app: {
-    port: process.env.PORT || 5000,
+    port: parseInt(process.env.PORT || '5000', 10),
     env: process.env.NODE_ENV || 'development',
     baseUrl: process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`,
   },
-
-  // Database
   database: {
     url: process.env.DATABASE_URL,
   },
-
-  // JWT
   jwt: {
-    secret: process.env.JWT_SECRET || process.env.JWT_ACCESS_SECRET,
-    accessSecret: process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET,
-    refreshSecret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    accessSecret: process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'dev-access-secret-change-me',
+    refreshSecret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'dev-refresh-secret-change-me',
+    accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    issuer: 'charityhub-targeting',
+    audience: 'charityhub-api',
   },
-
-  // Scoring
-  scoring: {
-    baselineCoefficient: parseFloat(process.env.BASELINE_COEFFICIENT || '1.0'),
+  cache: {
+    provider: process.env.CACHE_PROVIDER || 'memory',
+    redisUrl: process.env.REDIS_URL || null,
+    rulesTtlSeconds: parseInt(process.env.CACHE_RULES_TTL || '300', 10),
+    analyticsTtlSeconds: parseInt(process.env.CACHE_ANALYTICS_TTL || '900', 10),
   },
-
-  // CORS
   cors: {
     origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
     credentials: true,
   },
-
-  // Logging
-  logging: {
-    level: process.env.LOG_LEVEL || 'info',
+  auth: {
+    requireAuth: process.env.REQUIRE_AUTH !== 'false',
   },
-
-  // Audit
-  audit: {
-    enabled: process.env.AUDIT_ENABLED === 'true',
+  api: {
+    enableLegacyV1: process.env.ENABLE_LEGACY_API === 'true',
   },
+  scoring: {
+    engineVersion: process.env.SCORING_ENGINE_VERSION || '2.0.0',
+    ruleVersion: process.env.SCORING_RULE_VERSION || '2024-01',
+  },
+};
 
-
+if (config.app.env === 'production') {
+  if (
+    !process.env.JWT_ACCESS_SECRET ||
+    !process.env.JWT_REFRESH_SECRET ||
+    config.jwt.accessSecret === 'dev-access-secret-change-me'
+  ) {
+    throw new Error('CRITICAL: JWT secrets must be set in production environment!');
+  }
 }
 
-// Validate required environment variables
-const requiredVars = ['DATABASE_URL']
-const missingVars = requiredVars.filter((varName) => !process.env[varName])
-
-if (missingVars.length > 0) {
-  console.warn('⚠️  Missing required environment variables:')
-  missingVars.forEach((varName) => console.warn(`   - ${varName}`))
-  console.warn('\n⚠️  Server will start but database features will not work')
-  console.warn('Please check your .env file and set DATABASE_URL')
-  // Don't exit - allow server to start for testing
-}
-
-module.exports = config
+module.exports = config;

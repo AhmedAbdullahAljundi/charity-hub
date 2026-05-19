@@ -6,35 +6,43 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   Users,
-  Stethoscope,
-  GraduationCap,
-  Heart,
-  FileBarChart,
+  BarChart3,
+  ShieldCheck,
+  Settings,
   History,
-  Shield,
   ChevronRight,
   ChevronLeft,
-  X,
+  HeartPulse,
+  GraduationCap,
+  Heart,
+  FileText,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { useAuthStore } from "@/lib/stores/authStore";
 
 const menuItems = [
   { key: "dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { key: "families", href: "/dashboard/families", icon: Users },
-  { key: "medical_record", href: "/dashboard/medical", icon: Stethoscope },
+  { key: "households", href: "/dashboard/households", icon: Users },
+  { key: "medical", href: "/dashboard/medical", icon: HeartPulse },
   { key: "education", href: "/dashboard/education", icon: GraduationCap },
   { key: "volunteers", href: "/dashboard/volunteers", icon: Heart },
-  { key: "reports", href: "/dashboard/reports", icon: FileBarChart },
-  { key: "audit_log", href: "/dashboard/audit", icon: History },
-  { key: "users_permissions", href: "/dashboard/users", icon: Shield },
+  { key: "analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { key: "verification", href: "/dashboard/verification", icon: ShieldCheck },
+  { key: "admin", href: "/dashboard/admin", icon: Settings },
+  { key: "audit", href: "/dashboard/audit", icon: History },
+  { key: "reports", href: "/dashboard/reports", icon: FileText },
+  { key: "users", href: "/dashboard/users", icon: Shield },
 ];
 
 function SidebarContent({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const t = useTranslations("common");
+  const t = useTranslations("nav");
+  const user = useAuthStore((s) => s.user);
 
   return (
     <div className="flex flex-col h-full">
@@ -44,23 +52,33 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
             <span className="text-sidebar-primary-foreground font-bold text-lg">C</span>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center gap-2 text-center">
             <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0">
               <span className="text-sidebar-primary-foreground font-bold text-lg">C</span>
             </div>
             <div>
               <h1 className="text-sidebar-foreground font-bold text-lg leading-tight">CharityHub</h1>
-              <p className="text-sidebar-foreground/60 text-xs" suppressHydrationWarning>{t('sidebar.system_title')}</p>
+              <p className="text-sidebar-foreground/60 text-xs">Targeting Platform</p>
             </div>
           </div>
         )}
       </div>
 
+      {user && !collapsed && (
+        <div className="px-4 py-3 border-b border-sidebar-border">
+          <p className="text-sm font-medium text-sidebar-foreground truncate">{user.name}</p>
+          <Badge variant="secondary" className="mt-1 text-[10px]">
+            {user.role}
+          </Badge>
+        </div>
+      )}
+
       <ScrollArea className="flex-1 py-4">
         <nav className="flex flex-col gap-1 px-3">
           {menuItems.map((item) => {
             const isActive =
-              pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              pathname === item.href ||
+              (item.href !== "/dashboard" && pathname.startsWith(item.href));
             const Icon = item.icon;
             return (
               <Link
@@ -75,45 +93,53 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
                 )}
               >
                 <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span className="flex-1 text-start" suppressHydrationWarning>{t(`sidebar.${item.key}`)}</span>}
+                {!collapsed && <span className="flex-1 text-start">{t(item.key as "dashboard")}</span>}
               </Link>
             );
           })}
         </nav>
       </ScrollArea>
-
-      <div className="p-4 border-t border-sidebar-border">
-        {!collapsed && (
-          <div className="text-sidebar-foreground/40 text-xs text-center">
-            CharityHub v1.0.0
-          </div>
-        )}
-      </div>
     </div>
   );
 }
 
-export function AppSidebar({ collapsed, setCollapsed }) {
+export function AppSidebar({
+  collapsed,
+  setCollapsed,
+}: {
+  collapsed: boolean;
+  setCollapsed: (v: boolean) => void;
+}) {
+  const locale = useLocale();
+  const isRtl = locale === "ar";
+
   return (
-    <>
-      {/* Desktop sidebar */}
-      <aside
+    <aside
+      className={cn(
+        "hidden lg:flex flex-col h-screen bg-sidebar border-sidebar-border transition-all duration-300 sticky top-0",
+        isRtl ? "border-s" : "border-e",
+        collapsed ? "w-[72px]" : "w-[260px]"
+      )}
+    >
+      <SidebarContent collapsed={collapsed} />
+      <Button
+        variant="ghost"
+        size="icon"
         className={cn(
-          "hidden lg:flex flex-col h-screen bg-sidebar border-l border-sidebar-border transition-all duration-300 sticky top-0",
-          collapsed ? "w-[72px]" : "w-[260px]"
+          "absolute top-8 h-6 w-6 rounded-full bg-sidebar-primary text-sidebar-primary-foreground shadow-lg z-10",
+          isRtl ? "-start-3" : "-end-3"
         )}
+        onClick={() => setCollapsed(!collapsed)}
       >
-        <SidebarContent collapsed={collapsed} />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute -left-3 top-8 h-6 w-6 rounded-full bg-sidebar-primary text-sidebar-primary-foreground shadow-lg hover:bg-sidebar-primary/90 z-10"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          {collapsed ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </Button>
-      </aside>
-    </>
+        {collapsed ? (
+          isRtl ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />
+        ) : isRtl ? (
+          <ChevronRight className="h-3 w-3" />
+        ) : (
+          <ChevronLeft className="h-3 w-3" />
+        )}
+      </Button>
+    </aside>
   );
 }
 

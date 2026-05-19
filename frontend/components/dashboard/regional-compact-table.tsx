@@ -34,7 +34,7 @@ export function RegionalCompactTable({ regions, loading }: RegionalCompactTableP
     const copy = [...list];
     if (sort === "families-desc") copy.sort((a, b) => b.familiesCount - a.familiesCount);
     if (sort === "critical-desc") copy.sort((a, b) => b.criticalCases - a.criticalCases);
-    if (sort === "vuln-desc") copy.sort((a, b) => b.averageVulnerability - a.averageVulnerability);
+    if (sort === "vuln-desc") copy.sort((a, b) => (b.averageVulnerability || 0) - (a.averageVulnerability || 0));
     return copy;
   }, [regions, sort, filter]);
 
@@ -94,7 +94,7 @@ export function RegionalCompactTable({ regions, loading }: RegionalCompactTableP
               const loadPct = Math.round((r.familiesCount / maxFam) * 100);
               return (
                 <TableRow
-                  key={r.regionKey ?? r.region}
+                  key={`${r.regionKey ?? r.region}-${idx}`}
                   className={cn("text-xs border-border/30", idx % 2 === 1 ? "bg-muted/20" : "bg-transparent")}
                 >
                   <TableCell className="py-1.5 align-middle">
@@ -105,7 +105,7 @@ export function RegionalCompactTable({ regions, loading }: RegionalCompactTableP
                   <TableCell className="py-1.5 text-end tabular-nums">{r.pendingResearch}</TableCell>
                   <TableCell className="py-1.5 text-end tabular-nums">{r.criticalCases}</TableCell>
                   <TableCell className="py-1.5 text-end tabular-nums text-xs" dir="ltr">
-                    {r.averageVulnerability.toFixed(2)}
+                    {(r.averageVulnerability || 0).toFixed(2)}
                   </TableCell>
                   <TableCell className="py-1.5 tabular-nums">{r.supervisorsCount}</TableCell>
                 </TableRow>

@@ -10,6 +10,8 @@ import arForms from "../messages/ar/forms.json";
 import arSurface from "../messages/ar/surface.json";
 import arUsers from "../messages/ar/users.json";
 import arVolunteers from "../messages/ar/volunteers.json";
+import arScoring from "../messages/ar/scoring.json";
+import arRules from "../messages/ar/rules.json";
 
 import enCommon from "../messages/en/common.json";
 import enDomain from "../messages/en/domain.json";
@@ -19,6 +21,8 @@ import enForms from "../messages/en/forms.json";
 import enSurface from "../messages/en/surface.json";
 import enUsers from "../messages/en/users.json";
 import enVolunteers from "../messages/en/volunteers.json";
+import enScoring from "../messages/en/scoring.json";
+import enRules from "../messages/en/rules.json";
 
 const messagesMap = {
   ar: {
@@ -30,6 +34,9 @@ const messagesMap = {
     surface: arSurface,
     users: arUsers,
     volunteers: arVolunteers,
+    scoring: arScoring,
+    rules: arRules,
+    nav: arCommon.nav,
   },
   en: {
     common: enCommon,
@@ -40,6 +47,9 @@ const messagesMap = {
     surface: enSurface,
     users: enUsers,
     volunteers: enVolunteers,
+    scoring: enScoring,
+    rules: enRules,
+    nav: enCommon.nav,
   }
 };
 
@@ -75,6 +85,9 @@ export default getRequestConfig(async ({ requestLocale }) => {
       reports: surfaceData.reports,
       users: data.users,
       volunteers: data.volunteers,
+      scoring: data.scoring,
+      rules: data.rules,
+      nav: data.nav,
     },
   };
 });

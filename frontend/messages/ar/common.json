@@ -17,8 +17,26 @@
     "no_data": "لا توجد بيانات متاحة",
     "not_found": "العنصر المطلوب غير موجود"
   },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "households": "الأسر المستهدفة",
+    "medical": "السجل الطبي",
+    "education": "التعليم",
+    "volunteers": "المتطوعون",
+    "analytics": "التحليلات",
+    "verification": "مركز التوثيق",
+    "admin": "إدارة القواعد",
+    "audit": "سجل التدقيق",
+    "reports": "التقارير",
+    "users": "المستخدمين والصلاحيات"
+  },
   "sidebar": {
     "dashboard": "لوحة التحكم",
+    "households": "الأسر المستهدفة",
+    "analytics": "التحليلات",
+    "verification": "مركز التوثيق",
+    "admin": "إدارة القواعد",
+    "audit": "سجل التدقيق",
     "families": "الأسر",
     "medical_record": "السجل الطبي",
     "education": "التعليم",

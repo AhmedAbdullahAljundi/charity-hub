@@ -103,7 +103,7 @@ function AnalyticsGridInner({
     [classificationExpenses, t]
   );
 
-  const trendPayload = monthlySeries ?? [];
+  const trendPayload = React.useMemo(() => monthlySeries ?? [], [monthlySeries]);
   const medicalBars = React.useMemo(() => trendPayload.slice(-6), [trendPayload]);
 
   const trendHas = trendPayload.length > 0;

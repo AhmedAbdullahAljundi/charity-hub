@@ -17,8 +17,26 @@
     "no_data": "No data available",
     "not_found": "Requested item not found"
   },
+  "nav": {
+    "dashboard": "Dashboard",
+    "households": "Households",
+    "medical": "Medical Records",
+    "education": "Education",
+    "volunteers": "Volunteers",
+    "analytics": "Analytics",
+    "verification": "Verification Center",
+    "admin": "Rule Admin",
+    "audit": "Audit Log",
+    "reports": "Reports",
+    "users": "Users & Permissions"
+  },
   "sidebar": {
     "dashboard": "Dashboard",
+    "households": "Households",
+    "analytics": "Analytics",
+    "verification": "Verification",
+    "admin": "Admin",
+    "audit": "Audit Log",
     "families": "Families",
     "medical_record": "Medical Record",
     "education": "Education",

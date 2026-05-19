@@ -11,7 +11,7 @@
 
 const prisma = require('../../config/prisma')
 const { VulnerabilityClassification } = require('@prisma/client')
-const { calculateFamilyScore } = require('../../services/scoring/scoringService')
+const scoringService = require('../scoring/scoring.service')
 const { AppError } = require('../../utils/errors')
 
 /**
@@ -164,42 +164,19 @@ async function registerFamily(payload) {
       })
     }
 
-    // 6) Trigger PMT scoring using freshly created data
-    const scoringResult = await calculateFamilyScore(createdFamily.id, {}, tx)
-
-    const {
-      totalWeightedNeed,
-      totalActualIncome,
-      vulnerabilityIndex,
-      classification,
-      breakdown,
-    } = {
-      totalWeightedNeed: scoringResult.scoring.totalWeightedNeed,
-      totalActualIncome: scoringResult.scoring.totalActualIncome,
-      vulnerabilityIndex: scoringResult.scoring.vulnerabilityIndex,
-      classification: scoringResult.scoring.classification,
-      breakdown: scoringResult.scoring.breakdown,
-    }
-
-    // 7) Persist Scoring snapshot
-    const scoringRow = await tx.scoring.create({
-      data: {
-        family_id: createdFamily.id,
-        total_need: totalWeightedNeed,
-        total_income: totalActualIncome,
-        vulnerability_index: vulnerabilityIndex,
-        classification: mapClassificationToEnum(classification.code),
-        breakdown,
-      },
-    })
+    // 6) Trigger scoring using new 4-engine scoring service
+    const scoringResult = await scoringService.calculateAndPersist(createdFamily.id, tx)
 
     return {
       familyId: createdFamily.id,
       scoring: {
-        vulnerabilityIndex,
-        classification: classification.label,
-        classificationCode: classification.code,
-        scoringId: scoringRow.id,
+        vulnerabilityIndex: scoringResult.normalizedPercent != null
+          ? scoringResult.normalizedPercent / 10
+          : 0,
+        classification: scoringResult.legacyClassification || 'MODERATE',
+        systemRecommendation: scoringResult.systemRecommendation,
+        normalizedPercent: scoringResult.normalizedPercent,
+        scoringId: scoringResult.scoringId,
       },
     }
   })

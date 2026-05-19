@@ -7,6 +7,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { GlobalErrorBoundary } from "@/components/global-error-boundary";
 import "../globals.css";
 
 const ibmPlexArabic = IBM_Plex_Sans_Arabic({
@@ -23,7 +24,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "common.metadata" });
-  
+
   return {
     title: t("title"),
     description: t("description"),
@@ -58,13 +59,15 @@ export default async function RootLocaleLayout({
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
       <body className={`${ibmPlexArabic.variable} ${_geistMono.variable} font-sans antialiased`}>
-        <ThemeProvider>
-          <NextIntlClientProvider locale={locale} messages={messages}>
-            {children}
-            <Toaster position="top-center" richColors />
-            <Analytics />
-          </NextIntlClientProvider>
-        </ThemeProvider>
+        <GlobalErrorBoundary>
+          <ThemeProvider>
+            <NextIntlClientProvider locale={locale} messages={messages}>
+              {children}
+              <Toaster position="top-center" richColors />
+              <Analytics />
+            </NextIntlClientProvider>
+          </ThemeProvider>
+        </GlobalErrorBoundary>
       </body>
     </html>
   );

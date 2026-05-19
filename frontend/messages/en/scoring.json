@@ -1,0 +1,62 @@
+{
+  "layers": {
+    "L1": "Head of Household",
+    "L2": "Housing",
+    "L3": "Income",
+    "L4": "Social Vulnerability",
+    "L5": "Temporary Burdens",
+    "L6": "Health",
+    "L7": "Reductions",
+    "L8": "Fraud Risk"
+  },
+  "eligibility": {
+    "CRITICAL": "Critical",
+    "HIGH_NEED": "High Need",
+    "MODERATE_NEED": "Moderate Need",
+    "LOW_NEED": "Low Need",
+    "NOT_ELIGIBLE": "Not Eligible"
+  },
+  "warnings": {
+    "LOW_VERIFICATION_PENALTY": "Insufficient verification — affects confidence score",
+    "PENSION_UNVERIFIED": "Pension not verified",
+    "FEW_VERIFIED_CHANNELS": "Fewer than 3 verified income channels"
+  },
+  "engines": {
+    "vulnerability": "Vulnerability",
+    "reduction": "Reduction",
+    "confidence": "Confidence",
+    "fraud": "Fraud"
+  },
+  "panel": {
+    "recalculate": "Recalculate",
+    "calculating": "Calculating...",
+    "warnings": "Warnings",
+    "noScore": "Save a step, then calculate",
+    "percent": "Normalized score"
+  },
+  "wizard": {
+    "title": "Household Wizard",
+    "step": "Step {current} of {total}",
+    "savedAgo": "Saved {seconds} seconds ago",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "error": "Save failed",
+    "dirtyLeave": "You have unsaved changes. Leave anyway?",
+    "next": "Next",
+    "prev": "Previous",
+    "calculate": "Calculate Score"
+  },
+  "tree": {
+    "head": "Head",
+    "spouse": "Spouse",
+    "child": "Child",
+    "dependent": "Dependent",
+    "sick": "Sick",
+    "disabled": "Disabled",
+    "student": "Student",
+    "prisoner": "Prisoner",
+    "widow": "Widow",
+    "contribution": "Score contribution",
+    "rulesFired": "Rules fired"
+  }
+}

@@ -1,19 +1,16 @@
-/**
- * Authentication Routes
- * 
- * API routes for authentication
- */
+const express = require('express');
+const authController = require('./auth.controller');
+const { requireAuth } = require('../../middleware/auth');
+const { loginLimiter } = require('../../middleware/rateLimit');
 
-const express = require('express')
-const router = express.Router()
-const authController = require('./auth.controller')
-const { requireAuth } = require('../../middleware/auth')
+const { loginSchema, refreshSchema } = require('../../shared/validators/auth.validator');
+const { validate } = require('../../middleware/validate');
 
-// Public routes
-router.post('/login', authController.login)
-router.post('/logout', authController.logout)
+const router = express.Router();
 
-// Protected routes
-router.get('/me', requireAuth, authController.getMe)
+router.post('/login', loginLimiter, validate(loginSchema), authController.login);
+router.post('/refresh', validate(refreshSchema), authController.refresh);
+router.post('/logout', authController.logout);
+router.get('/me', requireAuth, authController.me);
 
-module.exports = router
+module.exports = router;

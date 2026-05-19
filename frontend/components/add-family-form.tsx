@@ -1,10 +1,9 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useTranslations } from "next-intl";
-import { dictLabel } from "@/lib/i18n/dict-label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,65 +14,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { useFamiliesStore, CASE_CATEGORIES, AID_DECISIONS } from "@/lib/store";
-import api from "@/lib/api";
-import { Loader2, User, Phone, MapPin, CreditCard, FileText, HandCoins } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useFamiliesStore } from "@/lib/store";
+import api from "@/lib/api/client";
+import { Loader2, User, Phone, MapPin, CreditCard, FileText } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-function createFamilySchema(tv: (key: string) => string) {
-  return z.object({
-    headName: z.string().min(3, tv("headNameMin")),
-    wifeName: z.string().optional(),
-    nationalId: z
-      .string()
-      .length(14, tv("nationalIdLength"))
-      .regex(/^\d+$/, tv("nationalIdDigits")),
-    wifeNationalId: z.string().optional().refine(
-      (val) => !val || (val.length === 14 && /^\d+$/.test(val)),
-      tv("nationalIdLength")
-    ),
-    phone: z
-      .string()
-      .min(11, tv("phoneMin"))
-      .regex(/^01[0125]\d{8}$/, tv("phoneInvalid")),
-    phone2: z.string().optional().refine(
-      (val) => !val || /^01[0125]\d{8}$/.test(val),
-      tv("phoneInvalid")
-    ),
-    address: z.string().min(5, tv("addressMin")),
-    housingType: z.string().min(1, tv("housingRequired")),
-    meezaCard: z.string().optional().refine(
-      (val) => !val || (val.length >= 16 && /^\d+$/.test(val)),
-      tv("meezaLength")
-    ),
-    category: z.string().min(1, tv("categoryRequired")),
-    categoryReason: z.string().min(5, tv("categoryReasonMin")),
-    aidDecision: z.string().min(1, tv("aidRequired")),
-    monthlyAidAmount: z.coerce.number().min(0, tv("monthlyAidRange")).max(9999, tv("monthlyAidRange")),
-    pdfName: z.string().optional(),
-    notes: z.string().optional(),
-    fieldResearchDone: z.boolean().optional(),
-    dataVerified: z.boolean().optional(),
-  });
-}
+const formSchema = z.object({
+  name: z.string().min(4, "يجب أن يكون الاسم 4 حروف على الأقل"),
+  spouseName: z.string().optional(),
+  nationalId: z.string().length(14, "الرقم القومي يجب أن يكون 14 رقماً").regex(/^\d+$/, "أرقام فقط"),
+  spouseNationalId: z.string().optional().refine(val => !val || (val.length === 14 && /^\d+$/.test(val)), "الرقم القومي يجب أن يكون 14 رقماً"),
+  phone: z.string().regex(/^01\d{9}$/, "رقم الهاتف غير صحيح"),
+  alternatePhone: z.string().optional().refine(val => !val || /^01\d{9}$/.test(val), "رقم الهاتف غير صحيح"),
+  address: z.string().min(10, "العنوان يجب أن يكون 10 حروف على الأقل"),
+  meezaCardNumber: z.string().optional().refine(val => !val || (val.length === 16 && /^\d+$/.test(val)), "رقم البطاقة يجب أن يكون 16 رقماً"),
+  classification: z.string().min(1, "هذا الحقل مطلوب"),
+  assistanceDecision: z.string().min(1, "هذا الحقل مطلوب"),
+});
 
-type FamilyFormValues = z.infer<ReturnType<typeof createFamilySchema>>;
-
-const HOUSING_VALUES = ["RENT", "OWNED", "SHARED"] as const;
+type FamilyFormValues = z.infer<typeof formSchema>;
 
 export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
   const addFamily = useFamiliesStore(state => state.addFamily);
   const updateFamily = useFamiliesStore(state => state.updateFamily);
   const [loading, setLoading] = useState(false);
   const isEdit = !!initialData;
-  const tv = useTranslations("validation.family");
-  const tf = useTranslations("families.form");
-  const tDict = useTranslations("families");
-  const familySchema = useMemo(() => createFamilySchema(tv), [tv]);
 
   const {
     register,
@@ -83,122 +49,92 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
     formState: { errors },
     reset,
   } = useForm<FamilyFormValues>({
-    resolver: zodResolver(familySchema),
-    defaultValues: initialData
-      ? { ...initialData, housingType: initialData.housingType || initialData.housing_type || "RENT" }
-      : {
-        headName: "",
-        wifeName: "",
-        nationalId: "",
-        wifeNationalId: "",
-        phone: "",
-        phone2: "",
-        address: "",
-        housingType: "RENT",
-        meezaCard: "",
-        category: "",
-        categoryReason: "",
-        aidDecision: "",
-        monthlyAidAmount: 0,
-        pdfName: "",
-        notes: "",
-        fieldResearchDone: false,
-        dataVerified: false,
-      },
+    resolver: zodResolver(formSchema),
+    defaultValues: initialData ? {
+      name: initialData.headName || initialData.name || "",
+      spouseName: initialData.spouseName || "",
+      nationalId: initialData.nationalId || "",
+      spouseNationalId: initialData.spouseNationalId || "",
+      phone: initialData.phone || "",
+      alternatePhone: initialData.alternatePhone || "",
+      address: initialData.address || "",
+      meezaCardNumber: initialData.meezaCardNumber || "",
+      classification: initialData.classification || "MODERATE_NEED",
+      assistanceDecision: initialData.assistanceDecision || "PENDING",
+    } : {
+      name: "",
+      spouseName: "",
+      nationalId: "",
+      spouseNationalId: "",
+      phone: "",
+      alternatePhone: "",
+      address: "",
+      meezaCardNumber: "",
+      classification: "",
+      assistanceDecision: "",
+    },
   });
 
-  const fieldResearchDone = watch("fieldResearchDone");
-  const dataVerified = watch("dataVerified");
+  const classificationVal = watch("classification");
+  const assistanceDecisionVal = watch("assistanceDecision");
 
-  const mapCategoryToSocialStatus = (category) => {
-    switch (category) {
-      case "orphans":
-        return "ORPHANS";
-      case "divorced":
-        return "DIVORCED";
-      case "poor":
-        return "POOR";
-      case "needy":
-        return "NEEDY";
-      case "disability":
-        return "DISABILITY";
-      case "student":
-        return "STUDENT";
-      case "prisoner":
-        return "PRISONER";
-      case "elderly":
-        return "ELDERLY";
-      case "absence":
-        return "ABANDONMENT";
-      case "chronic":
-        return "CHRONIC_DISEASE";
-      case "temporary_injury":
-        return "TEMPORARY_INJURY";
-      default:
-        return "OTHER";
-    }
-  };
-
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: FamilyFormValues) => {
     try {
       setLoading(true);
 
+      const notesJson = JSON.stringify({
+        meezaCardNumber: data.meezaCardNumber,
+        alternatePhone: data.alternatePhone,
+        spouseNationalId: data.spouseNationalId,
+        spouseName: data.spouseName,
+      });
+
       if (isEdit) {
-        // ── EDIT MODE: PUT /v1/families/:id (حفظ حقيقي في قاعدة البيانات) ──
         await api.put(`/v1/families/${initialData.id}`, {
           address: data.address,
           phone: data.phone,
-          housing_type: data.housingType,
-          notes: data.notes || null,
-          social_status: mapCategoryToSocialStatus(data.category),
+          notes: notesJson,
+          social_status: data.classification,
         });
-        updateFamily(initialData.id, { ...data, housing_type: data.housingType });
-        toast.success(tf("toast_edit_ok"));
+        updateFamily(initialData.id, { 
+          headName: data.name,
+          nationalId: data.nationalId,
+          phone: data.phone,
+          address: data.address,
+          classification: data.classification,
+          assistanceDecision: data.assistanceDecision
+        });
+        toast.success("تم تعديل بيانات الأسرة بنجاح");
         onSuccess?.();
         return;
       }
 
-      // ── CREATE MODE: POST /v1/families ──
       const payload = {
         family: {
           registration_number: data.nationalId,
           address: data.address,
-          region: null,
-          housing_type: data.housingType,
-          rent_value: null,
+          housing_type: "RENT",
           phone: data.phone,
-          notes: data.notes || null,
-          social_status: mapCategoryToSocialStatus(data.category),
+          notes: notesJson,
+          social_status: data.classification,
         },
         persons: [
           {
-            full_name: data.headName,
+            full_name: data.name,
             national_id: data.nationalId,
             role_in_family: "HUSBAND",
             gender: "MALE",
-            birth_date: null,
-            marital_status: null,
-            education_level: null,
-            occupation: null,
             smoker: false,
             disability: false,
           },
-          ...(data.wifeName
-            ? [
-              {
-                full_name: data.wifeName,
-                national_id: data.wifeNationalId || null,
-                role_in_family: "WIFE",
-                gender: "FEMALE",
-                birth_date: null,
-                marital_status: null,
-                education_level: null,
-                occupation: null,
-                smoker: false,
-                disability: false,
-              },
-            ]
-            : []),
+          ...(data.spouseName ? [{
+            full_name: data.spouseName,
+            national_id: data.spouseNationalId || null,
+            role_in_family: "WIFE",
+            gender: "FEMALE",
+            smoker: false,
+            disability: false,
+          }] : []),
         ],
         incomes: [],
         medicalCases: [],
@@ -206,254 +142,211 @@ export function AddFamilyForm({ onSuccess, initialData }: { onSuccess?: () => vo
       };
 
       const response = await api.post("/v1/families", payload);
-
-      const vulnerabilityIndex = response.data?.vulnerabilityIndex ?? 0;
-      const classification = response.data?.classification ?? "متوسط";
-
-      // Update local UI store so existing v0 dashboards/tabs keep working
+      
       addFamily({
         ...data,
-        id: response.data.familyId,
-        vulnerabilityIndex,
-        classification,
+        id: response.data.familyId || crypto.randomUUID(),
+        headName: data.name,
+        classification: data.classification,
+        assistanceDecision: data.assistanceDecision,
+        vulnerabilityIndex: 0,
       });
 
       reset();
-      toast.success(tf("toast_add_ok"));
+      toast.success("تم إضافة الأسرة بنجاح");
       onSuccess?.();
-    } catch (error: any) {
-      console.error("Family save error", error);
-      const message =
-        error.response?.data?.message ||
-        (isEdit ? tf("toast_edit_err") : tf("toast_add_err"));
-      toast.error(message);
+    } catch (error) {
+      console.error(error);
+      toast.error("حدث خطأ أثناء حفظ البيانات");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {/* ── Section 1: Basic Info ── */}
-      <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-        <User className="h-4 w-4" />
-        <span>{tf("section_basic")}</span>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="headName">{tf("headName")}</Label>
-        <Input id="headName" {...register("headName")} placeholder={tf("headNamePh")} />
-        {errors.headName && <p className="text-xs text-destructive">{errors.headName.message}</p>}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="wifeName">{tf("wifeName")}</Label>
-        <Input id="wifeName" {...register("wifeName")} placeholder={tf("wifeNamePh")} />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="nationalId">{tf("nationalId")}</Label>
-          <Input id="nationalId" {...register("nationalId")} placeholder={tf("nationalIdPh")} dir="ltr" className="text-right" />
-          {errors.nationalId && <p className="text-xs text-destructive">{errors.nationalId.message}</p>}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white rounded-xl" dir="rtl">
+      {/* SECTION 1 - البيانات الأساسية */}
+      <div>
+        <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
+          <User className="h-5 w-5 text-green-600" />
+          <h3 className="text-green-600 font-bold text-lg">البيانات الأساسية</h3>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="wifeNationalId">{tf("wifeNationalId")}</Label>
-          <Input id="wifeNationalId" {...register("wifeNationalId")} placeholder={tf("nationalIdPh")} dir="ltr" className="text-right" />
-          {errors.wifeNationalId && <p className="text-xs text-destructive">{errors.wifeNationalId.message}</p>}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* ── Section 2: Contact ── */}
-      <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-        <Phone className="h-4 w-4" />
-        <span>{tf("section_contact")}</span>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="phone">{tf("phone")}</Label>
-          <Input id="phone" {...register("phone")} placeholder={tf("phonePh")} dir="ltr" className="text-right" />
-          {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone2">{tf("phone2")}</Label>
-          <Input id="phone2" {...register("phone2")} placeholder={tf("phonePh")} dir="ltr" className="text-right" />
-          {errors.phone2 && <p className="text-xs text-destructive">{errors.phone2.message}</p>}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="address">{tf("address")}</Label>
-          <div className="flex items-start gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground mt-2.5 shrink-0" />
-            <Input id="address" {...register("address")} placeholder={tf("addressPh")} className="flex-1" />
-          </div>
-          {errors.address && <p className="text-xs text-destructive me-6">{errors.address.message}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label>{tf("housingType")}</Label>
-          <Select
-            defaultValue={watch("housingType") || "RENT"}
-            onValueChange={(v) => setValue("housingType", v, { shouldValidate: true })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={tf("housingPlaceholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              {HOUSING_VALUES.map((hv) => (
-                <SelectItem key={hv} value={hv}>
-                  {tDict(`housing.${hv}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.housingType && <p className="text-xs text-destructive">{errors.housingType.message}</p>}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* ── Section 3: Financial ── */}
-      <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-        <CreditCard className="h-4 w-4" />
-        <span>{tf("section_financial")}</span>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="meezaCard">{tf("meezaCard")}</Label>
-        <Input id="meezaCard" {...register("meezaCard")} placeholder={tf("meezaPh")} dir="ltr" className="text-right" />
-        {errors.meezaCard && <p className="text-xs text-destructive">{errors.meezaCard.message}</p>}
-        <p className="text-[11px] text-muted-foreground">{tf("meezaHint")}</p>
-      </div>
-
-      <Separator />
-
-      {/* ── Section 4: Classification ── */}
-      <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-        <FileText className="h-4 w-4" />
-        <span>{tf("section_classification")}</span>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>{tf("category")}</Label>
-          <Select onValueChange={(val) => setValue("category", val, { shouldValidate: true })}>
-            <SelectTrigger>
-              <SelectValue placeholder={tf("categoryPh")} />
-            </SelectTrigger>
-            <SelectContent>
-              {CASE_CATEGORIES.map((cat) => (
-                <SelectItem key={cat.value} value={cat.key}>
-                  {dictLabel(tDict, "caseCategories", cat)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.category && <p className="text-xs text-destructive">{errors.category.message}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label>{tf("aidDecision")}</Label>
-          <Select onValueChange={(val) => setValue("aidDecision", val, { shouldValidate: true })}>
-            <SelectTrigger>
-              <SelectValue placeholder={tf("aidDecisionPh")} />
-            </SelectTrigger>
-            <SelectContent>
-              {AID_DECISIONS.map((aid) => (
-                <SelectItem key={aid.value} value={aid.key}>
-                  {dictLabel(tDict, "aidDecisions", aid)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.aidDecision && <p className="text-xs text-destructive">{errors.aidDecision.message}</p>}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="categoryReason">{tf("categoryReason")}</Label>
-        <Textarea
-          id="categoryReason"
-          {...register("categoryReason")}
-          placeholder={tf("categoryReasonPh")}
-          rows={2}
-        />
-        {errors.categoryReason && <p className="text-xs text-destructive">{errors.categoryReason.message}</p>}
-      </div>
-
-      <Separator />
-
-      {/* ── Section 5: Aid Amount ── */}
-      <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-        <HandCoins className="h-4 w-4" />
-        <span>{tf("section_aid")}</span>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="monthlyAidAmount">{tf("monthlyAidAmount")}</Label>
-        <Input
-          id="monthlyAidAmount"
-          type="number"
-          {...register("monthlyAidAmount")}
-          min={0}
-          max={9999}
-          placeholder={tf("monthlyAidPlaceholder")}
-          dir="ltr"
-          className="text-right"
-        />
-        {errors.monthlyAidAmount && <p className="text-xs text-destructive">{errors.monthlyAidAmount.message}</p>}
-        <p className="text-[11px] text-muted-foreground">{tf("monthlyAidHint")}</p>
-      </div>
-
-      <Separator />
-
-      {/* ── Section 6: Verification ── */}
-      <div className="space-y-4 rounded-xl bg-secondary/50 p-4">
-        <div className="flex items-center justify-between">
+        
+        <div className="space-y-4">
           <div>
-            <Label className="text-sm font-medium">{tf("fieldResearchTitle")}</Label>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{tf("fieldResearchHint")}</p>
+            <Label className="text-sm text-gray-600 mb-1 text-right block">اسم رب الأسرة *</Label>
+            <Input 
+              {...register("name")} 
+              placeholder="الاسم الرباعي"
+              className={`border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 text-right text-gray-800 placeholder-gray-400 w-full`}
+            />
+            {errors.name && <p className="text-red-500 text-xs mt-1 text-right">{errors.name.message}</p>}
           </div>
-          <Switch
-            checked={fieldResearchDone}
-            onCheckedChange={(val) => setValue("fieldResearchDone", val)}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
+          
           <div>
-            <Label className="text-sm font-medium">{tf("dataVerifiedTitle")}</Label>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{tf("dataVerifiedHint")}</p>
+            <Label className="text-sm text-gray-600 mb-1 text-right block">اسم الزوجة</Label>
+            <Input 
+              {...register("spouseName")} 
+              placeholder="اسم الزوجة (يُستخدم لتسمية ملف PDF)"
+              className={`border ${errors.spouseName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 text-right text-gray-800 placeholder-gray-400 w-full`}
+            />
+            {errors.spouseName && <p className="text-red-500 text-xs mt-1 text-right">{errors.spouseName.message}</p>}
           </div>
-          <Switch
-            checked={dataVerified}
-            onCheckedChange={(val) => setValue("dataVerified", val)}
-          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-2">
+              <Label className="text-sm text-gray-600 mb-1 text-right block">الرقم القومي لرب الأسرة *</Label>
+              <Input 
+                {...register("nationalId")} 
+                placeholder="رقم 14"
+                maxLength={14}
+                dir="ltr"
+                className={`border ${errors.nationalId ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 text-right text-gray-800 placeholder-gray-400 w-full`}
+              />
+              {errors.nationalId && <p className="text-red-500 text-xs mt-1 text-right">{errors.nationalId.message}</p>}
+            </div>
+            <div className="sm:col-span-1">
+              <Label className="text-sm text-gray-600 mb-1 text-right block">الرقم القومي للزوجة</Label>
+              <Input 
+                {...register("spouseNationalId")} 
+                placeholder="رقم 14"
+                maxLength={14}
+                dir="ltr"
+                className={`border ${errors.spouseNationalId ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 text-right text-gray-800 placeholder-gray-400 w-full`}
+              />
+              {errors.spouseNationalId && <p className="text-red-500 text-xs mt-1 text-right">{errors.spouseNationalId.message}</p>}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="pdfName">{tf("pdfName")}</Label>
-        <Input id="pdfName" {...register("pdfName")} placeholder={tf("pdfNamePh")} />
-        <p className="text-[11px] text-muted-foreground">{tf("pdfNameHint")}</p>
+      {/* SECTION 2 - بيانات الاتصال */}
+      <div>
+        <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
+          <Phone className="h-5 w-5 text-green-600" />
+          <h3 className="text-green-600 font-bold text-lg">بيانات الاتصال</h3>
+        </div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-row-reverse">
+            <div>
+              <Label className="text-sm text-gray-600 mb-1 text-right block">رقم الهاتف الأساسي *</Label>
+              <Input 
+                {...register("phone")} 
+                placeholder="01xxxxxxxx"
+                dir="ltr"
+                className={`border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 text-right text-gray-800 placeholder-gray-400 w-full`}
+              />
+              {errors.phone && <p className="text-red-500 text-xs mt-1 text-right">{errors.phone.message}</p>}
+            </div>
+            <div>
+              <Label className="text-sm text-gray-600 mb-1 text-right block">رقم هاتف بديل</Label>
+              <Input 
+                {...register("alternatePhone")} 
+                placeholder="01xxxxxxxx"
+                dir="ltr"
+                className={`border ${errors.alternatePhone ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 text-right text-gray-800 placeholder-gray-400 w-full`}
+              />
+              {errors.alternatePhone && <p className="text-red-500 text-xs mt-1 text-right">{errors.alternatePhone.message}</p>}
+            </div>
+          </div>
+          <div>
+            <Label className="text-sm text-gray-600 mb-1 text-right block">العنوان بالتفصيل *</Label>
+            <div className="relative">
+              <Input 
+                {...register("address")} 
+                placeholder="الشارع، الحي، المدينة، المحافظة"
+                className={`border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 text-right pr-10 text-gray-800 placeholder-gray-400 w-full`}
+              />
+              <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            </div>
+            {errors.address && <p className="text-red-500 text-xs mt-1 text-right">{errors.address.message}</p>}
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="notes">{tf("notes")}</Label>
-        <Textarea id="notes" {...register("notes")} placeholder={tf("notesPh")} rows={2} />
+      {/* SECTION 3 - البيانات المالية */}
+      <div>
+        <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
+          <CreditCard className="h-5 w-5 text-green-600" />
+          <h3 className="text-green-600 font-bold text-lg">البيانات المالية</h3>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <Label className="text-sm text-gray-600 mb-1 text-right block">رقم بطاقة ميزة (فيزا)</Label>
+            <Input 
+              {...register("meezaCardNumber")} 
+              placeholder="رقم البطاقة (16 رقم)"
+              maxLength={16}
+              dir="ltr"
+              className={`border ${errors.meezaCardNumber ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 text-right text-gray-800 placeholder-gray-400 w-full`}
+            />
+            <p className="text-xs text-gray-400 mt-1 text-right">رقم البطاقة المستخدمة لصرف المساعدات عبر البنك</p>
+            {errors.meezaCardNumber && <p className="text-red-500 text-xs mt-1 text-right">{errors.meezaCardNumber.message}</p>}
+          </div>
+        </div>
       </div>
-      {/* ── Submit Button ── */}
-      <Button
-        type="submit"
-        className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
-        disabled={loading}
-      >
-        {loading && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
-        {loading ? tf("saving") : isEdit ? tf("submitEdit") : tf("submitAdd")}
-      </Button>
+
+      {/* SECTION 4 - التصنيف والحالة */}
+      <div>
+        <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
+          <FileText className="h-5 w-5 text-green-600" />
+          <h3 className="text-green-600 font-bold text-lg">التصنيف والحالة</h3>
+        </div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-row-reverse">
+            <div>
+              <Label className="text-sm text-gray-600 mb-1 text-right block">تصنيف الحالة *</Label>
+              <Select onValueChange={(v) => setValue("classification", v, { shouldValidate: true })} value={classificationVal}>
+                <SelectTrigger className={`border ${errors.classification ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-green-500 text-right w-full bg-white`}>
+                  <SelectValue placeholder="اختر التصنيف" />
+                </SelectTrigger>
+                <SelectContent dir="rtl">
+                  <SelectItem value="CRITICAL">هش للغاية</SelectItem>
+                  <SelectItem value="HIGH_NEED">هش</SelectItem>
+                  <SelectItem value="MODERATE_NEED">ضعيف</SelectItem>
+                  <SelectItem value="LOW_NEED">متوسط</SelectItem>
+                  <SelectItem value="NOT_ELIGIBLE">خارج الأولوية</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.classification && <p className="text-red-500 text-xs mt-1 text-right">{errors.classification.message}</p>}
+            </div>
+            <div>
+              <Label className="text-sm text-gray-600 mb-1 text-right block">قرار المساعدة *</Label>
+              <Select onValueChange={(v) => setValue("assistanceDecision", v, { shouldValidate: true })} value={assistanceDecisionVal}>
+                <SelectTrigger className={`border ${errors.assistanceDecision ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-green-500 text-right w-full bg-white`}>
+                  <SelectValue placeholder="نوع المساعدة" />
+                </SelectTrigger>
+                <SelectContent dir="rtl">
+                  <SelectItem value="APPROVED">موافقة</SelectItem>
+                  <SelectItem value="PENDING">قيد المراجعة</SelectItem>
+                  <SelectItem value="REJECTED">رفض</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.assistanceDecision && <p className="text-red-500 text-xs mt-1 text-right">{errors.assistanceDecision.message}</p>}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* FOOTER */}
+      <div className="flex items-center justify-start gap-4 mt-8 pt-4 border-t border-gray-200">
+        <Button 
+          type="button" 
+          onClick={onSuccess}
+          variant="outline"
+          className="border border-gray-300 text-gray-600 rounded-lg px-8 py-2 bg-transparent hover:bg-gray-50 font-medium"
+        >
+          إلغاء
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={loading}
+          className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-8 py-2 font-medium"
+        >
+          {loading && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
+          حفظ
+        </Button>
+      </div>
     </form>
   );
 }
