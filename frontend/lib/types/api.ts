@@ -31,6 +31,7 @@ export interface AuthTokens {
 export interface PersonDto {
   id: string;
   name: string;
+  nationalId?: string;
   gender: string;
   birthDate: string;
   role: string;
@@ -58,6 +59,7 @@ export interface PersonDto {
 
 export interface DiseaseDto {
   id: string;
+  name?: string;
   treatmentCost: string;
   followup: string;
   workImpact: string;
@@ -65,6 +67,7 @@ export interface DiseaseDto {
 
 export interface DisabilityDto {
   id: string;
+  description?: string;
   workImpact: string;
   companion: string;
   treatmentCost: string;
@@ -83,6 +86,7 @@ export interface TemporaryBurdenDto {
   id: string;
   type: string;
   grade?: string | null;
+  description?: string | null;
 }
 
 export interface HouseholdDto {
@@ -92,23 +96,62 @@ export interface HouseholdDto {
   district: string;
   village: string;
   address?: string | null;
+  addressRegion?: string | null;
+  addressStreet?: string | null;
+  addressDetails?: string | null;
   housingType: string;
   hasRationCard: boolean;
   hasFamilySupport: boolean;
   hasFoodAid: boolean;
   bankAssetGrade?: string | null;
+  primaryPhone?: string | null;
+  secondaryPhone?: string | null;
+  whatsappPhone?: string | null;
+  socialStatus?: "MARRIED" | "DIVORCED" | "WIDOWED" | "SINGLE_OTHER" | null;
+  divorceYear?: string | null;
+  divorceDocNumber?: string | null;
+  marriageCount?: number | null;
+  deathCertNumber?: string | null;
+  deathDate?: string | null;
+  registrationDate?: string | null;
+  searchType?: "DESK" | "FIELD" | null;
+  isModest?: boolean | null;
+  officeDealings?: boolean | null;
   notes?: string | null;
+  fieldNotes?: string | null;
   isDraft: boolean;
   lastDraftSavedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
   persons?: PersonDto[];
   incomeSources?: IncomeSourceDto[];
   temporaryBurdens?: TemporaryBurdenDto[];
   scoreResults?: ScoreResultDto[];
+  dependentCount?: number;
+  totalPersons?: number;
+  totalMembersCount?: number;
+  totalMonthlyIncome?: number;
+  latestClassification?: string | null;
+  latestDecisionStatus?: string | null;
+  latestScore?: ScoreResultDto | null;
+  headName?: string | null;
+  spouseName?: string | null;
+  headNationalId?: string | null;
+  spouseNationalId?: string | null;
+  personTags?: {
+    hasDiseases: boolean;
+    hasDisabilities: boolean;
+    hasStudent: boolean;
+    hasBride: boolean;
+    hasOrphan: boolean;
+  };
+  pdfUrl?: string | null;
 }
 
 export interface LayerBreakdownItem {
   layerId: string;
   score: string;
+  cap?: string | number;
   cappedScore: string;
   triggeredRules?: Array<{
     ruleId: string;
@@ -124,6 +167,8 @@ export interface ScoreResultDto {
   householdId?: string;
   systemRecommendation: EligibilityLevel;
   humanDecision?: string;
+  classificationTag?: string | null;
+  assistanceType?: string | null;
   reviewStatus?: string;
   decisionNote?: string | null;
   vulnerabilityScore: string | number;

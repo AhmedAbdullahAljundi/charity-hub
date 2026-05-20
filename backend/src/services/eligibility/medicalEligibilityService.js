@@ -13,16 +13,15 @@
  */
 
 const prisma = require('../../config/prisma');
-const { MedicalCategory } = require('@prisma/client');
 const { AppError, NotFoundError } = require('../../utils/errors');
 
 /**
  * Base service intervals (in days) by medical category
  */
 const BASE_INTERVALS = {
-  [MedicalCategory.C]: 30,
-  [MedicalCategory.B]: 60,
-  [MedicalCategory.A]: 90,
+  'C': 30,
+  'B': 60,
+  'A': 90,
 };
 
 /**

@@ -9,7 +9,7 @@ function calculateL6(ctx) {
 
   for (const person of ctx.input.persons) {
     for (const disease of person.diseases) {
-      const multiplier = healthConditionIndex >= 3 ? toDecimal('0.5') : toDecimal('1.0');
+      const multiplier = healthConditionIndex >= 2 ? toDecimal('0.5') : toDecimal('1.0');
       const part = add(
         add(
           WEIGHTS.DISEASE.TREATMENT[disease.treatmentCost] ?? '0',
@@ -33,7 +33,7 @@ function calculateL6(ctx) {
     }
 
     for (const disability of person.disabilities) {
-      const multiplier = healthConditionIndex >= 3 ? toDecimal('0.5') : toDecimal('1.0');
+      const multiplier = healthConditionIndex >= 2 ? toDecimal('0.5') : toDecimal('1.0');
       const part = add(
         add(
           WEIGHTS.DISABILITY.WORK_IMPACT[disability.workImpact] ?? '0',

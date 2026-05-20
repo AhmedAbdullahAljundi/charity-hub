@@ -231,12 +231,12 @@ model User {
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String   @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
   expiresAt DateTime
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   revokedAt DateTime?
 
   @@index([userId])
@@ -250,6 +250,23 @@ model Household {
   district         String
   village          String
   address          String?
+  primaryPhone     String?
+  secondaryPhone   String?
+  whatsappPhone    String?
+  socialStatus     String?
+  divorceYear      Int?
+  divorceDocNumber String?
+  marriageCount    Int?
+  deathCertNumber  String?
+  deathDate        DateTime?
+  addressRegion    String?
+  addressStreet    String?
+  addressDetails   String?
+  registrationDate DateTime?
+  searchType       String?           @default("office")
+  isModest         Boolean           @default(false)
+  officeDealings   Boolean           @default(false)
+  fieldNotes       String?
   housingType      HousingType       @default(OWNED)
   hasRationCard    Boolean           @default(true)
   hasFamilySupport Boolean           @default(false)
@@ -279,6 +296,7 @@ model Person {
   householdId       String
   household         Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
   name              String
+  nationalId        String?
   gender            Gender
   birthDate         DateTime
   role              PersonRole
@@ -369,10 +387,10 @@ model IncomeSource {
 }
 
 model ScoreResult {
-  id        String    @id @default(cuid())
-  householdId String
-  household   Household @relation(fields: [householdId], references: [id])
-  calculatedAt DateTime @default(now())
+  id           String    @id @default(cuid())
+  householdId  String
+  household    Household @relation(fields: [householdId], references: [id])
+  calculatedAt DateTime  @default(now())
 
   engineVersion   String
   ruleVersion     String
@@ -390,6 +408,8 @@ model ScoreResult {
   humanDecision        HumanDecision    @default(PENDING)
   reviewStatus         ReviewStatus     @default(SCORE_READY)
   decisionNote         String?
+  classificationTag    String?
+  assistanceType       String?
   decidedById          String?
   decidedBy            User?            @relation("DecidedBy", fields: [decidedById], references: [id])
   decidedAt            DateTime?

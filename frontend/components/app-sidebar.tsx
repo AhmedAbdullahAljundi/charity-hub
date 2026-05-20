@@ -25,18 +25,33 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/lib/stores/authStore";
 
-const menuItems = [
-  { key: "dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { key: "households", href: "/dashboard/households", icon: Users },
-  { key: "medical", href: "/dashboard/medical", icon: HeartPulse },
-  { key: "education", href: "/dashboard/education", icon: GraduationCap },
-  { key: "volunteers", href: "/dashboard/volunteers", icon: Heart },
-  { key: "analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { key: "verification", href: "/dashboard/verification", icon: ShieldCheck },
-  { key: "admin", href: "/dashboard/admin", icon: Settings },
-  { key: "audit", href: "/dashboard/audit", icon: History },
-  { key: "reports", href: "/dashboard/reports", icon: FileText },
-  { key: "users", href: "/dashboard/users", icon: Shield },
+const menuGroups = [
+  {
+    label: "الرئيسية",
+    items: [
+      { key: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { key: "households", href: "/dashboard/households", icon: Users },
+      { key: "medical", href: "/dashboard/medical", icon: HeartPulse },
+      { key: "education", href: "/dashboard/education", icon: GraduationCap },
+      { key: "volunteers", href: "/dashboard/volunteers", icon: Heart },
+    ]
+  },
+  {
+    label: "الإدارة",
+    items: [
+      { key: "analytics", href: "/dashboard/analytics", icon: BarChart3 },
+      { key: "verification", href: "/dashboard/verification", icon: ShieldCheck },
+      { key: "reports", href: "/dashboard/reports", icon: FileText },
+    ]
+  },
+  {
+    label: "النظام",
+    items: [
+      { key: "audit", href: "/dashboard/audit", icon: History },
+      { key: "users", href: "/dashboard/users", icon: Shield },
+      { key: "admin", href: "/dashboard/admin", icon: Settings },
+    ]
+  }
 ];
 
 function SidebarContent({ collapsed }: { collapsed: boolean }) {
@@ -45,60 +60,83 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
   const user = useAuthStore((s) => s.user);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-center p-6 border-b border-sidebar-border">
+    <div className="flex h-full flex-col bg-slate-900 dark:bg-slate-950 text-slate-300">
+      <div className="flex items-center justify-center border-b border-white/10 px-4 py-4">
         {collapsed ? (
-          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
-            <span className="text-sidebar-primary-foreground font-bold text-lg">C</span>
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-500/15 ring-1 ring-green-400/20">
+            <span className="text-sm font-semibold text-green-300">C</span>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-2 text-center">
-            <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0">
-              <span className="text-sidebar-primary-foreground font-bold text-lg">C</span>
+          <div className="flex w-full items-center gap-3 text-start">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-green-500/15 ring-1 ring-green-400/20">
+              <span className="text-sm font-semibold text-green-300">C</span>
             </div>
-            <div>
-              <h1 className="text-sidebar-foreground font-bold text-lg leading-tight">CharityHub</h1>
-              <p className="text-sidebar-foreground/60 text-xs">Targeting Platform</p>
+            <div className="min-w-0">
+              <h1 className="text-base font-bold leading-tight">
+                <span className="text-white">Charity</span><span className="text-green-500">Hub</span>
+              </h1>
+              <p className="truncate text-xs text-slate-400">Case Management</p>
             </div>
           </div>
         )}
       </div>
 
-      {user && !collapsed && (
-        <div className="px-4 py-3 border-b border-sidebar-border">
-          <p className="text-sm font-medium text-sidebar-foreground truncate">{user.name}</p>
-          <Badge variant="secondary" className="mt-1 text-[10px]">
-            {user.role}
-          </Badge>
-        </div>
-      )}
-
-      <ScrollArea className="flex-1 py-4">
-        <nav className="flex flex-col gap-1 px-3">
-          {menuItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 justify-start rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
-                  collapsed && "justify-center px-2",
-                  isActive
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span className="flex-1 text-start">{t(item.key as "dashboard")}</span>}
-              </Link>
-            );
-          })}
+      <ScrollArea className="flex-1 py-3">
+        <nav className="flex flex-col gap-4">
+          {menuGroups.map((group, gIndex) => (
+            <div key={gIndex} className="flex flex-col gap-1 px-2.5">
+              {!collapsed && (
+                <div className="flex items-center gap-3 px-3 py-1 mb-1">
+                  <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">{group.label}</span>
+                  <div className="h-px flex-1 bg-slate-700/50"></div>
+                </div>
+              )}
+              {collapsed && gIndex > 0 && (
+                <div className="mx-4 my-2 h-px bg-slate-700/50"></div>
+              )}
+              {group.items.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center justify-start gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150 relative",
+                      collapsed && "justify-center px-2",
+                      isActive
+                        ? "bg-green-500/12 text-green-300 font-medium"
+                        : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    )}
+                  >
+                    {isActive && (
+                      <div className="absolute start-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-e-full bg-green-500" />
+                    )}
+                    <Icon className={cn("h-[18px] w-[18px] shrink-0", isActive ? "text-green-400" : "text-slate-400 group-hover:text-white")} />
+                    {!collapsed && <span className="flex-1 text-start">{t(item.key as "dashboard")}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
       </ScrollArea>
+
+      {user && !collapsed && (
+        <div className="border-t border-slate-700 px-4 py-3 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-600 text-white font-semibold text-sm">
+            {user.name.charAt(0)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm text-white">{user.name}</p>
+            <Badge className="mt-0.5 border-0 bg-slate-700 text-[10px] text-slate-300 hover:bg-slate-700">
+              {user.role}
+            </Badge>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -116,9 +154,9 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        "hidden lg:flex flex-col h-screen bg-sidebar border-sidebar-border transition-all duration-300 sticky top-0",
+        "sticky top-0 hidden h-screen flex-col border-slate-700 bg-slate-900 dark:bg-slate-950 transition-all duration-300 lg:flex",
         isRtl ? "border-s" : "border-e",
-        collapsed ? "w-[72px]" : "w-[260px]"
+        collapsed ? "w-[72px]" : "w-[248px]"
       )}
     >
       <SidebarContent collapsed={collapsed} />
@@ -126,7 +164,7 @@ export function AppSidebar({
         variant="ghost"
         size="icon"
         className={cn(
-          "absolute top-8 h-6 w-6 rounded-full bg-sidebar-primary text-sidebar-primary-foreground shadow-lg z-10",
+          "absolute top-6 z-10 h-6 w-6 rounded-full border border-slate-700 bg-slate-800 text-slate-300 shadow-sm hover:bg-slate-700",
           isRtl ? "-start-3" : "-end-3"
         )}
         onClick={() => setCollapsed(!collapsed)}
@@ -158,7 +196,7 @@ export function MobileSidebar() {
           <span className="sr-only">{t("mobile.open_menu")}</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side={locale === "ar" ? "right" : "left"} className="w-[260px] p-0 bg-sidebar">
+      <SheetContent side={locale === "ar" ? "right" : "left"} className="w-[260px] bg-slate-900 p-0">
         <SheetTitle className="sr-only">{t("mobile.menu_title")}</SheetTitle>
         <SidebarContent collapsed={false} />
       </SheetContent>

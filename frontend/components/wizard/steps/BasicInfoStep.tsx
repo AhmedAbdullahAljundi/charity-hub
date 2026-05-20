@@ -356,6 +356,11 @@ export function BasicInfoStep() {
           </div>
 
           <div className="space-y-2">
+            <Label>القرية / الحي</Label>
+            <Input value={fd.village ?? ""} onChange={(e) => setField("village", e.target.value)} placeholder="مثال: بهتيم" />
+          </div>
+
+          <div className="space-y-2">
             <Label>رقم / اسم المنطقة</Label>
             <Input value={fd.addressRegion ?? ""} onChange={(e) => setField("addressRegion", e.target.value)} placeholder="مثال: المنطقة الرابعة" />
           </div>

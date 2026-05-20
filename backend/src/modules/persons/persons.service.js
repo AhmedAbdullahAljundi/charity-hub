@@ -16,7 +16,7 @@ const personsService = {
   async create(user, householdId, body) {
     await assertHouseholdAccessById(user, householdId);
     const row = await prisma.person.create({
-      data: { ...body, householdId, birthDate: new Date(body.birthDate) },
+      data: { ...body, nationalId: body.nationalId, householdId, birthDate: new Date(body.birthDate) },
       include: { diseases: true, disabilities: true },
     });
     return serializePerson(row);
@@ -29,6 +29,7 @@ const personsService = {
       where: { id: personId },
       data: {
         ...body,
+        nationalId: body.nationalId,
         birthDate: body.birthDate ? new Date(body.birthDate) : undefined,
       },
       include: { diseases: true, disabilities: true },

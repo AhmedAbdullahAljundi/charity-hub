@@ -19,6 +19,7 @@ function maskHouseholdForViewer(household) {
     copy.persons = copy.persons.map((p) => ({
       ...p,
       name: maskName(p.name),
+      nationalId: null,
       birthDate: null,
       prisonSuspicion: null,
       diseases: p.diseases?.map((d) => ({ id: d.id, name: '***', treatmentCost: d.treatmentCost })),
@@ -36,6 +37,10 @@ function maskHouseholdForViewer(household) {
       monthlyAmount: null,
     }));
   }
+  if (copy.headName) copy.headName = maskName(copy.headName);
+  if (copy.spouseName) copy.spouseName = maskName(copy.spouseName);
+  if (copy.headNationalId) copy.headNationalId = null;
+  if (copy.spouseNationalId) copy.spouseNationalId = null;
   return copy;
 }
 

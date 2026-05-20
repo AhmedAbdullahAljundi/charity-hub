@@ -19,34 +19,277 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Plus, Trash2, AlertCircle } from "lucide-react";
+import {
+  createBurden,
+  createDisease,
+  createDisability,
+  deleteBurden,
+  deleteDisease,
+  deleteDisability,
+  updateBurden as updateBurdenRecord,
+  updateDisease as updateDiseaseRecord,
+  updateDisability as updateDisabilityRecord,
+} from "@/lib/api/households-api";
+import { toast } from "sonner";
+
+type BurdenType = "DEBT" | "INJURY" | "SURGERY" | "SON_IN_PRISON";
+type DiseaseDraft = NonNullable<ReturnType<typeof useWizardStore.getState>["formData"]["diseases"]>[number];
+type DisabilityDraft = NonNullable<ReturnType<typeof useWizardStore.getState>["formData"]["disabilities"]>[number];
+
+const BURDEN_CONFIG: Record<
+  BurdenType,
+  {
+    enabledKey: "hasDebt" | "hasInjury" | "hasSurgery" | "hasSonInPrison";
+    gradeKey: "debtGrade" | "injuryGrade" | "surgeryGrade" | "sonInPrisonGrade";
+    idKey: "debtId" | "injuryId" | "surgeryId" | "sonInPrisonId";
+    description: string;
+  }
+> = {
+  DEBT: {
+    enabledKey: "hasDebt",
+    gradeKey: "debtGrade",
+    idKey: "debtId",
+    description: "Temporary debt burden from wizard",
+  },
+  INJURY: {
+    enabledKey: "hasInjury",
+    gradeKey: "injuryGrade",
+    idKey: "injuryId",
+    description: "Temporary injury burden from wizard",
+  },
+  SURGERY: {
+    enabledKey: "hasSurgery",
+    gradeKey: "surgeryGrade",
+    idKey: "surgeryId",
+    description: "Temporary surgery burden from wizard",
+  },
+  SON_IN_PRISON: {
+    enabledKey: "hasSonInPrison",
+    gradeKey: "sonInPrisonGrade",
+    idKey: "sonInPrisonId",
+    description: "Temporary son in prison burden from wizard",
+  },
+};
 
 export function BurdensStep() {
+  const householdId = useWizardStore((s) => s.householdId);
   const fd = useWizardStore((s) => s.formData);
   const setField = useWizardStore((s) => s.setField);
+  const autoSave = useWizardStore((s) => s.autoSave);
   
   const burdens = fd.burdens ?? {};
   const diseases = fd.diseases ?? [];
   const disabilities = fd.disabilities ?? [];
-  const members = [...(fd.head?.name ? [{ id: fd.head.id, _localKey: "head", name: fd.head.name, role: "HEAD" }] : []), ...(fd.members || [])];
+  const members = [...(fd.head?.name ? [{ id: fd.head.personId || fd.head.id, _localKey: "head", name: fd.head.name, role: "HEAD" }] : []), ...(fd.members || [])];
 
-  const updateBurden = (key: string, value: any) => {
-    setField("burdens", { ...burdens, [key]: value });
+  const ensureHouseholdId = async () => {
+    if (householdId) return householdId;
+    await autoSave();
+    return useWizardStore.getState().householdId;
   };
 
-  const addDisease = () => {
-    setField("diseases", [
-      ...diseases,
-      { _localKey: `d-${Date.now()}`, treatmentCost: "NONE", followup: "NONE_OR_RARE", workImpact: "NONE" }
-    ]);
+  const getHeadPersistenceIds = async () => {
+    const hid = await ensureHouseholdId();
+    const headPersonId = useWizardStore.getState().formData.head?.personId || useWizardStore.getState().formData.head?.id;
+    if (!hid || !headPersonId) {
+      toast.warning("احفظ بيانات العائل أولاً في تابة الأفراد");
+      return null;
+    }
+    return { hid, headPersonId };
+  };
+
+  const normalizeTreatmentCost = (value?: string | null) => {
+    if (value === "PERIODIC_VERY_EXPENSIVE") return "VERY_EXPENSIVE";
+    return value || "NONE";
+  };
+
+  const normalizeDiseaseFollowup = (value?: string | null) => {
+    if (value === "PERIODIC_REGULAR") return "REGULAR";
+    if (value === "PERIODIC_EXPENSIVE") return "EXPENSIVE";
+    return value || "NONE_OR_RARE";
+  };
+
+  const normalizeDiseaseWorkImpact = (value?: string | null) => {
+    if (value === "SLIGHT") return "MINOR";
+    if (value === "SEVERE_BUT_WORKING") return "MAJOR_WORKS";
+    return value || "NONE";
+  };
+
+  const normalizeDisabilityWorkImpact = (value?: string | null) => {
+    if (value === "SLIGHT") return "LIMITED";
+    if (value === "REQUIRES_SPECIAL") return "SPECIAL_WORK";
+    return value || "NONE";
+  };
+
+  const normalizeCompanion = (value?: string | null) => {
+    if (value === "FULL_DEPENDENCE") return "FULLY_DEPENDENT";
+    return value || "NONE";
+  };
+
+  const persistDisease = async (idx: number, disease: DiseaseDraft) => {
+    const ids = await getHeadPersistenceIds();
+    if (!ids) return;
+
+    const body = {
+      name: disease.name || "",
+      treatmentCost: normalizeTreatmentCost(disease.treatmentCost),
+      followup: normalizeDiseaseFollowup(disease.followup),
+      workImpact: normalizeDiseaseWorkImpact(disease.workImpact),
+    };
+
+    try {
+      if (disease.id) {
+        await updateDiseaseRecord(ids.hid, ids.headPersonId, disease.id, body);
+      } else {
+        const saved = await createDisease(ids.hid, ids.headPersonId, body);
+        const latest = [...(useWizardStore.getState().formData.diseases ?? [])];
+        if (latest[idx]) {
+          latest[idx] = { ...latest[idx], id: saved.id, personId: ids.headPersonId };
+          setField("diseases", latest);
+        }
+      }
+    } catch {
+      toast.error("تعذر حفظ بيانات المرض. حاول مرة أخرى.");
+    }
+  };
+
+  const persistDisability = async (idx: number, disability: DisabilityDraft) => {
+    const ids = await getHeadPersistenceIds();
+    if (!ids) return;
+
+    const body = {
+      description: disability.description || "",
+      workImpact: normalizeDisabilityWorkImpact(disability.workImpact),
+      companion: normalizeCompanion(disability.companion),
+      treatmentCost: normalizeTreatmentCost(disability.treatmentCost),
+    };
+
+    try {
+      if (disability.id) {
+        await updateDisabilityRecord(ids.hid, ids.headPersonId, disability.id, body);
+      } else {
+        const saved = await createDisability(ids.hid, ids.headPersonId, body);
+        const latest = [...(useWizardStore.getState().formData.disabilities ?? [])];
+        if (latest[idx]) {
+          latest[idx] = { ...latest[idx], id: saved.id, personId: ids.headPersonId };
+          setField("disabilities", latest);
+        }
+      }
+    } catch {
+      toast.error("تعذر حفظ بيانات الإعاقة. حاول مرة أخرى.");
+    }
+  };
+
+  const persistBurdenToggle = async (type: BurdenType, enabled: boolean) => {
+    const config = BURDEN_CONFIG[type];
+    const current = useWizardStore.getState().formData.burdens ?? {};
+    const existingId = current[config.idKey];
+    const grade = current[config.gradeKey] || "A";
+    const next = { ...current, [config.enabledKey]: enabled };
+
+    try {
+      if (enabled && !existingId) {
+        const hid = await ensureHouseholdId();
+        if (!hid) {
+          toast.error("احفظ بيانات الأسرة الأساسية أولاً قبل حفظ الأحمال.");
+          setField("burdens", next);
+          return;
+        }
+        const saved = await createBurden(hid, {
+          type,
+          grade,
+          description: config.description,
+        });
+        setField("burdens", { ...next, [config.gradeKey]: saved.grade ?? grade, [config.idKey]: saved.id });
+      } else if (!enabled && existingId) {
+        const hid = await ensureHouseholdId();
+        if (!hid) {
+          toast.error("تعذر تحديد الأسرة لحذف الحمل.");
+          setField("burdens", next);
+          return;
+        }
+        await deleteBurden(hid, existingId);
+        setField("burdens", { ...next, [config.idKey]: undefined });
+      } else {
+        setField("burdens", next);
+      }
+    } catch {
+      toast.error("تعذر حفظ بيانات الأحمال. حاول مرة أخرى.");
+    }
+  };
+
+  const persistBurdenGrade = async (type: BurdenType, grade: string) => {
+    const config = BURDEN_CONFIG[type];
+    const current = useWizardStore.getState().formData.burdens ?? {};
+    const existingId = current[config.idKey];
+    const enabled = Boolean(current[config.enabledKey]);
+    const next = { ...current, [config.gradeKey]: grade };
+
+    try {
+      if (existingId) {
+        const hid = await ensureHouseholdId();
+        if (!hid) {
+          toast.error("تعذر تحديد الأسرة لتحديث درجة الحمل.");
+          setField("burdens", next);
+          return;
+        }
+        await updateBurdenRecord(hid, existingId, { grade });
+      } else if (enabled) {
+        const hid = await ensureHouseholdId();
+        if (!hid) {
+          toast.error("احفظ بيانات الأسرة الأساسية أولاً قبل حفظ الأحمال.");
+          setField("burdens", next);
+          return;
+        }
+        const saved = await createBurden(hid, {
+          type,
+          grade,
+          description: config.description,
+        });
+        next[config.idKey] = saved.id;
+      }
+      setField("burdens", next);
+    } catch {
+      toast.error("تعذر تحديث درجة الحمل. حاول مرة أخرى.");
+    }
+  };
+
+  const addDisease = async () => {
+    const draft = { _localKey: `d-${Date.now()}`, treatmentCost: "NONE", followup: "NONE_OR_RARE", workImpact: "NONE" };
+    const ids = await getHeadPersistenceIds();
+    if (!ids) return;
+    try {
+      const saved = await createDisease(ids.hid, ids.headPersonId, {
+        name: "",
+        treatmentCost: "NONE",
+        followup: "NONE_OR_RARE",
+        workImpact: "NONE",
+      });
+      setField("diseases", [...diseases, { ...draft, id: saved.id, personId: ids.headPersonId }]);
+    } catch {
+      toast.error("تعذر حفظ بيانات المرض. حاول مرة أخرى.");
+    }
   };
 
   const updateDisease = (idx: number, key: string, value: any) => {
     const next = [...diseases];
     next[idx] = { ...next[idx], [key]: value };
     setField("diseases", next);
+    void persistDisease(idx, next[idx]);
   };
 
-  const removeDisease = (idx: number) => {
+  const removeDisease = async (idx: number) => {
+    const disease = diseases[idx];
+    if (disease?.id) {
+      const ids = await getHeadPersistenceIds();
+      if (!ids) return;
+      try {
+        await deleteDisease(ids.hid, ids.headPersonId, disease.id);
+      } catch {
+        toast.error("تعذر حذف المرض. حاول مرة أخرى.");
+        return;
+      }
+    }
     setField("diseases", diseases.filter((_, i) => i !== idx));
   };
 
@@ -65,20 +308,42 @@ export function BurdensStep() {
     return score;
   };
 
-  const addDisability = () => {
-    setField("disabilities", [
-      ...disabilities,
-      { _localKey: `dis-${Date.now()}`, workImpact: "NONE", companion: "NONE", treatmentCost: "NONE" }
-    ]);
+  const addDisability = async () => {
+    const draft = { _localKey: `dis-${Date.now()}`, workImpact: "NONE", companion: "NONE", treatmentCost: "NONE" };
+    const ids = await getHeadPersistenceIds();
+    if (!ids) return;
+    try {
+      const saved = await createDisability(ids.hid, ids.headPersonId, {
+        description: "",
+        workImpact: "NONE",
+        companion: "NONE",
+        treatmentCost: "NONE",
+      });
+      setField("disabilities", [...disabilities, { ...draft, id: saved.id, personId: ids.headPersonId }]);
+    } catch {
+      toast.error("تعذر حفظ بيانات الإعاقة. حاول مرة أخرى.");
+    }
   };
 
   const updateDisability = (idx: number, key: string, value: any) => {
     const next = [...disabilities];
     next[idx] = { ...next[idx], [key]: value };
     setField("disabilities", next);
+    void persistDisability(idx, next[idx]);
   };
 
-  const removeDisability = (idx: number) => {
+  const removeDisability = async (idx: number) => {
+    const disability = disabilities[idx];
+    if (disability?.id) {
+      const ids = await getHeadPersistenceIds();
+      if (!ids) return;
+      try {
+        await deleteDisability(ids.hid, ids.headPersonId, disability.id);
+      } catch {
+        toast.error("تعذر حذف الإعاقة. حاول مرة أخرى.");
+        return;
+      }
+    }
     setField("disabilities", disabilities.filter((_, i) => i !== idx));
   };
 
@@ -133,12 +398,12 @@ export function BurdensStep() {
               <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border">
                 <div className="flex items-center justify-between">
                   <Label>توجد ديون مؤثرة؟</Label>
-                  <Switch checked={burdens.hasDebt ?? false} onCheckedChange={(v) => updateBurden("hasDebt", v)} />
+                  <Switch checked={burdens.hasDebt ?? false} onCheckedChange={(v) => void persistBurdenToggle("DEBT", v)} />
                 </div>
                 {burdens.hasDebt && (
                   <div className="space-y-2 pt-2 border-t">
                     <Label className="text-xs">درجة الدين</Label>
-                    <Select value={burdens.debtGrade ?? "A"} onValueChange={(v) => updateBurden("debtGrade", v)}>
+                    <Select value={burdens.debtGrade ?? "A"} onValueChange={(v) => void persistBurdenGrade("DEBT", v)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="A">A — دين بسيط يُدار (0.2)</SelectItem>
@@ -155,12 +420,12 @@ export function BurdensStep() {
               <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border">
                 <div className="flex items-center justify-between">
                   <Label>توجد إصابات مؤثرة؟</Label>
-                  <Switch checked={burdens.hasInjury ?? false} onCheckedChange={(v) => updateBurden("hasInjury", v)} />
+                  <Switch checked={burdens.hasInjury ?? false} onCheckedChange={(v) => void persistBurdenToggle("INJURY", v)} />
                 </div>
                 {burdens.hasInjury && (
                   <div className="space-y-2 pt-2 border-t">
                     <Label className="text-xs">درجة الإصابة</Label>
-                    <Select value={burdens.injuryGrade ?? "A"} onValueChange={(v) => updateBurden("injuryGrade", v)}>
+                    <Select value={burdens.injuryGrade ?? "A"} onValueChange={(v) => void persistBurdenGrade("INJURY", v)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="A">A — إصابة بسيطة (0.2)</SelectItem>
@@ -177,12 +442,12 @@ export function BurdensStep() {
               <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border">
                 <div className="flex items-center justify-between">
                   <Label>توجد عمليات جراحية؟</Label>
-                  <Switch checked={burdens.hasSurgery ?? false} onCheckedChange={(v) => updateBurden("hasSurgery", v)} />
+                  <Switch checked={burdens.hasSurgery ?? false} onCheckedChange={(v) => void persistBurdenToggle("SURGERY", v)} />
                 </div>
                 {burdens.hasSurgery && (
                   <div className="space-y-2 pt-2 border-t">
                     <Label className="text-xs">درجة العملية</Label>
-                    <Select value={burdens.surgeryGrade ?? "A"} onValueChange={(v) => updateBurden("surgeryGrade", v)}>
+                    <Select value={burdens.surgeryGrade ?? "A"} onValueChange={(v) => void persistBurdenGrade("SURGERY", v)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="A">A (0.3)</SelectItem>
@@ -209,7 +474,7 @@ export function BurdensStep() {
             
             {diseases.map((d, idx) => (
               <div key={d.id ?? d._localKey} className="bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-xl p-4 relative">
-                <Button variant="ghost" size="icon" className="absolute top-2 left-2 text-rose-500 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/50" onClick={() => removeDisease(idx)}>
+                <Button variant="ghost" size="icon" className="absolute top-2 left-2 text-rose-500 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/50" onClick={() => void removeDisease(idx)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
                 
@@ -285,7 +550,7 @@ export function BurdensStep() {
               </div>
             )}
 
-            <Button variant="outline" className="w-full border-dashed" onClick={addDisease}>
+            <Button variant="outline" className="w-full border-dashed" onClick={() => void addDisease()}>
               <Plus className="w-4 h-4 me-2" /> إضافة مرض مزمن
             </Button>
             
@@ -301,7 +566,7 @@ export function BurdensStep() {
             
             {disabilities.map((d, idx) => (
               <div key={d.id ?? d._localKey} className="bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 rounded-xl p-4 relative">
-                <Button variant="ghost" size="icon" className="absolute top-2 left-2 text-orange-500 hover:text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900/50" onClick={() => removeDisability(idx)}>
+                <Button variant="ghost" size="icon" className="absolute top-2 left-2 text-orange-500 hover:text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900/50" onClick={() => void removeDisability(idx)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
                 
@@ -370,7 +635,7 @@ export function BurdensStep() {
               </div>
             ))}
 
-            <Button variant="outline" className="w-full border-dashed" onClick={addDisability}>
+            <Button variant="outline" className="w-full border-dashed" onClick={() => void addDisability()}>
               <Plus className="w-4 h-4 me-2" /> إضافة إعاقة
             </Button>
             

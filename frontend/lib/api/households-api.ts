@@ -1,5 +1,12 @@
 import { api } from "./client";
-import type { ApiResponse, HouseholdDto, PaginatedMeta, PersonDto, IncomeSourceDto } from "@/lib/types/api";
+import type {
+  ApiResponse,
+  HouseholdDto,
+  PaginatedMeta,
+  PersonDto,
+  IncomeSourceDto,
+  TemporaryBurdenDto,
+} from "@/lib/types/api";
 
 export async function listHouseholds(params?: Record<string, string | number | boolean | undefined>) {
   const { data } = await api.get<ApiResponse<HouseholdDto[]> & { meta: PaginatedMeta }>("/households", {
@@ -94,10 +101,34 @@ export async function updateIncome(householdId: string, iid: string, body: Recor
   return data.data!;
 }
 
+export async function deleteIncome(householdId: string, iid: string) {
+  await api.delete(`/households/${householdId}/income/${iid}`);
+}
+
 export async function verifyIncome(householdId: string, iid: string, body: Record<string, unknown>) {
   const { data } = await api.patch<ApiResponse<IncomeSourceDto>>(
     `/households/${householdId}/income/${iid}/verify`,
     body
   );
   return data.data!;
+}
+
+export async function createBurden(householdId: string, body: Record<string, unknown>) {
+  const { data } = await api.post<ApiResponse<TemporaryBurdenDto>>(
+    `/households/${householdId}/burdens`,
+    body
+  );
+  return data.data!;
+}
+
+export async function updateBurden(householdId: string, bid: string, body: Record<string, unknown>) {
+  const { data } = await api.put<ApiResponse<TemporaryBurdenDto>>(
+    `/households/${householdId}/burdens/${bid}`,
+    body
+  );
+  return data.data!;
+}
+
+export async function deleteBurden(householdId: string, bid: string) {
+  await api.delete(`/households/${householdId}/burdens/${bid}`);
 }

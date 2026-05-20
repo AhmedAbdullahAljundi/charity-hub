@@ -1,14 +1,19 @@
 "use client";
 
 import { create } from "zustand";
-import { updateHousehold, createHousehold } from "@/lib/api/households-api";
+import { updateHousehold, createHousehold, createPerson, updatePerson } from "@/lib/api/households-api";
 import { useScoringStore } from "./scoringStore";
-import type { HouseholdDto, PersonDto, IncomeSourceDto } from "@/lib/types/api";
+import type { HouseholdDto, PersonDto } from "@/lib/types/api";
+import { toast } from "sonner";
 
 export type AutosaveStatus = "idle" | "saving" | "synced" | "error";
 
 export interface WizardPersonForm extends Partial<PersonDto> {
   _localKey?: string;
+  personId?: string;
+  nationalId?: string;
+  relationship?: string;
+  notes?: string;
   hasDisease?: boolean;
   hasDisability?: boolean;
   diseasesDraft?: Array<Partial<{ id?: string; treatmentCost: string; followup: string; workImpact: string }>>;
@@ -52,12 +57,17 @@ export interface WizardFormData {
   burdens?: {
     hasDebt?: boolean;
     debtGrade?: string;
+    debtId?: string;
     hasInjury?: boolean;
     injuryGrade?: string;
+    injuryId?: string;
     hasSurgery?: boolean;
     surgeryGrade?: string;
+    surgeryId?: string;
     hasSonInPrison?: boolean;
     sonInPrisonUnmarried?: boolean;
+    sonInPrisonGrade?: string;
+    sonInPrisonId?: string;
     hasSmoking?: boolean;
     hasDrugs?: boolean;
     hasBegging?: boolean;
@@ -154,6 +164,42 @@ const initialForm: WizardFormData = {
   income: {},
 };
 
+function extractNationalIdInfo(nationalId?: string) {
+  if (!nationalId || !/^[23]\d{13}$/.test(nationalId)) return null;
+  const century = nationalId[0] === "2" ? 1900 : 2000;
+  const year = century + Number(nationalId.substring(1, 3));
+  const month = Number(nationalId.substring(3, 5));
+  const day = Number(nationalId.substring(5, 7));
+  const genderDigit = Number(nationalId.substring(12, 13));
+  return {
+    gender: genderDigit % 2 === 0 ? "FEMALE" : "MALE",
+    birthDate: new Date(Date.UTC(year, month - 1, day)).toISOString().split("T")[0],
+  };
+}
+
+function buildHeadPayload(formData: WizardFormData) {
+  const head = formData.head;
+  if (!head?.name) return null;
+  const nationalIdInfo = extractNationalIdInfo(head.nationalId);
+  const maritalStatus = formData.socialStatus === "SINGLE_OTHER" ? "SINGLE" : formData.socialStatus || "MARRIED";
+  const payload: Record<string, unknown> = {
+    name: head.name,
+    nationalId: head.nationalId,
+    gender: head.gender || nationalIdInfo?.gender || "MALE",
+    birthDate: head.birthDate || nationalIdInfo?.birthDate,
+    role: "HEAD",
+    isHead: true,
+    residencyStatus: head.residencyStatus,
+    employmentType: head.employmentType || "NONE",
+    educationLevel: head.educationLevel || "ILLITERATE",
+    maritalStatus,
+  };
+  if (formData.socialStatus === "DIVORCED") {
+    payload.alimonyStatus = formData.alimonyStatus || null;
+  }
+  return payload;
+}
+
 function setNested(obj: WizardFormData, path: string, value: unknown): WizardFormData {
   const next = { ...obj };
   const parts = path.split(".");
@@ -203,16 +249,34 @@ export const useWizardStore = create<WizardState>((set, get) => ({
     set({ autosaveStatus: "saving" });
     try {
       const payload = {
+        code: formData.code,
         governorate: formData.governorate,
         district: formData.district,
         village: formData.village,
         address: formData.address,
+        addressRegion: formData.addressRegion,
+        addressStreet: formData.addressStreet,
+        addressDetails: formData.addressDetails,
         housingType: formData.housingType,
         hasRationCard: formData.hasRationCard,
         hasFamilySupport: formData.hasFamilySupport,
         hasFoodAid: formData.hasFoodAid,
         bankAssetGrade: formData.bankAssetGrade,
+        primaryPhone: formData.primaryPhone,
+        secondaryPhone: formData.secondaryPhone,
+        whatsappPhone: formData.whatsappPhone,
+        socialStatus: formData.socialStatus,
+        divorceYear: formData.divorceYear,
+        divorceDocNumber: formData.divorceDocNumber,
+        marriageCount: formData.marriageCount,
+        deathCertNumber: formData.deathCertNumber,
+        deathDate: formData.deathDate,
+        registrationDate: formData.registrationDate,
+        searchType: formData.searchType,
+        isModest: formData.isModest,
+        officeDealings: formData.officeDealings,
         notes: formData.notes,
+        fieldNotes: formData.fieldNotes,
         isDraft: true,
       };
 
@@ -229,6 +293,22 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         await updateHousehold(id, payload);
       }
 
+      const headPayload = buildHeadPayload(formData);
+      if (id && headPayload?.birthDate) {
+        const headId = formData.head?.personId || formData.head?.id;
+        const savedHead = headId
+          ? await updatePerson(id, headId, headPayload)
+          : await createPerson(id, headPayload);
+        const nextFormData = {
+          ...get().formData,
+          head: { ...get().formData.head, ...savedHead, personId: savedHead.id },
+        };
+        set({
+          formData: nextFormData,
+          conditionalFlags: deriveFlags(nextFormData),
+        });
+      }
+
       set({
         isDirty: false,
         autosaveStatus: "synced",
@@ -239,6 +319,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         await useScoringStore.getState().fetchLatest(id);
       }
     } catch {
+      toast.error("تعذر حفظ بيانات الاستقصاء. حاول مرة أخرى.");
       set({ autosaveStatus: "error" });
     }
   },
@@ -267,22 +348,70 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       };
     }
     const formData: WizardFormData = {
+      code: h.code,
       governorate: h.governorate,
       district: h.district,
       village: h.village,
       address: h.address ?? undefined,
+      addressRegion: h.addressRegion ?? undefined,
+      addressStreet: h.addressStreet ?? undefined,
+      addressDetails: h.addressDetails ?? undefined,
       housingType: h.housingType,
       hasRationCard: h.hasRationCard,
       hasFamilySupport: h.hasFamilySupport,
       hasFoodAid: h.hasFoodAid,
       bankAssetGrade: h.bankAssetGrade,
+      primaryPhone: h.primaryPhone ?? undefined,
+      secondaryPhone: h.secondaryPhone ?? undefined,
+      whatsappPhone: h.whatsappPhone ?? undefined,
+      socialStatus: h.socialStatus ?? undefined,
+      divorceYear: h.divorceYear ?? undefined,
+      divorceDocNumber: h.divorceDocNumber ?? undefined,
+      marriageCount: h.marriageCount ?? undefined,
+      deathCertNumber: h.deathCertNumber ?? undefined,
+      deathDate: h.deathDate ?? undefined,
+      registrationDate: h.registrationDate ?? undefined,
+      searchType: h.searchType ?? undefined,
+      isModest: h.isModest ?? undefined,
+      officeDealings: h.officeDealings ?? undefined,
       notes: h.notes ?? undefined,
-      head: head ? { ...head, hasDisease: (head.diseases?.length ?? 0) > 0, hasDisability: (head.disabilities?.length ?? 0) > 0 } : initialForm.head,
+      fieldNotes: h.fieldNotes ?? undefined,
+      head: head ? { ...head, personId: head.id, hasDisease: (head.diseases?.length ?? 0) > 0, hasDisability: (head.disabilities?.length ?? 0) > 0 } : initialForm.head,
       members: members.map((m) => ({
         ...m,
         hasDisease: (m.diseases?.length ?? 0) > 0,
         hasDisability: (m.disabilities?.length ?? 0) > 0,
       })),
+      diseases: (head?.diseases ?? []).map((d) => ({
+        ...d,
+        personId: head.id,
+      })),
+      disabilities: (head?.disabilities ?? []).map((d) => ({
+        ...d,
+        personId: head.id,
+      })),
+      burdens: {
+        ...(h.temporaryBurdens ?? []).reduce<NonNullable<WizardFormData["burdens"]>>((acc, burden) => {
+          if (burden.type === "DEBT") {
+            acc.hasDebt = true;
+            acc.debtGrade = burden.grade ?? undefined;
+            acc.debtId = burden.id;
+          } else if (burden.type === "INJURY") {
+            acc.hasInjury = true;
+            acc.injuryGrade = burden.grade ?? undefined;
+            acc.injuryId = burden.id;
+          } else if (burden.type === "SURGERY") {
+            acc.hasSurgery = true;
+            acc.surgeryGrade = burden.grade ?? undefined;
+            acc.surgeryId = burden.id;
+          } else if (burden.type === "SON_IN_PRISON") {
+            acc.hasSonInPrison = true;
+            acc.sonInPrisonGrade = burden.grade ?? undefined;
+            acc.sonInPrisonId = burden.id;
+          }
+          return acc;
+        }, {}),
+      },
       income,
     };
     set({

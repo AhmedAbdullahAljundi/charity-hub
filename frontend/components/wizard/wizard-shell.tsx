@@ -68,6 +68,13 @@ export function WizardShell({
     if (activeTab < 5) setActiveTab((activeTab + 1) as 1|2|3|4|5);
   }, [autoSave, activeTab, setActiveTab, mode]);
 
+  const handleTabChange = useCallback(async (newTab: 1 | 2 | 3 | 4 | 5) => {
+    if (mode === "edit" && isDirty) {
+      await autoSave();
+    }
+    setActiveTab(newTab);
+  }, [autoSave, isDirty, mode, setActiveTab]);
+
   const onPrev = useCallback(() => {
     if (activeTab > 1) setActiveTab((activeTab - 1) as 1|2|3|4|5);
   }, [activeTab, setActiveTab]);
@@ -97,7 +104,7 @@ export function WizardShell({
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => void handleTabChange(tab.id)}
               className={cn(
                 "shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-all select-none border",
                 activeTab === tab.id

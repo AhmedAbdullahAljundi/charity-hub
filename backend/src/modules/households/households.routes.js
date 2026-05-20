@@ -6,6 +6,7 @@ const controller = require('./households.controller');
 const personsRoutes = require('../persons/persons.routes');
 const incomeRoutes = require('../income/income.routes');
 const scoringRoutes = require('../scoring/scoring.routes');
+const burdensRoutes = require('./burdens.routes');
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.post('/', requirePermission(PERMISSIONS.HOUSEHOLD_WRITE), controller.crea
 
 router.use('/:id/persons', personsRoutes);
 router.use('/:id/income', incomeRoutes);
+router.use('/:id/burdens', burdensRoutes);
 router.use('/:id', scoringRoutes);
 
 router.get('/:id', controller.get);

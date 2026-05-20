@@ -1,4 +1,4 @@
-const { ZERO, sum, toDecimal } = require('../../../../shared/utils/decimal');
+const { ZERO, sum, toDecimal, add } = require('../../../../shared/utils/decimal');
 const { WEIGHTS, LAYER_CAPS } = require('../../registry/weights');
 const { createLayerResult, triggeredRule } = require('../utils/layer-helpers');
 
@@ -91,18 +91,38 @@ function calculateL5(ctx) {
     }
   }
 
-  const bridePerson = input.persons.find((p) => p.isBride);
-  if (bridePerson?.brideHasSponsor) {
-    const w = weights.get('burden_bride_sponsor', WEIGHTS.BURDENS.BRIDE_SPONSOR);
-    contributions.push(w);
+  const personBrides = input.persons.filter((p) => {
+    const isSingle = p.maritalStatus == null || p.maritalStatus === 'SINGLE';
+    return (
+      p.gender === 'FEMALE' &&
+      p.age >= 13 &&
+      p.age <= 25 &&
+      isSingle &&
+      p.role === 'DEPENDENT_ADULT' &&
+      p.isBride === true
+    );
+  });
+
+  for (const bride of personBrides) {
+    const base = weights.get('burden_bride', WEIGHTS.BURDENS.BRIDE);
+    let brideScore = base;
+    const ruleParts = ['person bride'];
+
+    if (bride.brideHasSponsor) {
+      const sponsor = weights.get('burden_bride_sponsor', WEIGHTS.BURDENS.BRIDE_SPONSOR);
+      brideScore = add(brideScore, sponsor);
+      ruleParts.push('sponsor correction');
+    }
+
+    contributions.push(brideScore);
     rules.push(
       triggeredRule(
-        'burden_bride_sponsor',
-        'rules.burden_bride_sponsor',
-        'Bride has sponsor',
-        'WEIGHTS.BURDENS.BRIDE_SPONSOR',
-        w,
-        w
+        `burden_person_bride_${bride.id}`,
+        'rules.burden_bride',
+        `Bride ${bride.name || bride.id}: ${ruleParts.join(' + ')}`,
+        'WEIGHTS.BURDENS.BRIDE',
+        brideScore,
+        brideScore
       )
     );
   }

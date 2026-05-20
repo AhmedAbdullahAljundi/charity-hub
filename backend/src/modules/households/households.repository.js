@@ -10,16 +10,58 @@ const householdsRepository = {
   findMany(filters, pagination) {
     const { page = 1, limit = 20 } = pagination;
     const where = {};
+    const and = [];
 
     if (filters.governorate) where.governorate = filters.governorate;
     if (filters.district) where.district = filters.district;
     if (filters.isDraft !== undefined) where.isDraft = filters.isDraft === 'true' || filters.isDraft === true;
+    if (filters.search) {
+      const contains = String(filters.search).trim();
+      if (contains) {
+        and.push({
+          OR: [
+            { code: { contains, mode: 'insensitive' } },
+            { governorate: { contains, mode: 'insensitive' } },
+            { district: { contains, mode: 'insensitive' } },
+            { village: { contains, mode: 'insensitive' } },
+            { address: { contains, mode: 'insensitive' } },
+            { primaryPhone: { contains, mode: 'insensitive' } },
+            { secondaryPhone: { contains, mode: 'insensitive' } },
+            { whatsappPhone: { contains, mode: 'insensitive' } },
+            {
+              persons: {
+                some: {
+                  OR: [
+                    { name: { contains, mode: 'insensitive' } },
+                    { nationalId: { contains, mode: 'insensitive' } },
+                  ],
+                },
+              },
+            },
+          ],
+        });
+      }
+    }
 
     if (filters.eligibility) {
-      where.scoreResults = {
-        some: { systemRecommendation: filters.eligibility },
-      };
+      and.push({ scoreResults: { some: { systemRecommendation: filters.eligibility } } });
     }
+
+    if (filters.decisionStatus) {
+      and.push({ scoreResults: { some: { humanDecision: filters.decisionStatus } } });
+    }
+
+    if (filters.classification) {
+      and.push({
+        scoreResults: {
+          some: {
+            decisionNote: { contains: filters.classification, mode: 'insensitive' },
+          },
+        },
+      });
+    }
+
+    if (and.length) where.AND = and;
 
     return prisma.$transaction([
       prisma.household.findMany({
@@ -33,7 +75,7 @@ const householdsRepository = {
         },
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { updatedAt: 'desc' },
+        orderBy: buildOrderBy(filters.sort, filters.sortBy, filters.sortOrder),
       }),
       prisma.household.count({ where }),
     ]);
@@ -76,5 +118,35 @@ const householdsRepository = {
     });
   },
 };
+
+function buildOrderBy(sort, sortBy, sortOrder) {
+  const fallback = [{ updatedAt: 'desc' }];
+  const rawSort = sort || (sortBy ? `${sortBy}:${sortOrder || 'asc'}` : '');
+  if (!rawSort) return fallback;
+
+  const sortableColumns = {
+    code: 'code',
+    wifeName: 'updatedAt',
+    husbandName: 'updatedAt',
+    district: 'district',
+    address: 'district',
+    totalIncome: 'updatedAt',
+    normalizedPercent: 'updatedAt',
+    eligibility: 'updatedAt',
+    updatedAt: 'updatedAt',
+  };
+
+  const orderBy = String(rawSort)
+    .split(',')
+    .map((item) => {
+      const [column, direction] = item.split(':');
+      const field = sortableColumns[column];
+      if (!field) return null;
+      return { [field]: direction === 'desc' ? 'desc' : 'asc' };
+    })
+    .filter(Boolean);
+
+  return orderBy.length ? orderBy : fallback;
+}
 
 module.exports = { householdsRepository, householdInclude };

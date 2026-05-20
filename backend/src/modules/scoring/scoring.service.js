@@ -44,7 +44,7 @@ const scoringService = {
       where: { householdId },
       orderBy: { calculatedAt: 'desc' },
     });
-    if (!row) throw new NotFoundError('ScoreResult');
+    if (!row) return null;
     return serializeScoreResult(row);
   },
 

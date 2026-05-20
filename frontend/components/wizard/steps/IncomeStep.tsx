@@ -21,8 +21,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle2, Clock, Info, ShieldAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  createIncome,
+  deleteIncome,
+  updateIncome as updateIncomeSource,
+  verifyIncome,
+} from "@/lib/api/households-api";
+import { toast } from "sonner";
 
-const ALL_CHANNELS = [
+const ALL_CHANNELS: Array<{
+  key: string;
+  label: string;
+  critical: boolean;
+  requiresDivorce?: boolean;
+}> = [
   { key: "PENSION", label: "المعاش التأميني", critical: true },
   { key: "TAKAFUL_KARAMA", label: "تكافل وكرامة والضمان الاجتماعي", critical: false },
   { key: "CHARITY_1", label: "جمعية خيرية 1", critical: false },
@@ -34,9 +46,11 @@ const ALL_CHANNELS = [
 ] as const;
 
 export function IncomeStep() {
+  const householdId = useWizardStore((s) => s.householdId);
   const fd = useWizardStore((s) => s.formData);
   const flags = useWizardStore((s) => s.conditionalFlags);
   const setField = useWizardStore((s) => s.setField);
+  const autoSave = useWizardStore((s) => s.autoSave);
   const members = fd.members ?? [];
   const income = fd.income ?? {};
 
@@ -78,6 +92,77 @@ export function IncomeStep() {
       ...income,
       [channel]: { ...row, [field]: value }
     });
+  };
+
+  const ensureHouseholdId = async () => {
+    if (householdId) return householdId;
+    await autoSave();
+    return useWizardStore.getState().householdId;
+  };
+
+  const persistIncomeAmount = async (channel: string, amount: number) => {
+    const hid = await ensureHouseholdId();
+    if (!hid) {
+      toast.error("احفظ بيانات الأسرة الأساسية أولاً قبل حفظ الدخل.");
+      return;
+    }
+
+    const currentIncome = useWizardStore.getState().formData.income ?? {};
+    const row = currentIncome[channel] ?? { amount: 0, verified: "UNVERIFIED" };
+
+    try {
+      if (amount > 0 && !row.id) {
+        const saved = await createIncome(hid, { channel, monthlyAmount: amount });
+        setField("income", {
+          ...currentIncome,
+          [channel]: { ...row, amount, id: saved.id, verified: saved.verified },
+        });
+      } else if (amount > 0 && row.id) {
+        await updateIncomeSource(hid, row.id, { monthlyAmount: amount });
+        setField("income", {
+          ...currentIncome,
+          [channel]: { ...row, amount },
+        });
+      } else if (amount <= 0 && row.id) {
+        await deleteIncome(hid, row.id);
+        setField("income", {
+          ...currentIncome,
+          [channel]: { ...row, amount: 0, id: undefined, verified: "UNVERIFIED" },
+        });
+      }
+    } catch {
+      toast.error("تعذر حفظ مصدر الدخل. حاول مرة أخرى.");
+    }
+  };
+
+  const verifyIncomeSource = async (channel: string) => {
+    const hid = await ensureHouseholdId();
+    if (!hid) {
+      toast.error("احفظ بيانات الأسرة الأساسية أولاً قبل التوثيق.");
+      return;
+    }
+
+    const currentIncome = useWizardStore.getState().formData.income ?? {};
+    const row = currentIncome[channel];
+    if (!row?.id) {
+      toast.error("احفظ المبلغ أولاً قبل التوثيق");
+      return;
+    }
+
+    try {
+      const saved = await verifyIncome(hid, row.id, {
+        status: "VERIFIED",
+        note: "",
+        verified: "VERIFIED",
+        verificationNote: "",
+      });
+      setField("income", {
+        ...currentIncome,
+        [channel]: { ...row, verified: saved.verified, note: saved.verificationNote ?? "" },
+      });
+    } catch {
+      toast.error("تعذر توثيق مصدر الدخل. حاول مرة أخرى.");
+    }
   };
 
   const updateBurden = (key: string, value: any) => {
@@ -143,6 +228,7 @@ export function IncomeStep() {
                       className="h-8"
                       value={row.amount || ""} 
                       onChange={(e) => updateIncome(c.key, "amount", parseFloat(e.target.value) || 0)} 
+                      onBlur={(e) => void persistIncomeAmount(c.key, parseFloat(e.target.value) || 0)}
                     />
                   </div>
                   <div className="hidden sm:flex items-center">
@@ -151,19 +237,15 @@ export function IncomeStep() {
                     {row.verified === "UNVERIFIED" && <Badge variant="secondary" className="text-muted-foreground">غير موثق</Badge>}
                   </div>
                   <div>
-                    <Select 
-                      value={row.verified} 
-                      onValueChange={(v) => updateIncome(c.key, "verified", v)}
+                    <Button
+                      type="button"
+                      variant={row.verified === "VERIFIED" ? "secondary" : "outline"}
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => void verifyIncomeSource(c.key)}
                     >
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="UNVERIFIED">غير موثق</SelectItem>
-                        <SelectItem value="PENDING">قيد التحقق</SelectItem>
-                        <SelectItem value="VERIFIED">موثق ✓</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      {row.verified === "VERIFIED" ? "موثق ✓" : "توثيق"}
+                    </Button>
                   </div>
                 </div>
               );
@@ -261,12 +343,12 @@ export function IncomeStep() {
                 {/* BOX 4: الأصول والمشاريع */}
                 <div className="space-y-3 bg-muted/20 border rounded-lg p-4">
                   <h4 className="font-semibold text-primary">الأصول والمشاريع المملوكة</h4>
-                  <Select value={fd.bankAssetGrade ?? "NONE"} onValueChange={(v) => setField("bankAssetGrade", v)}>
+                  <Select value={fd.bankAssetGrade ?? "__NONE__"} onValueChange={(v) => setField("bankAssetGrade", v === "__NONE__" ? null : v)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="NONE">لا يوجد أصول</SelectItem>
+                      <SelectItem value="__NONE__">لا يوجد أصول</SelectItem>
                       <SelectItem value="A">A — أصول رمزية (حصالة أو بضاعة صغيرة) (-0.3)</SelectItem>
                       <SelectItem value="B">B — أصول بسيطة (محل أو سيارة قديمة) (-0.8)</SelectItem>
                       <SelectItem value="C">C — أصول متوسطة (عقار أو نشاط مستمر) (-1.2)</SelectItem>

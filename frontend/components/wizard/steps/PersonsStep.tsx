@@ -24,6 +24,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useWizardStore, WizardPersonForm } from "@/lib/stores/wizardStore";
+import {
+  createDisease,
+  createDisability,
+  createPerson,
+  deletePerson,
+  updatePerson,
+} from "@/lib/api/households-api";
+import { toast } from "sonner";
 
 function extractNationalIdInfo(nid: string) {
   if (!/^[23]\d{13}$/.test(nid)) return null;
@@ -43,13 +51,70 @@ function extractNationalIdInfo(nid: string) {
   return { gender, age, birthDate: birthDate.toISOString().split("T")[0] };
 }
 
+function normalizeRole(role?: string) {
+  if (role === "HEAD" || role === "SPOUSE" || role === "DEPENDENT_ADULT" || role === "CHILD") return role;
+  if (role === "زوج" || role === "زوجة") return "SPOUSE";
+  if (role === "مستقل" || role === "INDEPENDENT") return "OTHER";
+  return "OTHER";
+}
+
+function normalizeEmploymentQuality(value?: string | null) {
+  if (value === "SUFFICIENT" || value === "UNSTABLE" || value === "WEAK") return value;
+  if (value === "VERY_WEAK") return "WEAK";
+  if (value === "IRREGULAR" || value === "REGULAR_PARTIAL") return "UNSTABLE";
+  return null;
+}
+
+function normalizeStudentLevel(value?: string | null) {
+  const map: Record<string, string> = {
+    TODDLER: "CHILD",
+    SECONDARY_TECHNICAL_FEMALE: "SECONDARY_VOCATIONAL_FEMALE",
+    SECONDARY_TECHNICAL_MALE: "SECONDARY_VOCATIONAL_MALE",
+    UNIVERSITY_STEM: "UNIVERSITY_SCIENTIFIC",
+    UNIVERSITY_ARTS: "UNIVERSITY_HUMANITIES",
+  };
+  return value ? map[value] ?? value : null;
+}
+
+function normalizeTreatmentCost(value?: string | null) {
+  if (value === "PERIODIC_VERY_EXPENSIVE") return "VERY_EXPENSIVE";
+  return value || "NONE";
+}
+
+function normalizeDiseaseFollowup(value?: string | null) {
+  if (value === "PERIODIC_REGULAR") return "REGULAR";
+  if (value === "PERIODIC_EXPENSIVE") return "EXPENSIVE";
+  return value || "NONE_OR_RARE";
+}
+
+function normalizeDiseaseWorkImpact(value?: string | null) {
+  if (value === "SLIGHT") return "MINOR";
+  if (value === "SEVERE_BUT_WORKING") return "MAJOR_WORKS";
+  return value || "NONE";
+}
+
+function normalizeDisabilityWorkImpact(value?: string | null) {
+  if (value === "SLIGHT") return "LIMITED";
+  if (value === "REQUIRES_SPECIAL") return "SPECIAL_WORK";
+  return value || "NONE";
+}
+
+function normalizeCompanion(value?: string | null) {
+  if (value === "FULL_DEPENDENCE") return "FULLY_DEPENDENT";
+  return value || "NONE";
+}
+
 export function PersonsStep() {
-  const members = useWizardStore((s) => s.formData.members ?? []);
+  const householdId = useWizardStore((s) => s.householdId);
+  const fd = useWizardStore((s) => s.formData);
+  const members = fd.members ?? [];
   const setField = useWizardStore((s) => s.setField);
   const flags = useWizardStore((s) => s.conditionalFlags);
+  const autoSave = useWizardStore((s) => s.autoSave);
   
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [draft, setDraft] = useState<WizardPersonForm>({});
 
   const openNew = () => {
@@ -64,19 +129,133 @@ export function PersonsStep() {
     setIsModalOpen(true);
   };
 
-  const removeMember = (idx: number) => {
-    setField("members", members.filter((_, i) => i !== idx));
+  const ensureHouseholdId = async () => {
+    if (householdId) return householdId;
+    await autoSave();
+    return useWizardStore.getState().householdId;
   };
 
-  const saveMember = () => {
-    const next = [...members];
-    if (editingIdx !== null) {
-      next[editingIdx] = draft;
-    } else {
-      next.push(draft);
+  const removeMember = async (idx: number) => {
+    const member = members[idx];
+    try {
+      if (member?.id && householdId) {
+        await deletePerson(householdId, member.id);
+      }
+      setField("members", members.filter((_, i) => i !== idx));
+    } catch {
+      toast.error("تعذر حذف الفرد. حاول مرة أخرى.");
     }
-    setField("members", next);
-    setIsModalOpen(false);
+  };
+
+  const buildPersonPayload = (member: WizardPersonForm) => {
+    const info = member.nationalId ? extractNationalIdInfo(member.nationalId) : null;
+    const role = normalizeRole(member.role);
+    const gender = member.gender || info?.gender || "MALE";
+    const employmentType = member.employmentType || "NONE";
+    const isWorkingSon = role === "CHILD" && gender === "MALE" && employmentType !== "NONE";
+    const payload: Record<string, unknown> = {
+      name: member.name,
+      nationalId: member.nationalId,
+      gender,
+      birthDate: member.birthDate || info?.birthDate,
+      role,
+      isHead: false,
+      maritalStatus: member.maritalStatus || "SINGLE",
+      residencyStatus: "RESIDENT",
+      employmentType,
+      employmentQuality: normalizeEmploymentQuality(member.employmentQuality),
+      educationLevel: member.educationLevel || "ILLITERATE",
+      isStudent: member.isStudent || false,
+      studentLevel: normalizeStudentLevel(member.studentLevel),
+      isBride: member.isBride || false,
+      brideHasSponsor: member.brideHasSponsor || false,
+      isOrphan: member.isOrphan || false,
+      isSonContributor: isWorkingSon,
+      sonMarried: member.sonMarried || false,
+      sonSameHouse: member.sonSameHouse ?? true,
+      isPrisoner: member.isPrisoner || false,
+      prisonTerm: member.prisonTerm || null,
+    };
+    if (role === "SPOUSE" && fd.socialStatus === "DIVORCED") {
+      payload.alimonyStatus = fd.alimonyStatus || null;
+    }
+    return payload;
+  };
+
+  const saveMemberHealth = async (hid: string, pid: string, member: WizardPersonForm) => {
+    const diseases = [...(member.diseases ?? []), ...(member.diseasesDraft ?? [])];
+    const disabilities = [...(member.disabilities ?? []), ...(member.disabilitiesDraft ?? [])];
+    const savedDiseases: any[] = [];
+    const savedDisabilities: any[] = [];
+
+    for (const disease of diseases) {
+      if (!disease.id) {
+        const savedDisease = await createDisease(hid, pid, {
+          name: "name" in disease ? disease.name || "" : "",
+          treatmentCost: normalizeTreatmentCost(disease.treatmentCost),
+          followup: normalizeDiseaseFollowup(disease.followup),
+          workImpact: normalizeDiseaseWorkImpact(disease.workImpact),
+        });
+        savedDiseases.push({ ...disease, ...savedDisease, id: savedDisease.id });
+      } else {
+        savedDiseases.push(disease);
+      }
+    }
+
+    for (const disability of disabilities) {
+      if (!disability.id) {
+        const savedDisability = await createDisability(hid, pid, {
+          description: "description" in disability ? disability.description || "" : "",
+          workImpact: normalizeDisabilityWorkImpact(disability.workImpact),
+          companion: normalizeCompanion(disability.companion),
+          treatmentCost: normalizeTreatmentCost(disability.treatmentCost),
+        });
+        savedDisabilities.push({ ...disability, ...savedDisability, id: savedDisability.id });
+      } else {
+        savedDisabilities.push(disability);
+      }
+    }
+
+    return {
+      diseases: savedDiseases,
+      disabilities: savedDisabilities,
+      diseasesDraft: [],
+      disabilitiesDraft: [],
+    };
+  };
+
+  const saveMember = async () => {
+    setIsSaving(true);
+    try {
+      const hid = await ensureHouseholdId();
+      if (!hid) {
+        toast.error("احفظ بيانات الأسرة الأساسية أولاً قبل إضافة الأفراد.");
+        return;
+      }
+      const payload = buildPersonPayload(draft);
+      if (!payload.name || !payload.birthDate || !payload.role) {
+        toast.error("أدخل اسم الفرد وتاريخ الميلاد والدور قبل الحفظ.");
+        return;
+      }
+      const saved = draft.id
+        ? await updatePerson(hid, draft.id, payload)
+        : await createPerson(hid, payload);
+      const savedHealth = await saveMemberHealth(hid, saved.id, draft);
+
+      const savedMember = { ...draft, ...saved, ...savedHealth, id: saved.id };
+      const next = [...members];
+      if (editingIdx !== null) {
+        next[editingIdx] = savedMember;
+      } else {
+        next.push(savedMember);
+      }
+      setField("members", next);
+      setIsModalOpen(false);
+    } catch {
+      toast.error("تعذر حفظ بيانات الفرد. حاول مرة أخرى.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const updateDraft = (key: keyof WizardPersonForm, value: unknown) => {
@@ -419,7 +598,9 @@ export function PersonsStep() {
             
             <div className="pt-4 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsModalOpen(false)}>إلغاء</Button>
-              <Button onClick={saveMember}>حفظ الفرد</Button>
+              <Button onClick={saveMember} disabled={isSaving}>
+                {isSaving ? "جار الحفظ..." : "حفظ الفرد"}
+              </Button>
             </div>
           </div>
         </DialogContent>
