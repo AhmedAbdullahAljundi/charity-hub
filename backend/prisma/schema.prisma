@@ -273,6 +273,8 @@ model Household {
   hasFoodAid       Boolean           @default(false)
   bankAssetGrade   SeverityGrade?
   notes            String?
+  pdfUrl           String?
+  pastSpouses      Json?
   isDraft          Boolean           @default(true)
   lastDraftSavedAt DateTime?
   createdAt        DateTime          @default(now())
@@ -318,6 +320,8 @@ model Person {
   prisonTerm        PrisonTerm?
   prisonSuspicion   Decimal?           @db.Decimal(4, 2)
   isOrphan          Boolean            @default(false)
+  relationship      String?
+  notes             String?
   diseases          Disease[]
   disabilities      Disability[]
   createdAt         DateTime           @default(now())

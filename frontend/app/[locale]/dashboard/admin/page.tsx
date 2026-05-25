@@ -17,7 +17,7 @@ export default function AdminRulesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t("admin")}</h1>
+      <h1 className="text-2xl font-bold">{t("ruleEditor")}</h1>
       {loading ? (
         <Loader2 className="h-8 w-8 animate-spin" />
       ) : (

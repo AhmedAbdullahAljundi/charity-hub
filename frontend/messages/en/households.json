@@ -1,0 +1,862 @@
+{
+  "title": "Targeted Households",
+  "addNew": "Add New Household",
+  "search": {
+    "placeholder": "Search by name, national ID, phone, or registration number...",
+    "clear": "Clear"
+  },
+  "filters": {
+    "eligibility": "Eligibility",
+    "classification": "Classification",
+    "decision": "Decision",
+    "all": "All",
+    "clear": "Clear Filter"
+  },
+  "columns": "Columns",
+  "export": {
+    "button": "Export",
+    "csv": "Export CSV",
+    "excel": "Export Excel",
+    "filename": "CharityHub-Households",
+    "sheetTitle": "CharityHub - Targeted Households List",
+    "exportDate": "Export Date"
+  },
+  "whatsapp": "Open WhatsApp Chat",
+  "table": {
+    "headers": {
+      "code": "ID Code",
+      "family": "Family",
+      "address": "Address",
+      "phone": "Phone",
+      "dependents": "Children/Dep.",
+      "total": "Total Size",
+      "income": "Total Income",
+      "score": "Score",
+      "classification": "Classification",
+      "actions": "Actions"
+    },
+    "actions": {
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "empty": {
+      "title": "No households match your search",
+      "clear": "Clear Filters"
+    },
+    "pagination": {
+      "showing": "Showing",
+      "to": "-",
+      "of": "of",
+      "items": "households",
+      "prev": "Prev",
+      "next": "Next"
+    },
+    "sort": {
+      "wife": "Sort by Wife ↑↓",
+      "husband": "Sort by Husband ↑↓"
+    },
+    "selection": {
+      "selected": "Households Selected",
+      "calculateAll": "Calculate All",
+      "export": "Export",
+      "cancel": "Cancel"
+    },
+    "tooltips": {
+      "whatsapp": "Open WhatsApp chat",
+      "dependents": "Counted children and dependents",
+      "noFile": "No file",
+      "openFile": "Open file"
+    },
+    "status": {
+      "pending": "Pending"
+    },
+    "deleteDialog": {
+      "title": "Delete Household",
+      "desc": "Are you sure you want to delete",
+      "warning": "This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "expanded": {
+      "members": "Members",
+      "lastModified": "Last Modified",
+      "income": "Income",
+      "scoreBreakdown": "Score Breakdown"
+    }
+  },
+  "kpi": {
+    "total": "Total Households",
+    "evaluated": "Evaluated",
+    "pendingEval": "Pending Evaluation",
+    "fieldVisit": "Field Visit",
+    "missingFiles": "Missing Files"
+  },
+  "eligibility": {
+    "CRITICAL": "Critical",
+    "HIGH_NEED": "High Need",
+    "MODERATE_NEED": "Moderate Need",
+    "LOW_NEED": "Low Need",
+    "NOT_ELIGIBLE": "Not Eligible"
+  },
+  "classification": {
+    "orphans": "Orphans",
+    "poor": "Poor",
+    "needy": "Needy",
+    "prisoners": "Prisoner Families",
+    "disabled": "Disabled",
+    "elderly": "Elderly",
+    "chronic": "Chronic Illness",
+    "abandoned": "Abandoned Cases",
+    "students": "Students",
+    "elderly2": "Seniors",
+    "not_eligible": "Not Eligible",
+    "pending": "Pending"
+  },
+  "decision": {
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected",
+    "NEEDS_REVIEW": "Needs Review",
+    "ESCALATED": "Escalated"
+  },
+  "tags": {
+    "chronicDisease": "Chronic Disease",
+    "disability": "Disability",
+    "student": "Student",
+    "bride": "Bride",
+    "orphan": "Orphan",
+    "prisoner": "Prisoner"
+  },
+  "roles": {
+    "head": "Head of Household",
+    "spouse": "Spouse",
+    "child": "Child",
+    "dependentAdult": "Dependent Adult"
+  },
+  "wizard": {
+    "title": "Add / Edit Household Data",
+    "newFamily": "New Household",
+    "familyPrefix": "Family",
+    "saving": "Saving...",
+    "saved": "Saved {time} ago",
+    "saveBtn": "Save",
+    "next": "Next",
+    "previous": "Previous",
+    "unsaved": "Unsaved changes",
+    "allSaved": "All saved",
+    "viewMode": "View Mode",
+    "viewModeDesc": "You are viewing this household in read-only mode. Editing is not available and no changes will be saved.",
+    "tabs": {
+      "basic": "Basic Info",
+      "persons": "Members",
+      "income": "Income",
+      "burdens": "Burdens",
+      "evaluation": "Evaluation"
+    },
+    "basic": {
+      "section": "Basic Information",
+      "codeLabel": "Registration Code",
+      "codePlaceholder": "e.g., 1245",
+      "codeSuggested": "Suggested: {code}",
+      "codeUseBtn": "Use",
+      "codeDuplicate": "This registration code is already used by another household.",
+      "codeAvailable": "Registration code is available.",
+      "codeError": "An error occurred while checking the code.",
+      "pdfUrl": "Paper File URL (PDF)",
+      "registrationDate": "Registration Date",
+      "wifeSection": "Wife Information",
+      "wifeName": "Wife's Full Name (Triple)",
+      "wifeNid": "National ID",
+      "socialStatus": "Marital Status",
+      "socialOptions": {
+        "married": "Married",
+        "divorced": "Divorced",
+        "widowed": "Widowed",
+        "single": "Single / Other",
+        "select": "Select status"
+      },
+      "wifeEmployment": "Wife Employment Indicators",
+      "wifeEmploymentType": "Wife Employment Type",
+      "wifeEmploymentOptions": {
+        "none": "Not working",
+        "weak": "Very little work",
+        "unstable": "Irregular / Intermittent work",
+        "sufficient": "Regular part-time work",
+        "select": "Select employment type"
+      },
+      "wifeEducation": "Wife Education Level",
+      "wifeEducationOptions": {
+        "illiterate": "Illiterate or daily worker",
+        "medium": "Above average / Employee",
+        "higherLimited": "Limited higher education",
+        "higherStable": "Stable higher education",
+        "select": "Select education level"
+      },
+      "husband": {
+        "section": "Husband Information",
+        "name": "Name",
+        "nid": "National ID",
+        "status": "Status",
+        "statusOptions": {
+          "resident": "Resident",
+          "absent": "Temporarily absent / Missing",
+          "prison": "In prison",
+          "select": "Select husband status"
+        },
+        "employmentType": "Head Employment Type",
+        "employmentOptions": {
+          "none": "Not working",
+          "weak": "Weak or intermittent work",
+          "seasonal": "Seasonal work ~ half month",
+          "regular": "Regular work > 20 days",
+          "abroadWeak": "Abroad - Weak work",
+          "abroadMedium": "Abroad - Medium work",
+          "abroadRegular": "Abroad - Regular work",
+          "select": "Select employment type",
+          "abroad_weak": "Working Abroad - Weak Income",
+          "abroad_medium": "Working Abroad - Medium Income",
+          "abroad_regular": "Working Abroad - Regular Income"
+        },
+        "educationLevel": "Husband Education Level",
+        "educationOptions": {
+          "illiterate": "Illiterate or daily worker",
+          "medium": "Above average / Company employee",
+          "higherLimited": "Limited higher education",
+          "higherStable": "Stable higher education",
+          "select": "Select education level"
+        },
+        "deceased": "Deceased",
+        "education": "Education Level",
+        "last": "Ex",
+        "pastSpouse": "Past Spouse",
+        "nidOptional": "National ID (Optional)"
+      },
+      "divorce": {
+        "year": "Divorce Year",
+        "docNumber": "Divorce Document Number",
+        "marriageCount": "Number of Marriages",
+        "note": "Important: The search must be renewed every year from the last search date."
+      },
+      "death": {
+        "certNumber": "Death Certificate Number",
+        "date": "Date of Death",
+        "marriageCount": "Number of marriages for widow"
+      },
+      "pastSpouse": "Previous Husband #{num}",
+      "pastSpouseName": "Name",
+      "pastSpouseNid": "National ID (Optional)",
+      "contact": {
+        "section": "Contact & Residence Information",
+        "primaryPhone": "Primary Mobile Number",
+        "primaryPhonePh": "01XXXXXXXXX",
+        "whatsapp": "WhatsApp Number",
+        "whatsappOpen": "Open WhatsApp Chat",
+        "region": "Region",
+        "district": "District Name",
+        "village": "Village Name",
+        "street": "Street Name",
+        "details": "House Location (Details)",
+        "select": "Select",
+        "whatsappPhone": "WhatsApp Phone",
+        "addressDetails": "Address Details"
+      },
+      "search": {
+        "section": "Search Settings",
+        "modesty": "Modesty",
+        "officeDealings": "Office Dealings",
+        "desk": "Desk Research",
+        "field": "Field Research",
+        "overdue": "Overdue by 1 year",
+        "modest": "Modest Family"
+      },
+      "notes": {
+        "section": "Notes",
+        "general": "General Notes",
+        "generalPh": "Any details or notes...",
+        "field": "Field Notes",
+        "fieldPh": "Notes related to field research...",
+        "generalPlaceholder": "Add general notes...",
+        "fieldPlaceholder": "Add field note..."
+      },
+      "errors": {
+        "invalidNid": "Invalid National ID (must be 14 digits starting with 2 or 3)"
+      }
+    },
+    "persons": {
+      "addNew": "Add New Member",
+      "editTitle": "Edit Member Data",
+      "addTitle": "Add New Member",
+      "name": "Full Name",
+      "namePh": "Triple name as on ID card",
+      "nid": "National ID",
+      "nidPh": "14 digits",
+      "relationship": "Relationship to Family",
+      "relationshipOptions": {
+        "spouse": "Spouse",
+        "son": "Son",
+        "daughter": "Daughter",
+        "father": "Father",
+        "mother": "Mother",
+        "brother": "Brother",
+        "sister": "Sister",
+        "grandfather": "Grandfather",
+        "grandmother": "Grandmother",
+        "other": "Other Relative",
+        "select": "Select relationship"
+      },
+      "role": "Member Status",
+      "roleOptions": {
+        "head": "Head",
+        "spouse": "Spouse",
+        "dependentAdult": "Dependent Adult",
+        "independent": "Independent",
+        "child": "Child / Dependent",
+        "select": "Select member status"
+      },
+      "maritalStatus": "Marital Status",
+      "maritalOptions": {
+        "single": "Single",
+        "married": "Married",
+        "divorced": "Divorced",
+        "widowed": "Widowed"
+      },
+      "education": "Education Level",
+      "educationOptions": {
+        "illiterate": "Illiterate / Literate (1x)",
+        "medium": "Medium / Diploma (0.75x)",
+        "higherLimited": "Limited Higher Education (0.5x)",
+        "higherStable": "Stable Higher Education (0.5x)"
+      },
+      "employmentQuality": "Employment Type (Dependent Adult)",
+      "employmentQualityOptions": {
+        "none": "Not working",
+        "weak": "Very little work (-0.20)",
+        "unstable": "Irregular / Intermittent work (-0.40)",
+        "sufficient": "Regular part-time work (-0.60)"
+      },
+      "correction": "Calculated correction: {value} points on vulnerability score",
+      "isStudent": "Enrolled in education? (Student)",
+      "studentLevel": "Education Stage",
+      "studentLevelOptions": {
+        "toddler": "Toddler / Nursery",
+        "kindergarten": "Kindergarten",
+        "primary": "Primary",
+        "preparatory": "Preparatory",
+        "secondaryGeneral": "General Secondary",
+        "secondaryTechFemale": "Commercial/Industrial Secondary (Female)",
+        "secondaryTechMale": "Industrial/Agricultural Secondary (Male)",
+        "universityStem": "University (Practical)",
+        "universityArts": "University (Theoretical)"
+      },
+      "isWorking": "Working? (Son or Daughter)",
+      "workDetails": "Son's Work Details (Economic Impact)",
+      "workType": "Work Type",
+      "workTypeOptions": {
+        "weak": "Weak daily wages",
+        "seasonal": "Seasonal",
+        "regular": "Regular"
+      },
+      "sonMarried": "Married?",
+      "sonSameHouse": "Lives with family?",
+      "brideStatus": "Bride Preparation Status",
+      "brideSponsor": "Is there a sponsor or helpful inheritance?",
+      "orphanStatus": "Orphan Status",
+      "orphanDesc": "Applies orphan weight for children (under 15 years)",
+      "displacedStatus": "Displaced Status (due to separation/imprisonment)",
+      "displacedDesc": "The system automatically classifies this member as an incoming dependent because they are under 15 years old and the household head is divorced or imprisoned. This grants special evaluation points.",
+      "isPrisoner": "Is this individual the prisoner?",
+      "prisonTerm": "Current sentence duration",
+      "prisonTermOptions": {
+        "short": "Less than 6 months",
+        "medium": "6 months - 2 years",
+        "long": "More than 2 years"
+      },
+      "prisonSuspicion": "Suspicion level of hidden wealth",
+      "prisonSuspicionOptions": {
+        "none": "No suspicion",
+        "light": "Light suspicion",
+        "medium": "Medium suspicion",
+        "high": "High suspicion",
+        "veryHigh": "Very high suspicion (visible wealth)"
+      },
+      "prisonSuspicionNote": "Negative values reduce vulnerability score when suspecting hidden assets",
+      "hasDisease": "Has chronic diseases?",
+      "hasDisability": "Has affecting disability?",
+      "workCorrection": "Work Correction Factors (for Head)",
+      "workCorrectionType": "Employment Type (for correction)",
+      "workCorrectionTypeOptions": {
+        "weak": "Weak work",
+        "seasonal": "Seasonal work",
+        "regular": "Regular work",
+        "none": "Not working"
+      },
+      "educationMultiplier": "Education Multiplier",
+      "educationMultiplierOptions": {
+        "illiterate": "Illiterate / Literate (1x)",
+        "medium": "Medium / Diploma (0.75x)",
+        "higher": "Higher Education (0.5x)"
+      },
+      "notes": "Individual Notes",
+      "notesPh": "Any additional details useful for evaluation...",
+      "cancel": "Cancel",
+      "save": "Save Member",
+      "saving": "Saving...",
+      "delete": "Delete",
+      "cannotDelete": "Cannot delete this member",
+      "deleteToast": "Member temporarily deleted",
+      "deleteToastDesc": "You can undo deletion within 60 seconds",
+      "undo": "Undo",
+      "undoSuccess": "Deletion undone",
+      "deleteError": "Error syncing deletion with server",
+      "saveError": "Save basic household data first before adding members.",
+      "validationError": "Enter member name, birth date, and role before saving.",
+      "persistError": "Could not save member data. Try again.",
+      "male": "Male",
+      "female": "Female",
+      "years": "years",
+      "noName": "No name",
+      "dependent": "Dependent",
+      "child": "Son/Daughter",
+      "independent": "Independent",
+      "student": "Student",
+      "literate": "Literate",
+      "working": "Working",
+      "notWorking": "Not working",
+      "spouseCard": "Spouse (Head)",
+      "disease": "Chronic Disease",
+      "disability": "Disability",
+      "sonWorking": "Is the son working?",
+      "notesPlaceholder": "Enter any additional notes here...",
+      "displacedState": "Incoming Dependent (Automatic)"
+    },
+    "income": {
+      "title": "Eight Income Channels",
+      "desc": "Document income sources accurately to ensure evaluation integrity.",
+      "totalMonthly": "Total Monthly Income",
+      "currency": "EGP",
+      "verification": "Verification",
+      "verified": "Verified",
+      "pending": "Pending Verification",
+      "unverified": "Unverified",
+      "mandatory": "Mandatory",
+      "amount": "Amount",
+      "amountPh": "0",
+      "channels": {
+        "PENSION": "Insurance Pension",
+        "TAKAFUL_KARAMA": "Takaful and Karama and Social Security",
+        "CHARITY_1": "Charity 1",
+        "CHARITY_2": "Charity 2",
+        "CHARITY_3": "Charity 3",
+        "DONOR_1": "Donor 1",
+        "DONOR_2": "Donor 2"
+      },
+      "warnings": {
+        "lowVerification": "Less than 3 verified sources - negatively affects reliability",
+        "unverifiedPension": "Pension registered but not verified"
+      },
+      "alimony": {
+        "title": "Formal Alimony",
+        "desc": "(Only shown for divorced cases)",
+        "formal": "Formal Alimony (Verified)",
+        "informalSufficient": "Informal Sufficient Alimony",
+        "informalInsufficient": "Informal Insufficient Alimony",
+        "none": "No Alimony",
+        "correctionSufficient": "Will apply -0.80 correction to vulnerability score",
+        "correctionInsufficient": "Will apply -0.40 correction to vulnerability score",
+        "amount": "Formal Alimony Amount",
+        "amountLabel": "Amount:",
+        "subtitle": "If the woman is divorced/abandoned, specify alimony status",
+        "options": {
+          "formal": "Formal Alimony (Court)",
+          "informalSufficient": "Informal - Sufficient",
+          "informalInsufficient": "Informal - Insufficient",
+          "none": "No Alimony"
+        },
+        "correction80": "Evaluated at 80%",
+        "correction40": "Evaluated at 40%"
+      },
+      "corrections": {
+        "title": "Additional Economic Indicators (Alimony, Assets, Support)",
+        "box1Title": "Brides, Orphans, and Displaced",
+        "brideCount": "Number of brides counted",
+        "orphanCount": "Number of orphans counted",
+        "displacedCount": "Number of displaced counted",
+        "autoNote": "These values are automatically calculated from member data",
+        "box3Title": "Sons in Prison",
+        "prisonTerm": "Sentence duration:",
+        "prisonTermShort": "Less than 6 months",
+        "prisonTermMedium": "6 months - 2 years",
+        "prisonTermLong": "More than 2 years",
+        "prisonTermUnspecified": "Unspecified",
+        "box4Title": "Owned Assets and Projects",
+        "noAssets": "No assets",
+        "assetA": "Symbolic assets (small savings or merchandise)",
+        "assetB": "Simple assets (shop or old car)",
+        "assetC": "Medium assets (property or ongoing business)",
+        "assetD": "Considerable assets (multiple properties)",
+        "assetE": "Large assets (visible wealth)",
+        "assetF": "Apparent wealth (explicit evidence of wealth)",
+        "box5Title": "Other Social and Economic Indicators",
+        "familySupport": "Unknown family support",
+        "foodAid": "Fixed monthly food aid",
+        "countsTitle": "Status Counts",
+        "brides": "Brides",
+        "orphans": "Orphans",
+        "displaced": "Displaced/Refugees",
+        "assetsTitle": "Assets & Projects",
+        "assetsOptions": {
+          "none": "No assets",
+          "a": "Grade A",
+          "b": "Grade B",
+          "c": "Grade C",
+          "d": "Grade D",
+          "e": "Grade E",
+          "f": "Grade F"
+        },
+        "otherIndicators": "Other Indicators"
+      },
+      "errors": {
+        "noHousehold": "Save basic household data first before saving income.",
+        "saveError": "Could not save income source. Try again.",
+        "verifyNoHousehold": "Save basic household data first before verification.",
+        "verifyFirst": "Save the amount first before verification",
+        "verifyError": "Could not modify verification status. Try again.",
+        "verifySuccess": "Verified successfully",
+        "unverifySuccess": "Verification cancelled"
+      }
+    },
+    "burdens": {
+      "section1": "Housing and Basic Burdens",
+      "section2": "Chronic Diseases",
+      "section3": "Disabilities",
+      "housing": {
+        "title": "Housing",
+        "type": "Housing Type",
+        "options": {
+          "owned": "Owned",
+          "shared": "Shared",
+          "donated": "Donated / Free Rent",
+          "rented": "Rented"
+        },
+        "rationCard": "Has Ration Card?"
+      },
+      "housingOptions": {
+        "owned": "Owned",
+        "shared": "Shared with another family",
+        "donatedRent": "Donated rent",
+        "rented": "Rent paid by family"
+      },
+      "rationCard": "Family does not have a ration card",
+      "debt": {
+        "title": "Debts"
+      },
+      "debtGrade": "Debt Grade",
+      "debtGradeOptions": {
+        "A": "Manageable light debt",
+        "B": "Medium debt",
+        "C": "Heavy debt",
+        "D": "Very critical debt"
+      },
+      "injury": {
+        "title": "Injuries"
+      },
+      "injuryGrade": "Injury Grade",
+      "injuryGradeOptions": {
+        "A": "Light injury",
+        "B": "Moderate injury",
+        "C": "Severe injury",
+        "D": "Critical injury"
+      },
+      "surgery": {
+        "title": "Surgeries"
+      },
+      "surgeryGrade": "Surgery Grade",
+      "surgeryGradeOptions": {
+        "A": "A",
+        "B": "B",
+        "C": "C",
+        "D": "D",
+        "E": "E (Very critical surgery)"
+      },
+      "sonInPrison": "Unmarried son in prison",
+      "sonInPrisonDesc": "Married son is registered as separate household - this item is for unmarried sons only",
+      "sonInPrisonPoints": "+0.5 points",
+      "addDisease": "Add Chronic Disease",
+      "addDisability": "Add Disability",
+      "disease": {
+        "name": "Disease Name / Description",
+        "person": "Affected Person",
+        "personSelect": "Select member",
+        "noName": "No name",
+        "treatmentCost": "Treatment Cost",
+        "treatmentCostOptions": {
+          "none": "None/Minimal",
+          "periodicCheap": "Periodic and inexpensive",
+          "periodicExpensive": "Periodic and expensive",
+          "periodicVeryExpensive": "Periodic and very expensive"
+        },
+        "followup": "Medical Follow-up",
+        "followupOptions": {
+          "noneOrRare": "None/Rare",
+          "periodicRegular": "Regular periodic visits",
+          "periodicExpensive": "Expensive periodic visits"
+        },
+        "workImpact": "Impact on Work",
+        "workImpactOptions": {
+          "none": "No impact",
+          "slight": "Slightly limiting",
+          "severeButWorking": "Greatly affects but can work",
+          "cannotWork": "Cannot work"
+        },
+        "title": "Diseases (Chronic)",
+        "add": "Add Disease"
+      },
+      "disability": {
+        "description": "Disability Description",
+        "person": "Disabled Person",
+        "personSelect": "Select member",
+        "noName": "No name",
+        "workImpact": "Impact on Work",
+        "workImpactOptions": {
+          "none": "No hindrance",
+          "slight": "Slightly limiting",
+          "requiresSpecial": "Requires special work",
+          "cannotWork": "Completely unable"
+        },
+        "companion": "Need for Companion",
+        "companionOptions": {
+          "none": "Not needed",
+          "outsideOnly": "Companion outside home only",
+          "fullDependence": "Fully dependent on companion"
+        },
+        "treatmentCost": "Treatment Cost (Devices/Treatment)",
+        "treatmentCostOptions": {
+          "none": "None/Minimal",
+          "periodicCheap": "Periodic and inexpensive",
+          "periodicExpensive": "Periodic and expensive",
+          "periodicVeryExpensive": "Periodic and very expensive"
+        },
+        "title": "Disabilities",
+        "add": "Add Disability"
+      },
+      "diminishingRule": "Automatic diminishing rule is applied by the evaluation engine starting from the third disease.",
+      "errors": {
+        "noHead": "Save head data first in the Members tab",
+        "noHousehold": "Save basic household data first before saving burdens.",
+        "deleteError": "Could not identify household to delete burden.",
+        "saveError": "Could not save burden data. Try again.",
+        "updateError": "Could not identify household to update burden grade.",
+        "gradeError": "Could not update burden grade. Try again.",
+        "diseaseSaveError": "Could not save disease data. Try again.",
+        "diseaseDeleteError": "Could not delete disease. Try again.",
+        "disabilitySaveError": "Could not save disability data. Try again.",
+        "disabilityDeleteError": "Could not delete disability. Try again."
+      }
+    },
+    "evaluation": {
+      "title": "Automatic Evaluation",
+      "calculate": "Calculate Score",
+      "recalculate": "Recalculate",
+      "calculating": "Calculating...",
+      "noScore": "Score not calculated yet. Click \"Calculate Score\" above.",
+      "scoreLabel": "Current Score",
+      "delta": "from last evaluation",
+      "calculatedAt": "Calculation date:",
+      "warnings": "Warnings ({count})",
+      "layerBreakdown": "Layer Breakdown",
+      "indicators": "Indicators and Recommendations",
+      "positiveFactors": "Factors Increasing Score",
+      "negativeFactors": "Factors Decreasing Score",
+      "noFactors": "No {type} factors recorded",
+      "recommendations": "System Recommendations",
+      "committee": {
+        "title": "Committee Decision",
+        "success": "Decision recorded successfully",
+        "successDesc": "This household is now displayed in the follow-up dashboard based on this decision.",
+        "assistanceType": "Assistance Classification",
+        "assistancePlaceholder": "Select assistance type",
+        "assistanceOptions": {
+          "monthlyCash": "Monthly cash assistance",
+          "monthlyMedical": "Monthly medical assistance",
+          "seasonalMixed": "Seasonal (medical/cash/goods)",
+          "goodsOnly": "Goods only",
+          "none": "Not eligible"
+        },
+        "categoryClass": "Category Classification",
+        "categoryPlaceholder": "Select category",
+        "categoryOptions": {
+          "poor": "Poor",
+          "veryPoor": "Needy",
+          "prisonersFam": "Prisoner Families",
+          "orphans": "Orphans",
+          "elderly": "Elderly",
+          "disabled": "Disabled",
+          "other": "Other"
+        },
+        "reviewStatus": "Decision Status",
+        "reviewOptions": {
+          "approved": "Approved",
+          "rejected": "Rejected",
+          "needsReview": "Needs Review",
+          "escalated": "Escalated to Supervisor"
+        },
+        "decisionNote": "Decision Note",
+        "decisionNotePh": "Write reasons and rationale for the decision here...",
+        "submit": "Record and Approve Decision"
+      },
+      "simulation": {
+        "title": "Simulation - What If Data Changes?",
+        "desc": "This simulation is not saved and does not affect actual data.",
+        "housingType": "Housing Type",
+        "housingOptions": {
+          "owned": "Owned",
+          "shared": "Shared",
+          "donatedRent": "Donated",
+          "rented": "Rented"
+        },
+        "totalIncome": "Alternative Income (EGP)",
+        "incomePh": "e.g., 3000",
+        "employmentType": "Head Employment Type",
+        "employmentOptions": {
+          "none": "Not working",
+          "weak": "Weak daily wages",
+          "seasonal": "Seasonal",
+          "regular": "Regular"
+        },
+        "runBtn": "See Impact",
+        "results": "Simulation Results",
+        "original": "Original",
+        "simulated": "Simulated",
+        "delta": "Difference",
+        "affectedLayers": "Affected Layers:"
+      },
+      "eligibility": {
+        "CRITICAL": "Very Critical",
+        "HIGH_NEED": "High Need",
+        "MODERATE_NEED": "Moderate Need",
+        "LOW_NEED": "Low Need",
+        "NOT_ELIGIBLE": "Not Eligible"
+      },
+      "layers": {
+        "L1_HEAD": "Head Status",
+        "L2_DEPENDENTS": "Dependents",
+        "L3_STUDENTS": "Students and Education",
+        "L4_VULNERABILITY": "Special Cases",
+        "L5_BURDENS": "Emergency Burdens",
+        "L5B_HOUSING": "Housing",
+        "L6_HEALTH": "Health and Disabilities",
+        "L7_CORRECTIONS": "Corrections",
+        "L8_INCOME": "Income"
+      },
+      "warnings_labels": {
+        "LOW_VERIFICATION_PENALTY": "Number of verified sources below minimum threshold",
+        "LOW_CONFIDENCE_REVIEW": "Data confidence level is low - needs review",
+        "MISSING_HEAD_DATA": "Head data is incomplete",
+        "INCOME_MISMATCH": "Contradiction in income data",
+        "NO_INCOME_SOURCES": "No income sources registered",
+        "HIGH_INCOME_WARNING": "Registered income is relatively high",
+        "MISSING_NID": "National ID missing for some members"
+      },
+      "autoEvaluation": "Automatic Evaluation",
+      "calculateScore": "Calculate Score",
+      "notCalculated": "Score not calculated yet. Click \"Calculate Score\" above.",
+      "committeeDecision": "Committee Decision",
+      "assistanceType": "Assistance Classification",
+      "category": "Category Classification",
+      "status": "Decision Status",
+      "notes": "Decision Note",
+      "submit": "Record and Approve Decision"
+    }
+  },
+  "view": {
+    "title": "Household File:",
+    "approved": "Approved",
+    "draft": "Draft",
+    "viewPdf": "View Paper File",
+    "editForm": "Edit Form",
+    "back": "Back",
+    "notFound": "Household not found",
+    "currentScore": "Current Score",
+    "members": "Members",
+    "membersDesc": "Head + {count} dependents",
+    "totalIncome": "Total Income",
+    "incomeUnit": "EGP / Month",
+    "address": "Address",
+    "unspecified": "Unspecified",
+    "noDetails": "No additional details",
+    "basicInfo": "Basic Information",
+    "socialStatus": "Marital Status",
+    "primaryPhone": "Primary Phone",
+    "whatsapp": "WhatsApp",
+    "housingType": "Housing Type",
+    "searchType": "Search Type",
+    "fieldSearch": "Field",
+    "deskSearch": "Desk",
+    "modestCase": "Modesty Case",
+    "officeDealings": "Office Dealings",
+    "members_title": "Family Members",
+    "headBadge": "Head",
+    "son": "Son",
+    "spouse": "Spouse",
+    "dependent": "Dependent",
+    "male": "Male",
+    "female": "Female",
+    "student": "Student",
+    "sick": "Sick",
+    "disabled": "Disabled",
+    "orphan": "Orphan",
+    "incomeSources": "Income Sources",
+    "noIncome": "No income sources registered",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "burdens": "Additional Burdens",
+    "grade": "Grade",
+    "notes": "Notes",
+    "noNotes": "No general notes recorded for this household."
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "add": "Add",
+    "close": "Close",
+    "confirm": "Confirm",
+    "error": "An error occurred",
+    "success": "Success",
+    "yes": "Yes",
+    "no": "No",
+    "required": "Required",
+    "optional": "Optional",
+    "male": "Male",
+    "female": "Female",
+    "currency": "EGP",
+    "today": "Today",
+    "daysAgo": "{days} days ago",
+    "dayAgo": "1 day ago",
+    "undefined": "Undefined"
+  },
+  "dashboard": {
+    "metrics": {
+      "total": "Total Households",
+      "incomplete": "Incomplete Files",
+      "visit": "Field Visit",
+      "pending": "Pending Evaluation",
+      "evaluated": "Evaluated"
+    },
+    "actions": {
+      "add": "Add Household",
+      "export": "Export",
+      "columns": "Columns",
+      "searchPlaceholder": "Search by name, national ID, phone, or code..."
+    },
+    "filters": {
+      "decision": "Decision",
+      "classification": "Classification",
+      "class": "Class"
+    }
+  }
+}

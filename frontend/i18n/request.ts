@@ -12,6 +12,10 @@ import arUsers from "../messages/ar/users.json";
 import arVolunteers from "../messages/ar/volunteers.json";
 import arScoring from "../messages/ar/scoring.json";
 import arRules from "../messages/ar/rules.json";
+import arHouseholds from "../messages/ar/households.json";
+import arVerification from "../messages/ar/verification.json";
+import arRuleEditor from "../messages/ar/ruleEditor.json";
+import arAnalytics from "../messages/ar/analytics.json";
 
 import enCommon from "../messages/en/common.json";
 import enDomain from "../messages/en/domain.json";
@@ -23,6 +27,10 @@ import enUsers from "../messages/en/users.json";
 import enVolunteers from "../messages/en/volunteers.json";
 import enScoring from "../messages/en/scoring.json";
 import enRules from "../messages/en/rules.json";
+import enHouseholds from "../messages/en/households.json";
+import enVerification from "../messages/en/verification.json";
+import enRuleEditor from "../messages/en/ruleEditor.json";
+import enAnalytics from "../messages/en/analytics.json";
 
 const messagesMap = {
   ar: {
@@ -36,6 +44,10 @@ const messagesMap = {
     volunteers: arVolunteers,
     scoring: arScoring,
     rules: arRules,
+    households: arHouseholds,
+    verification: arVerification,
+    ruleEditor: arRuleEditor,
+    analytics: arAnalytics,
     nav: arCommon.nav,
   },
   en: {
@@ -49,6 +61,10 @@ const messagesMap = {
     volunteers: enVolunteers,
     scoring: enScoring,
     rules: enRules,
+    households: enHouseholds,
+    verification: enVerification,
+    ruleEditor: enRuleEditor,
+    analytics: enAnalytics,
     nav: enCommon.nav,
   }
 };
@@ -87,7 +103,12 @@ export default getRequestConfig(async ({ requestLocale }) => {
       volunteers: data.volunteers,
       scoring: data.scoring,
       rules: data.rules,
+      households: data.households,
+      verification: data.verification,
+      ruleEditor: data.ruleEditor,
+      analytics: data.analytics,
       nav: data.nav,
     },
   };
 });
+// Trigger reload for analytics.json keys update

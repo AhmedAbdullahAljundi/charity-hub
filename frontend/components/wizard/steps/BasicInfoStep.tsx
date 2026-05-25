@@ -7,461 +7,739 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+ Select,
+ SelectContent,
+ SelectItem,
+ SelectTrigger,
+ SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useWizardStore } from "@/lib/stores/wizardStore";
 import api from "@/lib/api/client";
-import { AlertCircle, CheckCircle2, Loader2, Info } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Info, Link2, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 function extractNationalIdInfo(nid: string) {
-  if (!/^[23]\d{13}$/.test(nid)) return null;
-  const century = nid[0] === "2" ? 1900 : 2000;
-  const year = century + parseInt(nid.substring(1, 3));
-  const month = parseInt(nid.substring(3, 5));
-  const day = parseInt(nid.substring(5, 7));
-  const genderDigit = parseInt(nid.substring(12, 13));
-  const gender = genderDigit % 2 === 0 ? "أنثى" : "ذكر";
-  
-  const birthDate = new Date(year, month - 1, day);
-  let age = new Date().getFullYear() - birthDate.getFullYear();
-  const m = new Date().getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && new Date().getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return { gender, age, birthDate };
+ if (!nid || !/^([23])(\d{2})(0[1-9]|1[012])(0[1-9]|[12]\d|3[01])\d{7}$/.test(nid)) return null;
+ const century = nid[0] === "2" ? 1900 : 2000;
+ const year = century + parseInt(nid.substring(1, 3));
+ const month = parseInt(nid.substring(3, 5));
+ const day = parseInt(nid.substring(5, 7));
+ const genderDigit = parseInt(nid.substring(12, 13));
+ const gender = genderDigit % 2 === 0 ? "أنثى" : "ذكر"; 
+ 
+ const birthDate = new Date(year, month - 1, day);
+ const today = new Date();
+ let age = today.getFullYear() - birthDate.getFullYear();
+ const m = today.getMonth() - birthDate.getMonth();
+ if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+ age--;
+ }
+ return { gender, age, birthDate: birthDate.toISOString().split("T")[0] };
 }
 
 export function BasicInfoStep() {
-  const fd = useWizardStore((s) => s.formData);
-  const setField = useWizardStore((s) => s.setField);
-  const householdId = useWizardStore((s) => s.householdId);
+ const fd = useWizardStore((s) => s.formData);
+ const setField = useWizardStore((s) => s.setField);
+ const householdId = useWizardStore((s) => s.householdId);
+ const t = useTranslations("households");
 
-  // Suggested Code State
-  const [suggestedCode, setSuggestedCode] = useState<string | null>(null);
-  const [isCheckingCode, setIsCheckingCode] = useState(false);
-  const [codeError, setCodeError] = useState<string | null>(null);
-  const [codeSuccess, setCodeSuccess] = useState<string | null>(null);
+ // Suggested Code State
+ const [suggestedCode, setSuggestedCode] = useState<string | null>(null);
+ const [isCheckingCode, setIsCheckingCode] = useState(false);
+ const [codeError, setCodeError] = useState<string | null>(null);
+ const [codeSuccess, setCodeSuccess] = useState<string | null>(null);
 
-  // Phone errors
-  const [primaryPhoneError, setPrimaryPhoneError] = useState<string | null>(null);
-  const [nidError, setNidError] = useState<string | null>(null);
+ // Phone errors
+ const [primaryPhoneError, setPrimaryPhoneError] = useState<string | null>(null);
+ const [wifeNidError, setWifeNidError] = useState<string | null>(null);
+ const [headNidError, setHeadNidError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!fd.code && !householdId) {
-      // Suggest code logic. We assume the API can give us the last code.
-      // Since there's no specific endpoint mentioned, we'll try fetching list and taking first.
-      api.get("/households?limit=1&sort=code&order=desc")
-        .then((res) => {
-          const lastHousehold = res.data?.data?.list?.[0];
-          if (lastHousehold?.code) {
-            const lastCode = parseInt(lastHousehold.code, 10);
-            if (!isNaN(lastCode)) {
-              setSuggestedCode(String(lastCode + 1));
-            }
-          } else {
-            setSuggestedCode("1000"); // default starting code
-          }
-        })
-        .catch(() => setSuggestedCode("1000"));
-    }
+ useEffect(() => {
+  if (!fd.code && !householdId) {
+  api.get("/households?limit=100&sort=createdAt&order=desc")
+  .then((res) => {
+  const list = res.data?.list || res.data?.data?.list || res.data?.data || [];
+  let max = 0;
+  if (Array.isArray(list)) {
+    list.forEach((h: any) => {
+      const val = parseInt(String(h.code).replace(/\D/g, ''), 10);
+      if (!isNaN(val) && val <= 9999 && val > max) max = val;
+    });
+  }
+  setSuggestedCode(max > 0 ? String(max + 1).padStart(4, '0') : "0001");
+  })
+  .catch(() => setSuggestedCode("1000"));
+  }
   }, [fd.code, householdId]);
 
   useEffect(() => {
-    if (!fd.registrationDate && !householdId) {
-      const today = new Date().toISOString().split("T")[0];
-      setField("registrationDate", today);
-    }
+  if (!fd.registrationDate && !householdId) {
+  const today = new Date().toISOString().split("T")[0];
+  setField("registrationDate", today);
+  }
   }, [fd.registrationDate, householdId, setField]);
 
   const checkCodeUnique = async (code: string) => {
-    if (!code) return;
-    setIsCheckingCode(true);
-    setCodeError(null);
-    setCodeSuccess(null);
-    try {
-      const res = await api.get(`/households?search=${code}`);
-      const list = res.data?.data?.list || [];
-      const match = list.find((h: any) => h.code === code && h.id !== householdId);
-      if (match) {
-        setCodeError("رقم القيد مستخدم بالفعل لأسرة أخرى.");
-      } else {
-        setCodeSuccess("رقم القيد متاح.");
-      }
-    } catch {
-      setCodeError("حدث خطأ أثناء التحقق من الرقم.");
-    } finally {
-      setIsCheckingCode(false);
-    }
+  if (!code) return;
+  setIsCheckingCode(true);
+  setCodeError(null);
+  setCodeSuccess(null);
+  try {
+  const res = await api.get(`/households?search=${code}&limit=1000`);
+  const list = res.data?.list || res.data?.data?.list || res.data?.data || res.data || [];
+  const match = Array.isArray(list) ? list.find((h: any) => h.code === code && h.id !== householdId) : null;
+  if (match) {
+  setCodeError(t("wizard.basic.codeDuplicate"));
+  } else {
+  setCodeSuccess(t("wizard.basic.codeAvailable"));
+  }
+  } catch (err) {
+  setCodeError(t("wizard.basic.codeError"));
+  } finally {
+  setIsCheckingCode(false);
+  }
   };
 
   const validateNid = (val: string) => {
-    if (!val) {
-      setNidError(null);
-      return;
-    }
-    if (!/^[23]\d{13}$/.test(val)) {
-      setNidError("الرقم القومي غير صحيح (يجب أن يتكون من 14 رقماً ويبدأ بـ 2 أو 3)");
-    } else {
-      setNidError(null);
-    }
+  if (!val) return null;
+  if (!/^([23])(\d{2})(0[1-9]|1[012])(0[1-9]|[12]\d|3[01])\d{7}$/.test(val)) return t("wizard.basic.nidInvalid");
+  return null;
   };
 
   const validatePhone = (val: string, setter: (e: string | null) => void) => {
-    if (!val) {
-      setter(null);
-      return;
-    }
-    if (!/^01[0125]\d{8}$/.test(val)) {
-      setter("رقم الموبايل غير صحيح (يجب أن يبدأ بـ 01 ويكون 11 رقماً)");
-    } else {
-      setter(null);
-    }
+  if (!val) {
+  setter(null);
+  return;
+  }
+  if (!/^01[0125]\d{8}$/.test(val)) {
+  setter(t("wizard.basic.phoneInvalid"));
+  } else {
+  setter(null);
+  }
   };
 
-  const head = fd.head ?? {};
-  const nidInfo = head.nationalId ? extractNationalIdInfo(head.nationalId) : null;
+ const head = fd.head ?? {};
+ const nidInfo = head.nationalId ? extractNationalIdInfo(head.nationalId) : null;
 
-  return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500" dir="rtl">
-      
-      {/* SECTION 1: رقم القيد */}
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold border-b pb-2">1. رقم القيد (الكود)</h3>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-2">
-            <Label>رقم القيد <span className="text-destructive">*</span></Label>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                value={fd.code ?? ""}
-                onChange={(e) => {
-                  setField("code", e.target.value);
-                  setCodeError(null);
-                  setCodeSuccess(null);
-                }}
-                onBlur={(e) => checkCodeUnique(e.target.value)}
-                placeholder="مثال: 1245"
-              />
-              {isCheckingCode && <Loader2 className="h-5 w-5 animate-spin mt-2 text-muted-foreground" />}
-            </div>
-            {codeError && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{codeError}</p>}
-            {codeSuccess && <p className="text-xs text-emerald-600 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" />{codeSuccess}</p>}
-          </div>
-          
-          {!fd.code && suggestedCode && (
-            <div className="space-y-2 flex flex-col justify-end">
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-center justify-between">
-                <span className="text-sm font-medium text-primary">الرقم المقترح: {suggestedCode}</span>
-                <Button variant="outline" size="sm" onClick={() => {
-                  setField("code", suggestedCode);
-                  checkCodeUnique(suggestedCode);
-                }}>
-                  استخدم هذا الرقم
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
+ const inputClass = "h-9 text-sm focus-visible:ring-2 focus-visible:ring-green-500/20 focus-visible:border-green-400";
+ const labelClass = "text-sm font-medium";
 
-      {/* SECTION 2: الحالة الاجتماعية */}
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold border-b pb-2">2. الحالة الاجتماعية لربة الأسرة</h3>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-2">
-            <Label>الحالة الاجتماعية</Label>
-            <Select value={fd.socialStatus ?? ""} onValueChange={(v) => {
-              setField("socialStatus", v);
-              // Reset some fields if changed
-              if (v !== "MARRIED" && v !== "DIVORCED") setField("head.residencyStatus", null);
-            }}>
-              <SelectTrigger><SelectValue placeholder="اختر الحالة" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="MARRIED">متزوجة</SelectItem>
-                <SelectItem value="DIVORCED">مطلقة</SelectItem>
-                <SelectItem value="WIDOWED">أرملة</SelectItem>
-                <SelectItem value="SINGLE_OTHER">عزباء / أخرى</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+ return (
+ <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" >
+ 
+ {/* SECTION 1: الأساسيات */}
+ <section className="space-y-4">
+ <h3 className="text-sm font-semibold uppercase text-muted-foreground border-b pb-1.5">{t("wizard.basic.section")}</h3>
+ <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+ <div className="space-y-1.5 lg:col-span-3">
+ <Label className={labelClass}>{t("wizard.familyPrefix")} <span className="text-destructive">*</span></Label>
+ <Input 
+ className={inputClass} 
+ value={fd.familyName || (fd.wifeName ? `${t("wizard.familyPrefix")} ${fd.wifeName}` : "")} 
+ onChange={(e) => setField("familyName", e.target.value)} 
+ placeholder="" 
+ />
+ </div>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.codeLabel")} <span className="text-destructive">*</span></Label>
+ <div className="flex gap-2">
+ <Input
+  className={inputClass}
+  type="text"
+  value={fd.code ?? ""}
+  onChange={(e) => {
+  setField("code", e.target.value);
+  setCodeError(null);
+  setCodeSuccess(null);
+  }}
+  onBlur={(e) => checkCodeUnique(e.target.value)}
+  placeholder={suggestedCode ? `${t("wizard.basic.codePlaceholder")} (مقترح: ${suggestedCode})` : t("wizard.basic.codePlaceholder")}
+  />
+ {isCheckingCode && <Loader2 className="h-5 w-5 animate-spin mt-2 text-muted-foreground" />}
+ </div>
+ {codeError && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{codeError}</p>}
+ {codeSuccess && <p className="text-xs text-emerald-600 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" />{codeSuccess}</p>}
+ </div>
 
-        {(fd.socialStatus === "MARRIED" || fd.socialStatus === "DIVORCED" || fd.socialStatus === "WIDOWED") && (
-          <div className="bg-muted/30 border rounded-xl p-4 space-y-4 mt-4">
-            <h4 className="font-medium text-primary mb-2">بيانات الزوج</h4>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="space-y-2">
-                <Label>اسم الزوج <span className="text-destructive">*</span></Label>
-                <Input value={head.name ?? ""} onChange={(e) => setField("head.name", e.target.value)} />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>الرقم القومي للزوج <span className="text-destructive">*</span></Label>
-                <Input 
-                  value={head.nationalId ?? ""} 
-                  onChange={(e) => {
-                    setField("head.nationalId", e.target.value);
-                    validateNid(e.target.value);
-                  }}
-                  maxLength={14}
-                />
-                {nidError ? (
-                  <p className="text-xs text-destructive">{nidError}</p>
-                ) : nidInfo ? (
-                  <p className="text-xs text-muted-foreground flex gap-2 mt-1">
-                    <Badge variant="outline" className="text-[10px]">{nidInfo.gender}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{nidInfo.age} سنة</Badge>
-                  </p>
-                ) : null}
-              </div>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.pdfUrl")}</Label>
+ <div className="relative">
+ <FileText className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+ <Input 
+ className={cn(inputClass, "pr-9")} 
+ dir="ltr" 
+ placeholder="https://..." 
+ value={fd.pdfUrl ?? ""} 
+ onChange={(e) => setField("pdfUrl", e.target.value)} 
+ />
+ </div>
+ </div>
 
-              <div className="space-y-2">
-                <Label>حالة الزوج <span className="text-destructive">*</span></Label>
-                <Select 
-                  value={head.residencyStatus ?? "RESIDENT"} 
-                  onValueChange={(v) => setField("head.residencyStatus", v)}
-                >
-                  <SelectTrigger><SelectValue placeholder="اختر حالة الزوج" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="RESIDENT">مقيم</SelectItem>
-                    <SelectItem value="ABSENT_OTHER">غائب مؤقت / مفقود</SelectItem>
-                    <SelectItem value="ABSENT_PRISON">في السجن</SelectItem>
-                    <SelectItem value="ABSENT_DEATH">متوفى</SelectItem>
-                    <SelectItem value="ABSENT_DIVORCE">مطلقة منه</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+ <div className="space-y-1.5 w-full sm:w-64">
+ <Label className={labelClass}>{t("wizard.basic.registrationDate")}</Label>
+ <Input 
+ type="date" 
+ className={cn(inputClass, householdId ? "bg-muted cursor-not-allowed" : "")}
+ value={fd.registrationDate ?? ""} 
+ onChange={(e) => setField("registrationDate", e.target.value)} 
+ readOnly={!!householdId}
+ />
+ </div>
+ </div>
+ </section>
 
-            {/* IF مطلقة */}
-            {fd.socialStatus === "DIVORCED" && (
-              <div className="grid gap-4 sm:grid-cols-3 pt-4 border-t mt-4">
-                <div className="space-y-2">
-                  <Label>سنة الطلاق</Label>
-                  <Input type="number" placeholder="YYYY" value={fd.divorceYear ?? ""} onChange={(e) => setField("divorceYear", e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>رقم وثيقة الطلاق</Label>
-                  <Input value={fd.divorceDocNumber ?? ""} onChange={(e) => setField("divorceDocNumber", e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>عدد مرات الزواج</Label>
-                  <Input type="number" min="1" value={fd.marriageCount ?? ""} onChange={(e) => setField("marriageCount", parseInt(e.target.value) || "")} />
-                </div>
-                <div className="col-span-full">
-                  <p className="text-xs text-amber-600 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 p-2 rounded w-fit">
-                    <Info className="h-4 w-4" />
-                    ملاحظة هامة: يجب تجديد البحث كل سنة من تاريخ آخر بحث.
-                  </p>
-                </div>
-              </div>
-            )}
+ {/* SECTION 2: ربة الأسرة */}
+ <section className="space-y-4">
+ <h3 className="text-sm font-semibold uppercase text-muted-foreground border-b pb-1.5">{t("wizard.basic.wifeSection")}</h3>
+ <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.wifeName")} <span className="text-destructive">*</span></Label>
+ <Input className={inputClass} value={fd.wifeName ?? ""}
+ onChange={(e) => setField("wifeName", e.target.value)}
+ onBlur={() => {
+ if (fd.wifeName) {
+ // Auto-fill family name if not manually set
+ if (!fd.familyName) {
+ setField("familyName", `${t("wizard.familyPrefix")} ${fd.wifeName}`);
+ }
+ // Auto-create/update HEAD member for wife
+ const wifeNidInfo = fd.wifeNationalId ? extractNationalIdInfo(fd.wifeNationalId) : null;
+ const headExists = fd.members?.find(m => m.role === "HEAD");
+ if (!headExists) {
+ const wifeMember: any = {
+ _localKey: "head-wife-auto",
+ name: fd.wifeName,
+ nationalId: fd.wifeNationalId || "",
+ role: "HEAD",
+ isHead: true,
+ gender: "FEMALE",
+ birthDate: wifeNidInfo?.birthDate,
+ residencyStatus: "RESIDENT",
+ employmentType: fd.wifeEmploymentQuality || "NONE",
+ educationLevel: fd.wifeEducationLevel || "ILLITERATE",
+ maritalStatus: fd.socialStatus === "SINGLE_OTHER" ? "SINGLE" : fd.socialStatus || "MARRIED",
+ };
+ setField("members", [...(fd.members || []), wifeMember]);
+ } else {
+ const newMembers = fd.members!.map(m => m.role === "HEAD" ? { ...m, name: fd.wifeName, nationalId: fd.wifeNationalId || m.nationalId } : m);
+ setField("members", newMembers);
+ }
+ }
+ }}
+ />
+ </div>
+ 
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.wifeNid")} <span className="text-destructive">*</span></Label>
+ <Input 
+ className={inputClass}
+ value={fd.wifeNationalId ?? ""} 
+ onChange={(e) => {
+ setField("wifeNationalId", e.target.value);
+ setWifeNidError(validateNid(e.target.value));
+ }}
+ maxLength={14}
+ />
+ {wifeNidError ? (
+ <p className="text-xs text-destructive mt-1">{wifeNidError}</p>
+ ) : (fd.wifeNationalId && extractNationalIdInfo(fd.wifeNationalId)) ? (
+ <div className="flex gap-1.5 mt-1">
+ <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0 border-transparent text-white", extractNationalIdInfo(fd.wifeNationalId)!.gender === "ذكر" ? "bg-blue-500 hover:bg-blue-600" : "bg-pink-500 hover:bg-pink-600")}>
+ {extractNationalIdInfo(fd.wifeNationalId)!.gender}
+ </Badge>
+ <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-slate-100 text-slate-700">{extractNationalIdInfo(fd.wifeNationalId)!.age} سنة</Badge>
+ </div>
+ ) : null}
+ </div>
 
-            {/* IF أرملة */}
-            {fd.socialStatus === "WIDOWED" && (
-              <div className="grid gap-4 sm:grid-cols-2 pt-4 border-t mt-4">
-                <div className="space-y-2">
-                  <Label>رقم شهادة الوفاة</Label>
-                  <Input value={fd.deathCertNumber ?? ""} onChange={(e) => setField("deathCertNumber", e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>تاريخ الوفاة</Label>
-                  <Input type="date" value={fd.deathDate ?? ""} onChange={(e) => setField("deathDate", e.target.value)} />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.socialStatus")}</Label>
+ <Select value={fd.socialStatus ?? ""} onValueChange={(v) => {
+ setField("socialStatus", v);
+ if (v === "DIVORCED") setField("head.residencyStatus", "ABSENT_DIVORCE");
+ else if (v === "WIDOWED") setField("head.residencyStatus", "ABSENT_DEATH");
+ else if (v === "MARRIED") setField("head.residencyStatus", "RESIDENT");
+ else setField("head.residencyStatus", null);
+ 
+ if (v !== "DIVORCED" && v !== "WIDOWED") {
+ setField("marriageCount", 1);
+ setField("pastSpouses", []);
+ }
+ }}>
+ <SelectTrigger className={inputClass}><SelectValue placeholder={t("wizard.basic.socialOptions.select")} /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="MARRIED">{t("wizard.basic.socialOptions.married")}</SelectItem>
+ <SelectItem value="DIVORCED">{t("wizard.basic.socialOptions.divorced")}</SelectItem>
+ <SelectItem value="WIDOWED">{t("wizard.basic.socialOptions.widowed")}</SelectItem>
+ <SelectItem value="SINGLE_OTHER">{t("wizard.basic.socialOptions.single")}</SelectItem>
+ </SelectContent>
+ </Select>
+ </div>
+ </div>
 
-      {/* SECTION 3: بيانات التواصل */}
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold border-b pb-2">3. بيانات التواصل</h3>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-2">
-            <Label>رقم الموبايل الأساسي <span className="text-destructive">*</span></Label>
-            <Input 
-              dir="ltr"
-              className="text-right"
-              placeholder="01XXXXXXXXX"
-              value={fd.primaryPhone ?? ""} 
-              onChange={(e) => {
-                setField("primaryPhone", e.target.value);
-                validatePhone(e.target.value, setPrimaryPhoneError);
-              }} 
-            />
-            {primaryPhoneError && <p className="text-xs text-destructive">{primaryPhoneError}</p>}
-          </div>
+ {/* Wife Employment Quality */}
+ <div className="bg-muted/30 border border-slate-200 rounded-lg p-4 space-y-4">
+ <h4 className="text-sm font-medium text-slate-800">{t("wizard.basic.wifeEmployment")}</h4>
+ <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.wifeEmploymentType")}</Label>
+ <Select value={(fd as any).wifeEmploymentQuality ?? "NONE"} onValueChange={(v) => {
+ setField("wifeEmploymentQuality", v);
+ // Sync to HEAD member
+ const headExists = fd.members?.some(m => m.role === "HEAD");
+ if (headExists) {
+ const newMembers = fd.members!.map(m => m.role === "HEAD" ? { ...m, employmentType: v } : m);
+ setField("members", newMembers);
+ }
+ }}>
+ <SelectTrigger className={inputClass}><SelectValue placeholder={t("wizard.basic.wifeEmploymentOptions.select")} /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="NONE">{t("wizard.basic.wifeEmploymentOptions.none")}</SelectItem>
+ <SelectItem value="WEAK">{t("wizard.basic.wifeEmploymentOptions.weak")}</SelectItem>
+ <SelectItem value="UNSTABLE">{t("wizard.basic.wifeEmploymentOptions.unstable")}</SelectItem>
+ <SelectItem value="SUFFICIENT">{t("wizard.basic.wifeEmploymentOptions.sufficient")}</SelectItem>
+ </SelectContent>
+ </Select>
+ </div>
 
-          <div className="space-y-2">
-            <Label>رقم موبايل ثانٍ (اختياري)</Label>
-            <Input 
-              dir="ltr"
-              className="text-right"
-              placeholder="01XXXXXXXXX"
-              value={fd.secondaryPhone ?? ""} 
-              onChange={(e) => setField("secondaryPhone", e.target.value)} 
-            />
-          </div>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.wifeEducation")}</Label>
+ <Select value={(fd as any).wifeEducationLevel ?? "ILLITERATE"} onValueChange={(v) => {
+ setField("wifeEducationLevel", v);
+ // Sync to HEAD member
+ const headExists = fd.members?.some(m => m.role === "HEAD");
+ if (headExists) {
+ const newMembers = fd.members!.map(m => m.role === "HEAD" ? { ...m, educationLevel: v } : m);
+ setField("members", newMembers);
+ }
+ }}>
+ <SelectTrigger className={inputClass}><SelectValue placeholder={t("wizard.basic.wifeEducationOptions.select")} /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="ILLITERATE">{t("wizard.basic.wifeEducationOptions.illiterate")}</SelectItem>
+ <SelectItem value="MEDIUM">{t("wizard.basic.wifeEducationOptions.medium")}</SelectItem>
+ <SelectItem value="HIGHER_LIMITED">{t("wizard.basic.wifeEducationOptions.higherLimited")}</SelectItem>
+ <SelectItem value="HIGHER_STABLE">{t("wizard.basic.wifeEducationOptions.higherStable")}</SelectItem>
+ </SelectContent>
+ </Select>
+ </div>
+ </div>
+ </div>
 
-          <div className="space-y-2">
-            <Label>رقم الواتساب (اختياري)</Label>
-            <Input 
-              dir="ltr"
-              className="text-right"
-              placeholder="01XXXXXXXXX"
-              value={fd.whatsappPhone ?? ""} 
-              onChange={(e) => setField("whatsappPhone", e.target.value)} 
-            />
-            {fd.whatsappPhone && /^01[0125]\d{8}$/.test(fd.whatsappPhone) && (
-              <a 
-                href={`https://wa.me/+20${fd.whatsappPhone.substring(1)}`} 
-                target="_blank" 
-                rel="noreferrer"
-                className="text-xs text-emerald-600 hover:underline flex items-center gap-1 mt-1"
-              >
-                فتح محادثة: wa.me/+20{fd.whatsappPhone.substring(1)}
-              </a>
-            )}
-          </div>
-        </div>
-      </section>
+ {(fd.socialStatus === "MARRIED" || fd.socialStatus === "DIVORCED" || fd.socialStatus === "WIDOWED") && (
+ <div className="bg-muted/30 border border-slate-200 rounded-lg p-4 space-y-4">
+ <h4 className="text-sm font-medium text-slate-800">{t("wizard.basic.husband.section")} {fd.socialStatus === "DIVORCED" ? `(${t("wizard.basic.husband.last")})` : fd.socialStatus === "WIDOWED" ? `(${t("wizard.basic.husband.deceased")})` : ""}</h4>
+ <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.husband.name")} <span className="text-destructive">*</span></Label>
+ <Input 
+ className={inputClass} 
+ value={head.name ?? ""} 
+ onChange={(e) => setField("head.name", e.target.value)}
+ onBlur={() => {
+ if ((fd.socialStatus === "MARRIED" || fd.socialStatus === "DIVORCED" || fd.socialStatus === "WIDOWED") && head.name) {
+ const spouseExists = fd.members?.find(m => m.role === "SPOUSE");
+ if (!spouseExists) {
+ const spouseMember: any = {
+ _localKey: "spouse-auto",
+ name: head.name,
+ nationalId: head.nationalId || "",
+ role: "SPOUSE",
+ isHead: false,
+ gender: "MALE",
+ residencyStatus: head.residencyStatus || "RESIDENT",
+ employmentType: head.employmentType || "NONE",
+ educationLevel: head.educationLevel || "ILLITERATE",
+ };
+ setField("members", [...(fd.members || []), spouseMember]);
+ } else {
+ const newMembers = fd.members!.map(m => m.role === "SPOUSE" ? { ...m, name: head.name } : m);
+ setField("members", newMembers);
+ }
+ }
+ }}
+ />
+ </div>
+ 
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.husband.nid")} <span className="text-destructive">*</span></Label>
+ <Input 
+ className={inputClass}
+ value={head.nationalId ?? ""} 
+ onChange={(e) => {
+ setField("head.nationalId", e.target.value);
+ setHeadNidError(validateNid(e.target.value));
+ }}
+ onBlur={() => {
+ if ((fd.socialStatus === "MARRIED" || fd.socialStatus === "DIVORCED" || fd.socialStatus === "WIDOWED") && head.nationalId) {
+ const spouseExists = fd.members?.find(m => m.role === "SPOUSE");
+ if (spouseExists) {
+ const newMembers = fd.members!.map(m => m.role === "SPOUSE" ? { ...m, nationalId: head.nationalId } : m);
+ setField("members", newMembers);
+ }
+ }
+ }}
+ maxLength={14}
+ />
+ {headNidError ? (
+ <p className="text-xs text-destructive mt-1">{headNidError}</p>
+ ) : nidInfo ? (
+ <div className="flex gap-1.5 mt-1">
+ <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0 border-transparent text-white", nidInfo.gender === "ذكر" ? "bg-blue-500 hover:bg-blue-600" : "bg-pink-500 hover:bg-pink-600")}>
+ {nidInfo.gender}
+ </Badge>
+ <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-slate-100 text-slate-700">{nidInfo.age} سنة</Badge>
+ </div>
+ ) : null}
+ </div>
 
-      {/* SECTION 4: العنوان */}
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold border-b pb-2">4. بيانات العنوان بالتفصيل</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>المحافظة</Label>
-            <Select value={fd.governorate ?? ""} onValueChange={(v) => setField("governorate", v)}>
-              <SelectTrigger><SelectValue placeholder="اختر المحافظة" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="CAIRO">القاهرة</SelectItem>
-                <SelectItem value="GIZA">الجيزة</SelectItem>
-                <SelectItem value="ALEXANDRIA">الإسكندرية</SelectItem>
-                <SelectItem value="QALYUBIA">القليوبية</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>المركز / الحي</Label>
-            <Input value={fd.district ?? ""} onChange={(e) => setField("district", e.target.value)} placeholder="مثال: شبرا الخيمة" />
-          </div>
+ {fd.socialStatus === "MARRIED" && (
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.husband.status")} <span className="text-destructive">*</span></Label>
+ <Select 
+ value={head.residencyStatus ?? "RESIDENT"} 
+ onValueChange={(v) => setField("head.residencyStatus", v)}
+ >
+ <SelectTrigger className={inputClass}><SelectValue placeholder={t("wizard.basic.husband.statusOptions.select")} /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="RESIDENT">{t("wizard.basic.husband.statusOptions.resident")}</SelectItem>
+ <SelectItem value="ABSENT_OTHER">{t("wizard.basic.husband.statusOptions.absent")}</SelectItem>
+ <SelectItem value="ABSENT_PRISON">{t("wizard.basic.husband.statusOptions.prison")}</SelectItem>
+ </SelectContent>
+ </Select>
+ </div>
+ )}
 
-          <div className="space-y-2">
-            <Label>القرية / الحي</Label>
-            <Input value={fd.village ?? ""} onChange={(e) => setField("village", e.target.value)} placeholder="مثال: بهتيم" />
-          </div>
+ {fd.socialStatus === "MARRIED" && (
+ <>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.husband.employmentType")} <span className="text-destructive">*</span></Label>
+ <Select 
+ value={head.employmentType ?? ""} 
+ onValueChange={(v) => {
+ setField("head.employmentType", v);
+ const spouseMemberExists = fd.members?.some(m => m.role === "SPOUSE");
+ if (spouseMemberExists) {
+ const newMembers = fd.members!.map(m => m.role === "SPOUSE" ? { ...m, employmentType: v } : m);
+ setField("members", newMembers);
+ }
+ }}
+ >
+ <SelectTrigger className={inputClass}><SelectValue placeholder={t("wizard.basic.husband.employmentOptions.select")} /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="NONE">{t("wizard.basic.husband.employmentOptions.none")}</SelectItem>
+ <SelectItem value="WEAK">{t("wizard.basic.husband.employmentOptions.weak")}</SelectItem>
+ <SelectItem value="SEASONAL">{t("wizard.basic.husband.employmentOptions.seasonal")}</SelectItem>
+ <SelectItem value="REGULAR">{t("wizard.basic.husband.employmentOptions.regular")}</SelectItem>
+ <SelectItem value="ABROAD_WEAK">{t("wizard.basic.husband.employmentOptions.abroad_weak")}</SelectItem>
+ <SelectItem value="ABROAD_MEDIUM">{t("wizard.basic.husband.employmentOptions.abroad_medium")}</SelectItem>
+ <SelectItem value="ABROAD_REGULAR">{t("wizard.basic.husband.employmentOptions.abroad_regular")}</SelectItem>
+ </SelectContent>
+ </Select>
+ </div>
 
-          <div className="space-y-2">
-            <Label>رقم / اسم المنطقة</Label>
-            <Input value={fd.addressRegion ?? ""} onChange={(e) => setField("addressRegion", e.target.value)} placeholder="مثال: المنطقة الرابعة" />
-          </div>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.husband.education")} <span className="text-destructive">*</span></Label>
+ <Select 
+ value={head.educationLevel ?? ""} 
+ onValueChange={(v) => {
+ setField("head.educationLevel", v);
+ const spouseMemberExists = fd.members?.some(m => m.role === "SPOUSE");
+ if (spouseMemberExists) {
+ const newMembers = fd.members!.map(m => m.role === "SPOUSE" ? { ...m, educationLevel: v } : m);
+ setField("members", newMembers);
+ }
+ }}
+ >
+ <SelectTrigger className={inputClass}><SelectValue placeholder={t("wizard.basic.husband.educationOptions.select")} /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="ILLITERATE">{t("wizard.basic.husband.educationOptions.illiterate")}</SelectItem>
+ <SelectItem value="MEDIUM">{t("wizard.basic.husband.educationOptions.medium")}</SelectItem>
+ <SelectItem value="HIGHER_LIMITED">{t("wizard.basic.husband.educationOptions.higherLimited")}</SelectItem>
+ <SelectItem value="HIGHER_STABLE">{t("wizard.basic.husband.educationOptions.higherStable")}</SelectItem>
+ </SelectContent>
+ </Select>
+ </div>
+ </>
+ )}
+ </div>
 
-          <div className="space-y-2">
-            <Label>اسم الشارع</Label>
-            <Input value={fd.addressStreet ?? ""} onChange={(e) => setField("addressStreet", e.target.value)} placeholder="مثال: شارع المحطة" />
-          </div>
+ {/* IF مطلقة */}
+ {fd.socialStatus === "DIVORCED" && (
+ <div className="grid gap-4 sm:grid-cols-3 pt-4 border-t mt-4">
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.divorce.year")}</Label>
+ <Input className={inputClass} type="number" placeholder="YYYY" value={fd.divorceYear ?? ""} onChange={(e) => setField("divorceYear", e.target.value)} />
+ </div>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.divorce.docNumber")}</Label>
+ <Input className={inputClass} value={fd.divorceDocNumber ?? ""} onChange={(e) => setField("divorceDocNumber", e.target.value)} />
+ </div>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.divorce.marriageCount")}</Label>
+ <Select value={fd.marriageCount ? String(fd.marriageCount) : "1"} onValueChange={(v) => {
+ const count = parseInt(v);
+ setField("marriageCount", count);
+ const currentSpouses = fd.pastSpouses || [];
+ const newLength = count > 1 ? count - 1 : 0;
+ if (currentSpouses.length < newLength) {
+ setField("pastSpouses", [...currentSpouses, ...Array.from({ length: newLength - currentSpouses.length }).map(() => ({}))]);
+ } else {
+ setField("pastSpouses", currentSpouses.slice(0, newLength));
+ }
+ }}>
+ <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
+ <SelectContent>
+ {[1, 2, 3, 4, 5].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+ </SelectContent>
+ </Select>
+ </div>
+ <div className="col-span-full">
+ <p className="text-xs text-amber-600 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 p-2 rounded w-fit">
+ <Info className="h-4 w-4" />
+ {t("wizard.basic.divorce.note")}
+ </p>
+ </div>
+ </div>
+ )}
 
-          <div className="space-y-2 sm:col-span-2">
-            <Label>مكان البيت في الشارع (تفصيلي)</Label>
-            <Input value={fd.addressDetails ?? ""} onChange={(e) => setField("addressDetails", e.target.value)} placeholder="مثال: بجوار المسجد، الدور الثاني" />
-          </div>
-        </div>
-      </section>
+ {/* IF أرملة */}
+ {fd.socialStatus === "WIDOWED" && (
+ <div className="grid gap-4 sm:grid-cols-3 pt-4 border-t mt-4">
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.death.certNumber")}</Label>
+ <Input className={inputClass} value={fd.deathCertNumber ?? ""} onChange={(e) => setField("deathCertNumber", e.target.value)} />
+ </div>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.death.date")}</Label>
+ <Input className={inputClass} type="date" value={fd.deathDate ?? ""} onChange={(e) => setField("deathDate", e.target.value)} />
+ </div>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.death.marriageCount")}</Label>
+ <Select value={fd.marriageCount ? String(fd.marriageCount) : "1"} onValueChange={(v) => {
+ const count = parseInt(v);
+ setField("marriageCount", count);
+ const currentSpouses = fd.pastSpouses || [];
+ const newLength = count > 1 ? count - 1 : 0;
+ if (currentSpouses.length < newLength) {
+ setField("pastSpouses", [...currentSpouses, ...Array.from({ length: newLength - currentSpouses.length }).map(() => ({}))]);
+ } else {
+ setField("pastSpouses", currentSpouses.slice(0, newLength));
+ }
+ }}>
+ <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
+ <SelectContent>
+ {[1, 2, 3, 4, 5].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+ </SelectContent>
+ </Select>
+ </div>
+ </div>
+ )}
 
-      {/* SECTION 5: إعدادات البحث */}
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold border-b pb-2">5. إعدادات البحث وتوجيه المساعدات</h3>
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div className="space-y-3 border rounded-xl p-4 bg-muted/10">
-            <Label className="text-base">نوع البحث</Label>
-            <RadioGroup 
-              value={fd.searchType ?? "DESK"} 
-              onValueChange={(v) => setField("searchType", v)}
-              className="flex gap-6 mt-2"
-            >
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="DESK" id="desk" />
-                <Label htmlFor="desk">بحث مكتبي</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="FIELD" id="field" />
-                <Label htmlFor="field">بحث ميداني</Label>
-              </div>
-            </RadioGroup>
-          </div>
+ {/* Dynamic Past Spouses */}
+ {fd.marriageCount && fd.marriageCount > 1 && Array.from({ length: fd.marriageCount - 1 }).map((_, i) => (
+ <div key={i} className="border border-slate-200 p-4 rounded-lg bg-white/50 col-span-full space-y-4">
+ <h5 className="font-semibold text-xs text-slate-500 uppercase">{t("wizard.basic.husband.pastSpouse")} {i + 1}</h5>
+ <div className="grid grid-cols-2 gap-4">
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.husband.name")} <span className="text-destructive">*</span></Label>
+ <Input 
+ className={inputClass}
+ value={fd.pastSpouses?.[i]?.name || ""} 
+ onChange={e => {
+ const arr = [...(fd.pastSpouses || [])];
+ arr[i] = { ...arr[i], name: e.target.value };
+ setField("pastSpouses", arr);
+ }} 
+ />
+ </div>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.husband.nidOptional")}</Label>
+ <Input 
+ className={inputClass}
+ value={fd.pastSpouses?.[i]?.nationalId || ""} 
+ maxLength={14}
+ onChange={e => {
+ const arr = [...(fd.pastSpouses || [])];
+ arr[i] = { ...arr[i], nationalId: e.target.value };
+ setField("pastSpouses", arr);
+ }} 
+ />
+ </div>
+ </div>
+ </div>
+ ))}
+ </div>
+ )}
+ </section>
 
-          <div className="space-y-4 border rounded-xl p-4 bg-muted/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>حالة تعفف</Label>
-                <p className="text-xs text-muted-foreground mt-1">يمنع إجراء البحث الميداني المباشر احتراماً للأسرة.</p>
-              </div>
-              <Switch checked={fd.isModest ?? false} onCheckedChange={(v) => setField("isModest", v)} />
-            </div>
-            <div className="flex items-center justify-between border-t pt-4">
-              <div>
-                <Label>تعامل من خلال المقر</Label>
-                <p className="text-xs text-muted-foreground mt-1">تفضيل التواصل وتقديم المساعدات من خلال المقر مباشرة.</p>
-              </div>
-              <Switch checked={fd.officeDealings ?? false} onCheckedChange={(v) => setField("officeDealings", v)} />
-            </div>
-          </div>
-        </div>
-      </section>
+ {/* SECTION 3: التواصل والعنوان */}
+ <section className="space-y-4">
+ <h3 className="text-sm font-semibold uppercase text-muted-foreground border-b pb-1.5">{t("wizard.basic.contact.section")}</h3>
+ <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.contact.primaryPhone")} <span className="text-destructive">*</span></Label>
+ <Input 
+ dir="ltr"
+ className={cn("text-right", inputClass)}
+ placeholder="01XXXXXXXXX"
+ value={fd.primaryPhone ?? ""} 
+ onChange={(e) => {
+ setField("primaryPhone", e.target.value);
+ validatePhone(e.target.value, setPrimaryPhoneError);
+ }} 
+ />
+ {primaryPhoneError && <p className="text-xs text-destructive mt-1">{primaryPhoneError}</p>}
+ </div>
 
-      {/* SECTION 6: الملاحظات */}
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold border-b pb-2">6. الملاحظات</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>ملاحظات عامة</Label>
-            <Textarea 
-              value={fd.notes ?? ""} 
-              onChange={(e) => setField("notes", e.target.value)} 
-              placeholder="أي تفاصيل أو ملاحظات عامة حول الأسرة..."
-              className="h-24 resize-none"
-            />
-          </div>
-          <div className="space-y-2 relative">
-            <Label>ملاحظات ميدانية</Label>
-            <Textarea 
-              value={fd.fieldNotes ?? ""} 
-              onChange={(e) => setField("fieldNotes", e.target.value)} 
-              placeholder="ملاحظات تتعلق بالبحث الميداني..."
-              className="h-24 resize-none border-dashed"
-            />
-            <div className="mt-1">
-              <Badge variant="secondary" className="text-[10px] text-muted-foreground">
-                قيد الإنشاء — سيُربط بموديول البحث الميداني قريباً
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </section>
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.contact.whatsappPhone")}</Label>
+ <div className="relative">
+ <Input 
+ dir="ltr"
+ className={cn("text-right pr-9", inputClass)}
+ placeholder="01XXXXXXXXX"
+ value={fd.whatsappPhone ?? ""} 
+ onChange={(e) => setField("whatsappPhone", e.target.value)} 
+ />
+ {fd.whatsappPhone && /^01[0125]\d{8}$/.test(fd.whatsappPhone) && (
+ <a 
+ href={`https://wa.me/+20${fd.whatsappPhone.substring(1)}`} 
+ target="_blank" 
+ rel="noreferrer"
+ className="absolute right-2 top-2.5 text-emerald-500 hover:text-emerald-600 transition-colors"
+ title={t("wizard.basic.contact.whatsappOpen")}
+ >
+ <Link2 className="h-4 w-4" />
+ </a>
+ )}
+ </div>
+ </div>
+ </div>
+ 
+ <div className="flex flex-col lg:flex-row gap-4 items-end">
+ <div className="space-y-1.5 w-full lg:w-24 shrink-0">
+ <Label className={labelClass}>{t("wizard.basic.contact.region")}</Label>
+ <Select value={fd.addressRegion ?? ""} onValueChange={(v) => setField("addressRegion", v)}>
+ <SelectTrigger className={inputClass}><SelectValue placeholder={t("wizard.basic.contact.select")} /></SelectTrigger>
+ <SelectContent>
+ {Array.from({ length: 10 }).map((_, i) => (
+ <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>
+ ))}
+ </SelectContent>
+ </Select>
+ </div>
 
-      {/* SECTION 7: تاريخ التسجيل */}
-      <section className="space-y-4">
-        <div className="space-y-2 w-full sm:w-64">
-          <Label>تاريخ التسجيل</Label>
-          <Input 
-            type="date" 
-            value={fd.registrationDate ?? ""} 
-            onChange={(e) => setField("registrationDate", e.target.value)} 
-            readOnly={!!householdId} // read-only after first save
-            className={householdId ? "bg-muted cursor-not-allowed" : ""}
-          />
-        </div>
-      </section>
+ <div className="space-y-1.5 w-full lg:w-32 shrink-0">
+ <Label className={labelClass}>{fd.addressRegion === "10" ? t("wizard.basic.contact.village") : t("wizard.basic.contact.district")}</Label>
+ <Input className={inputClass} value={fd.district ?? ""} onChange={(e) => setField("district", e.target.value)} />
+ </div>
 
-    </div>
-  );
+ <div className="space-y-1.5 w-full lg:w-48 shrink-0">
+ <Label className={labelClass}>{t("wizard.basic.contact.street")}</Label>
+ <Input className={inputClass} value={fd.addressStreet ?? ""} onChange={(e) => setField("addressStreet", e.target.value)} />
+ </div>
+
+ <div className="space-y-1.5 w-full flex-1">
+ <Label className={labelClass}>{t("wizard.basic.contact.addressDetails")}</Label>
+ <Input className={inputClass} value={fd.addressDetails ?? ""} onChange={(e) => setField("addressDetails", e.target.value)} />
+ </div>
+ </div>
+ </section>
+
+ {/* SECTION 4: إعدادات البحث */}
+ <section className="space-y-4 relative">
+ <div className="flex justify-between items-center border-b pb-1.5">
+ <h3 className="text-sm font-semibold uppercase text-muted-foreground">{t("wizard.basic.search.section")}</h3>
+ <div className="flex items-center gap-4">
+ <div className="flex items-center gap-1.5">
+ <Label className="text-xs text-muted-foreground">{t("wizard.basic.search.modest")}</Label>
+ <Switch className="scale-75" checked={fd.isModest ?? false} onCheckedChange={(v) => setField("isModest", v)} />
+ </div>
+ <div className="flex items-center gap-1.5">
+ <Label className="text-xs text-muted-foreground">{t("wizard.basic.search.officeDealings")}</Label>
+ <Switch className="scale-75" checked={fd.officeDealings ?? false} onCheckedChange={(v) => {
+ setField("officeDealings", v);
+ if (v && fd.searchType === "FIELD") setField("searchType", "DESK");
+ }} />
+ </div>
+ </div>
+ </div>
+ 
+ <div className="flex gap-4">
+ <div className="space-y-2 border border-slate-200 rounded-lg p-3 bg-slate-50 flex-1 flex items-center justify-between">
+ <div className="flex items-center gap-3">
+ <Switch 
+ checked={fd.searchType === "DESK"} 
+ onCheckedChange={(v) => {
+ if (v) {
+ setField("searchType", "DESK");
+ setField("registrationDate", new Date().toISOString().split("T")[0]);
+ }
+ }} 
+ />
+ <Label className="text-sm font-semibold text-slate-700">{t("wizard.basic.search.desk")}</Label>
+ </div>
+ {fd.searchType === "DESK" && (
+ <span className="text-xs text-slate-500 font-mono" dir="ltr">{fd.registrationDate}</span>
+ )}
+ </div>
+
+ <div className={cn("space-y-2 border border-slate-200 rounded-lg p-3 bg-slate-50 flex-1 flex items-center justify-between", fd.officeDealings ? "opacity-50 pointer-events-none" : "")}>
+ <div className="flex items-center gap-3">
+ <Switch 
+ checked={fd.searchType === "FIELD"} 
+ onCheckedChange={(v) => {
+ if (v) {
+ setField("searchType", "FIELD");
+ setField("registrationDate", new Date().toISOString().split("T")[0]);
+ }
+ }} 
+ disabled={fd.officeDealings}
+ />
+ <Label className="text-sm font-semibold text-slate-700">{t("wizard.basic.search.field")}</Label>
+ </div>
+ {fd.searchType === "FIELD" && (
+ <div className="flex flex-col items-end">
+ <span className="text-xs text-slate-500 font-mono" dir="ltr">{fd.registrationDate}</span>
+ {fd.registrationDate && (new Date().getTime() - new Date(fd.registrationDate).getTime()) > 31536000000 && (
+ <span className="text-[10px] text-destructive flex items-center gap-1 mt-1">
+ <AlertCircle className="w-3 h-3" /> {t("wizard.basic.search.expired")}
+ </span>
+ )}
+ </div>
+ )}
+ </div>
+ </div>
+ </section>
+
+ {/* SECTION 5: الملاحظات */}
+ <section className="space-y-4">
+ <h3 className="text-sm font-semibold uppercase text-muted-foreground border-b pb-1.5">{t("wizard.basic.notes.section")}</h3>
+ <div className="grid gap-4 sm:grid-cols-2">
+ <div className="space-y-1.5">
+ <Label className={labelClass}>{t("wizard.basic.notes.general")}</Label>
+ <Textarea 
+ value={fd.notes ?? ""} 
+ onChange={(e) => setField("notes", e.target.value)} 
+ placeholder={t("wizard.basic.notes.generalPlaceholder")}
+ className="h-20 resize-none text-sm focus-visible:ring-2 focus-visible:ring-green-500/20 focus-visible:border-green-400"
+ />
+ </div>
+ <div className="space-y-1.5 relative">
+ <Label className={labelClass}>{t("wizard.basic.notes.field")}</Label>
+ <Textarea 
+ value={fd.fieldNotes ?? ""} 
+ onChange={(e) => setField("fieldNotes", e.target.value)} 
+ placeholder={t("wizard.basic.notes.fieldPlaceholder")}
+ className="h-20 resize-none border-dashed text-sm focus-visible:ring-2 focus-visible:ring-green-500/20 focus-visible:border-green-400"
+ />
+ </div>
+ </div>
+ </section>
+
+ </div>
+ );
 }

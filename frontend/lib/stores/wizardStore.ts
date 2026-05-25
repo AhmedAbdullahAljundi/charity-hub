@@ -18,10 +18,16 @@ export interface WizardPersonForm extends Partial<PersonDto> {
   hasDisability?: boolean;
   diseasesDraft?: Array<Partial<{ id?: string; treatmentCost: string; followup: string; workImpact: string }>>;
   disabilitiesDraft?: Array<Partial<{ id?: string; workImpact: string; companion: string; treatmentCost: string }>>;
+  workCorrection?: { type: string; multiplier: number; educationMultiplier?: number };
 }
 
 export interface WizardFormData {
   code?: string;
+  familyName?: string;
+  wifeName?: string;
+  wifeNationalId?: string;
+  wifeEmploymentQuality?: string;
+  wifeEducationLevel?: string;
   socialStatus?: "MARRIED" | "DIVORCED" | "WIDOWED" | "SINGLE_OTHER";
   divorceYear?: string;
   divorceDocNumber?: string;
@@ -40,6 +46,9 @@ export interface WizardFormData {
   fieldNotes?: string;
   registrationDate?: string;
   alimonyStatus?: "FORMAL" | "INFORMAL_SUFFICIENT" | "INFORMAL_INSUFFICIENT" | "NONE";
+  workCorrection?: { type: string; multiplier: number };
+  pdfUrl?: string;
+  pastSpouses?: Array<{ name: string; nationalId?: string }>;
 
   // Existing fields
   governorate?: string;
@@ -68,29 +77,11 @@ export interface WizardFormData {
     sonInPrisonUnmarried?: boolean;
     sonInPrisonGrade?: string;
     sonInPrisonId?: string;
-    hasSmoking?: boolean;
-    hasDrugs?: boolean;
-    hasBegging?: boolean;
+    // Removed: social indicators had no backend implementation
   };
-  diseases?: Array<{
-    id?: string;
-    _localKey?: string;
-    personId?: string;
-    name?: string;
-    treatmentCost?: string;
-    followup?: string;
-    workImpact?: string;
-  }>;
-  disabilities?: Array<{
-    id?: string;
-    _localKey?: string;
-    personId?: string;
-    description?: string;
-    workImpact?: string;
-    companion?: string;
-    treatmentCost?: string;
-  }>;
-  income?: Record<string, { amount: number; verified: string; note?: string; id?: string }>;
+  income?: Record<string, { amount: number; verified?: boolean; note?: string; id?: string }>;
+  diseases?: Array<any>;
+  disabilities?: Array<any>;
 }
 
 export interface ConditionalFlags {
@@ -120,11 +111,13 @@ function deriveFlags(form: WizardFormData): ConditionalFlags {
   else if (absent) mappedReason = "other";
 
   const members = form.members ?? [];
+  const socialStatusDivorce = form.socialStatus === "DIVORCED" || form.socialStatus === "مطلقة" || form.socialStatus === "DIVORCE" as any;
+
   return {
     headIsAbsent: absent,
     absenceReason: mappedReason,
     hasWidow: mappedReason === "death",
-    hasDivorce: mappedReason === "divorce",
+    hasDivorce: mappedReason === "divorce" || socialStatusDivorce,
     hasPrison: mappedReason === "prison",
     hasDisease: members.some((m) => m.hasDisease) || Boolean(head?.hasDisease),
     hasDisability: members.some((m) => m.hasDisability) || Boolean(head?.hasDisability),
@@ -158,6 +151,7 @@ const initialForm: WizardFormData = {
   hasRationCard: true,
   hasFamilySupport: false,
   hasFoodAid: false,
+  workCorrection: { type: "", multiplier: 0 },
   head: { residencyStatus: "RESIDENT", role: "HEAD", isHead: true, gender: "MALE" },
   members: [],
   burdens: {},
@@ -165,7 +159,7 @@ const initialForm: WizardFormData = {
 };
 
 function extractNationalIdInfo(nationalId?: string) {
-  if (!nationalId || !/^[23]\d{13}$/.test(nationalId)) return null;
+  if (!nationalId || !/^([23])(\d{2})(0[1-9]|1[012])(0[1-9]|[12]\d|3[01])\d{7}$/.test(nationalId)) return null;
   const century = nationalId[0] === "2" ? 1900 : 2000;
   const year = century + Number(nationalId.substring(1, 3));
   const month = Number(nationalId.substring(3, 5));
@@ -194,9 +188,6 @@ function buildHeadPayload(formData: WizardFormData) {
     educationLevel: head.educationLevel || "ILLITERATE",
     maritalStatus,
   };
-  if (formData.socialStatus === "DIVORCED") {
-    payload.alimonyStatus = formData.alimonyStatus || null;
-  }
   return payload;
 }
 
@@ -250,9 +241,12 @@ export const useWizardStore = create<WizardState>((set, get) => ({
     try {
       const payload = {
         code: formData.code,
-        governorate: formData.governorate,
-        district: formData.district,
-        village: formData.village,
+        familyName: formData.familyName || (formData.wifeName ? `أسرة ${formData.wifeName}` : undefined),
+        wifeName: formData.wifeName,
+        wifeNationalId: formData.wifeNationalId,
+        governorate: formData.governorate || formData.addressRegion || "1",
+        district: formData.district || "default",
+        village: formData.village || "default",
         address: formData.address,
         addressRegion: formData.addressRegion,
         addressStreet: formData.addressStreet,
@@ -277,12 +271,14 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         officeDealings: formData.officeDealings,
         notes: formData.notes,
         fieldNotes: formData.fieldNotes,
+        pdfUrl: formData.pdfUrl,
+        pastSpouses: formData.pastSpouses,
         isDraft: true,
       };
 
       let id = householdId;
       if (!id) {
-        if (!formData.governorate || !formData.district || !formData.village) {
+        if (!formData.code && !formData.wifeName) {
           set({ autosaveStatus: "idle" });
           return;
         }
@@ -294,6 +290,10 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       }
 
       const headPayload = buildHeadPayload(formData);
+      // attach work correction if present
+      if (headPayload && formData.workCorrection) {
+        headPayload.workCorrection = formData.workCorrection;
+      }
       if (id && headPayload?.birthDate) {
         const headId = formData.head?.personId || formData.head?.id;
         const savedHead = headId
@@ -309,6 +309,16 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         });
       }
 
+      if (id && formData.socialStatus === "DIVORCED") {
+        const spouse = formData.members?.find((m) => m.role === "SPOUSE");
+        if (spouse && (spouse.personId || spouse.id)) {
+          const sId = spouse.personId || spouse.id;
+          await updatePerson(id, sId, { alimonyStatus: formData.alimonyStatus || null });
+          const nextMembers = formData.members?.map(m => m.role === "SPOUSE" ? { ...m, alimonyStatus: formData.alimonyStatus || null } : m) || [];
+          set({ formData: { ...get().formData, members: nextMembers } });
+        }
+      }
+
       set({
         isDirty: false,
         autosaveStatus: "synced",
@@ -318,8 +328,15 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       if (id) {
         await useScoringStore.getState().fetchLatest(id);
       }
-    } catch {
-      toast.error("تعذر حفظ بيانات الاستقصاء. حاول مرة أخرى.");
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || String(e);
+      if (msg.includes('nationalId') || msg.includes('National ID') || msg.includes('الرقم القومي')) {
+        toast.error("الرقم القومي المدخل مسجل مسبقاً في النظام. يرجى المراجعة.");
+      } else if (msg.includes('Household code already exists') || msg.includes('Unique constraint')) {
+        toast.error("رقم القيد أو الرقم القومي المدخل مسجل مسبقاً لأسرة أخرى. يرجى المراجعة.");
+      } else {
+        toast.error(`تعذر الحفظ: ${msg}`);
+      }
       set({ autosaveStatus: "error" });
     }
   },
@@ -376,6 +393,8 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       officeDealings: h.officeDealings ?? undefined,
       notes: h.notes ?? undefined,
       fieldNotes: h.fieldNotes ?? undefined,
+      pdfUrl: h.pdfUrl ?? undefined,
+      pastSpouses: h.pastSpouses ? (h.pastSpouses as any) : undefined,
       head: head ? { ...head, personId: head.id, hasDisease: (head.diseases?.length ?? 0) > 0, hasDisability: (head.disabilities?.length ?? 0) > 0 } : initialForm.head,
       members: members.map((m) => ({
         ...m,

@@ -1,0 +1,853 @@
+{
+  "title": "الأسر المستهدفة",
+  "addNew": "إضافة أسرة جديدة",
+  "search": {
+    "placeholder": "ابحث بالاسم، الرقم القومي، الهاتف， أو رقم القيد...",
+    "clear": "مسح"
+  },
+  "filters": {
+    "eligibility": "الطبقة",
+    "classification": "التصنيف",
+    "decision": "القرار",
+    "all": "الكل",
+    "clear": "مسح الفلتر"
+  },
+  "columns": "أعمدة",
+  "export": {
+    "button": "تصدير",
+    "csv": "تصدير CSV",
+    "excel": "تصدير Excel",
+    "filename": "CharityHub-الأسر",
+    "sheetTitle": "CharityHub — قائمة الأسر المستهدفة",
+    "exportDate": "تاريخ التصدير"
+  },
+  "whatsapp": "فتح محادثة واتساب",
+  "table": {
+    "headers": {
+      "code": "رقم القيد",
+      "family": "الأسرة",
+      "address": "العنوان",
+      "phone": "الهاتف",
+      "dependents": "أطفال/معالون",
+      "total": "إجمالي الأسرة",
+      "income": "إجمالي الدخل",
+      "score": "التقييم",
+      "classification": "التصنيف",
+      "actions": "إجراءات"
+    },
+    "actions": {
+      "view": "عرض",
+      "edit": "تعديل",
+      "delete": "حذف"
+    },
+    "empty": {
+      "title": "لا توجد أسر تطابق البحث",
+      "clear": "مسح الفلاتر"
+    },
+    "pagination": {
+      "showing": "عرض",
+      "to": "-",
+      "of": "من",
+      "items": "أسرة",
+      "prev": "السابق",
+      "next": "التالي"
+    },
+    "sort": {
+      "wife": "ترتيب باسم الزوجة ↑↓",
+      "husband": "ترتيب باسم الزوج ↑↓"
+    },
+    "selection": {
+      "selected": "أسر محددة",
+      "calculateAll": "حساب التقييم للكل",
+      "export": "تصدير",
+      "cancel": "إلغاء"
+    },
+    "tooltips": {
+      "whatsapp": "فتح محادثة واتساب",
+      "dependents": "الأطفال والمعالون المحتسَبون في التقييم",
+      "noFile": "لا يوجد ملف",
+      "openFile": "فتح الملف"
+    },
+    "status": {
+      "pending": "لم يبت بعد"
+    },
+    "deleteDialog": {
+      "title": "حذف الأسرة",
+      "desc": "هل تريد حذف أسرة",
+      "warning": "لا يمكن التراجع عن هذا الإجراء.",
+      "cancel": "إلغاء",
+      "confirm": "حذف"
+    },
+    "expanded": {
+      "members": "الأفراد",
+      "lastModified": "آخر تعديل",
+      "income": "الدخل",
+      "scoreBreakdown": "تفصيل التقييم"
+    }
+  },
+  "kpi": {
+    "total": "إجمالي الأسر",
+    "evaluated": "تم تقييمها",
+    "pendingEval": "بانتظار تقييم",
+    "fieldVisit": "زيارة ميدانية",
+    "missingFiles": "ملفات ناقصة"
+  },
+  "eligibility": {
+    "CRITICAL": "حرج",
+    "HIGH_NEED": "احتياج شديد",
+    "MODERATE_NEED": "احتياج متوسط",
+    "LOW_NEED": "احتياج منخفض",
+    "NOT_ELIGIBLE": "غير مستحق"
+  },
+  "classification": {
+    "orphans": "أيتام",
+    "poor": "فقراء",
+    "needy": "مساكين",
+    "prisoners": "أسر سجناء",
+    "disabled": "ذوو إعاقة",
+    "elderly": "مسنون",
+    "chronic": "أمراض مزمنة",
+    "abandoned": "حالات هجر",
+    "students": "طالب علم",
+    "elderly2": "كبار سن",
+    "not_eligible": "لا يستحق",
+    "pending": "لم يبت بعد"
+  },
+  "decision": {
+    "PENDING": "بانتظار",
+    "APPROVED": "موافق",
+    "REJECTED": "مرفوض",
+    "NEEDS_REVIEW": "يحتاج مراجعة",
+    "ESCALATED": "تصعيد"
+  },
+  "tags": {
+    "chronicDisease": "مرض مزمن",
+    "disability": "إعاقة",
+    "student": "طالب",
+    "bride": "عروسة",
+    "orphan": "يتيم",
+    "prisoner": "سجين"
+  },
+  "roles": {
+    "head": "رب الأسرة",
+    "spouse": "الزوجة",
+    "child": "طفل",
+    "dependentAdult": "معال"
+  },
+  "wizard": {
+    "title": "إضافة / تعديل بيانات الأسرة",
+    "newFamily": "أسرة جديدة",
+    "familyPrefix": "أسرة",
+    "saving": "جاري الحفظ...",
+    "saved": "تم الحفظ منذ {time}",
+    "saveBtn": "حفظ",
+    "next": "التالي",
+    "previous": "السابق",
+    "unsaved": "يوجد تغييرات غير محفوظة",
+    "allSaved": "تم الحفظ",
+    "viewMode": "وضع الاستعراض",
+    "viewModeDesc": "أنت تقوم بعرض هذه الأسرة في وضع القراءة فقط. التعديلات غير متاحة ولن يتم حفظ أي تغييرات.",
+    "tabs": {
+      "basic": "البيانات الأساسية",
+      "persons": "الأفراد",
+      "income": "الدخل",
+      "burdens": "الأحمال",
+      "evaluation": "التقييم"
+    },
+    "basic": {
+      "section": "البيانات الأساسية",
+      "familyName": "اسم الأسرة (للعرض)",
+      "familyNamePlaceholder": "مثال: أسرة محمد أحمد",
+      "familyNamePrefix": "أسرة",
+      "codeLabel": "رقم القيد",
+      "codePlaceholder": "مثال: 1245",
+      "codeSuggested": "المقترح: {code}",
+      "codeUseBtn": "استخدم",
+      "codeDuplicate": "رقم القيد مستخدم بالفعل لأسرة أخرى.",
+      "codeAvailable": "رقم القيد متاح.",
+      "codeError": "حدث خطأ أثناء التحقق من الرقم.",
+      "pdfUrl": "رابط الملف الورقي (PDF)",
+      "registrationDate": "تاريخ التسجيل",
+      "wifeSection": "بيانات ربة الأسرة",
+      "wifeName": "اسم ربة الأسرة (ثلاثي)",
+      "wifeNid": "الرقم القومي",
+      "nidInvalid": "الرقم القومي غير صحيح",
+      "phoneInvalid": "رقم الموبايل غير صحيح",
+      "years": "سنة",
+      "socialStatus": "الحالة الاجتماعية",
+      "socialOptions": {
+        "married": "متزوجة",
+        "divorced": "مطلقة",
+        "widowed": "أرملة",
+        "single": "عزباء / أخرى",
+        "select": "اختر الحالة"
+      },
+      "wifeEmployment": "مؤشرات عمل ربة الأسرة",
+      "wifeEmploymentType": "نوع عمل ربة الأسرة",
+      "wifeEmploymentOptions": {
+        "none": "لا تعمل",
+        "weak": "عمل قليل جداً",
+        "unstable": "عمل غير منتظم / متقطع",
+        "sufficient": "عمل منتظم مجزئ",
+        "select": "اختر نوع العمل"
+      },
+      "wifeEducation": "مستوى تعليم ربة الأسرة",
+      "wifeEducationOptions": {
+        "illiterate": "أمي أو عاملة يومية",
+        "medium": "فوق متوسط / موظفة",
+        "higherLimited": "تعليم عالٍ محدود",
+        "higherStable": "تعليم عالٍ مستقر",
+        "select": "اختر مستوى التعليم"
+      },
+      "husband": {
+        "section": "بيانات الزوج",
+        "statusDivorced": "(الأخير)",
+        "statusDeceased": "(المتوفى)",
+        "name": "الاسم",
+        "nid": "الرقم القومي",
+        "status": "الحالة",
+        "statusOptions": {
+          "resident": "مقيم",
+          "absent": "غائب مؤقت / مفقود",
+          "prison": "في السجن",
+          "select": "اختر حالة الزوج"
+        },
+        "employmentType": "نوع عمل العائل",
+        "employmentOptions": {
+          "none": "لا يعمل",
+          "weak": "عمل ضعيف أو متقطع",
+          "seasonal": "عمل موسمي ≈ نصف الشهر",
+          "regular": "عمل منتظم > 20 يوم",
+          "abroadWeak": "مسافر — عمل ضعيف",
+          "abroadMedium": "مسافر — عمل متوسط",
+          "abroadRegular": "مسافر — عمل منتظم",
+          "select": "اختر نوع العمل",
+          "abroad_weak": "عمالة بالخارج - دخل ضعيف",
+          "abroad_medium": "عمالة بالخارج - دخل متوسط",
+          "abroad_regular": "عمالة بالخارج - دخل منتظم"
+        },
+        "educationLevel": "مستوى تعليم الزوج",
+        "educationOptions": {
+          "illiterate": "أمي أو عامل يومي",
+          "medium": "فوق متوسط / موظف شركة",
+          "higherLimited": "تعليم عالٍ محدود",
+          "higherStable": "تعليم عالٍ مستقر",
+          "select": "اختر مستوى التعليم"
+        },
+        "deceased": "المتوفى",
+        "education": "المستوى التعليمي",
+        "last": "السابق",
+        "pastSpouse": "الزوج السابق",
+        "nidOptional": "الرقم القومي (اختياري)"
+      },
+      "divorce": {
+        "year": "سنة الطلاق",
+        "docNumber": "رقم وثيقة الطلاق",
+        "marriageCount": "عدد مرات الزواج",
+        "note": "ملاحظة هامة: يجب تجديد البحث كل سنة من تاريخ آخر بحث."
+      },
+      "death": {
+        "certNumber": "رقم شهادة الوفاة",
+        "date": "تاريخ الوفاة",
+        "marriageCount": "عدد مرات زواج الأرملة"
+      },
+      "pastSpouse": "الزوج السابق رقم {num}",
+      "pastSpouseName": "الاسم",
+      "pastSpouseNid": "الرقم القومي (اختياري)",
+      "contact": {
+        "section": "بيانات التواصل ومحل الإقامة",
+        "primaryPhone": "رقم الموبايل الأساسي",
+        "primaryPhonePh": "01XXXXXXXXX",
+        "whatsapp": "رقم الواتساب",
+        "whatsappOpen": "فتح محادثة واتساب",
+        "region": "المنطقة",
+        "district": "اسم المقاطعة",
+        "village": "اسم القرية",
+        "street": "اسم الشارع",
+        "details": "مكان البيت (بالتفصيل)",
+        "select": "اختر",
+        "whatsappPhone": "رقم الواتساب",
+        "addressDetails": "تفاصيل العنوان"
+      },
+      "search": {
+        "section": "إعدادات البحث",
+        "modesty": "تعفف",
+        "officeDealings": "تعامل من المقر",
+        "desk": "بحث مكتبي",
+        "field": "بحث ميداني",
+        "overdue": "تجاوز عام",
+        "modest": "أسرة متعففة"
+      },
+      "notes": {
+        "section": "الملاحظات",
+        "general": "ملاحظات عامة",
+        "generalPh": "أي تفاصيل أو ملاحظات...",
+        "field": "ملاحظات ميدانية",
+        "fieldPh": "ملاحظات تتعلق بالبحث الميداني...",
+        "generalPlaceholder": "أضف ملاحظات عامة حول الأسرة...",
+        "fieldPlaceholder": "أضف ملاحظة ميدانية..."
+      },
+      "errors": {
+        "invalidNid": "الرقم القومي غير صالح (يجب أن يتكون من 14 رقماً ويبدأ بـ 2 أو 3)"
+      }
+    },
+    "persons": {
+      "addNew": "إضافة فرد جديد",
+      "editTitle": "تعديل بيانات الفرد",
+      "addTitle": "إضافة فرد جديد",
+      "name": "الاسم الكامل",
+      "namePh": "الاسم ثلاثي مطابق للبطاقة",
+      "nid": "الرقم القومي",
+      "nidPh": "14 رقماً",
+      "relationship": "الصلة بالأسرة",
+      "relationshipOptions": {
+        "spouse": "زوج / زوجة",
+        "son": "ابن",
+        "daughter": "ابنة",
+        "father": "أب",
+        "mother": "أم",
+        "brother": "أخ",
+        "sister": "أخت",
+        "grandfather": "جد",
+        "grandmother": "جدة",
+        "other": "قريب آخر",
+        "select": "اختر الصلة"
+      },
+      "role": "حالة الفرد",
+      "roleOptions": {
+        "head": "عائل",
+        "spouse": "زوج / زوجة",
+        "dependentAdult": "بالغ معال",
+        "independent": "مستقل",
+        "child": "تابع / طفل",
+        "select": "اختر حالة الفرد"
+      },
+      "maritalStatus": "الحالة الاجتماعية",
+      "maritalOptions": {
+        "single": "أعزب/ة",
+        "married": "متزوج/ة",
+        "divorced": "مطلق/ة",
+        "widowed": "أرمل/ة"
+      },
+      "education": "مستوى التعليم",
+      "educationOptions": {
+        "illiterate": "أمي / يقرأ ويكتب (1×)",
+        "medium": "متوسط / دبلوم (0.75×)",
+        "higherLimited": "تعليم عالٍ محدود (0.5×)",
+        "higherStable": "تعليم عالٍ مستقر (0.5×)"
+      },
+      "employmentQuality": "نوع العمل (بالغ معال)",
+      "employmentQualityOptions": {
+        "none": "لا يعمل",
+        "weak": "عمل قليل جداً  (−0.20)",
+        "unstable": "عمل غير منتظم / متقطع  (−0.40)",
+        "sufficient": "عمل منتظم مجزئ  (−0.60)"
+      },
+      "correction": "التصحيح المحسوب: {value} نقطة على درجة الهشاشة",
+      "isStudent": "مقيد بالتعليم؟ (طالب)",
+      "studentLevel": "المرحلة الدراسية",
+      "studentLevelOptions": {
+        "toddler": "طفل رضيع/حضانة",
+        "kindergarten": "رياض أطفال",
+        "primary": "ابتدائي",
+        "preparatory": "إعدادي",
+        "secondaryGeneral": "ثانوي عام",
+        "secondaryTechFemale": "ثانوي تجاري/صناعي (إناث)",
+        "secondaryTechMale": "ثانوي صناعي/زراعي (ذكور)",
+        "universityStem": "جامعة (عملي)",
+        "universityArts": "جامعة (نظري)"
+      },
+      "isWorking": "يعمل؟ (لابن أو ابنة)",
+      "workDetails": "تفاصيل عمل الابن (مؤثر اقتصادياً)",
+      "workType": "نوع العمل",
+      "workTypeOptions": {
+        "weak": "يومية ضعيفة",
+        "seasonal": "موسمي",
+        "regular": "منتظم"
+      },
+      "sonMarried": "متزوج؟",
+      "sonSameHouse": "يسكن مع الأسرة؟",
+      "brideStatus": "حالة تجهيز عروسة",
+      "brideSponsor": "يوجد كافل أو إرث مساعد؟",
+      "orphanStatus": "حالة يتيم",
+      "orphanDesc": "يطبق عليه وزن أيتام الأطفال (تحت 15 سنة)",
+      "displacedStatus": "حالة مشرد (بسبب انفصال/سجن)",
+      "displacedDesc": "يقوم النظام باحتساب هذا الفرد كـ (وافد) تلقائياً لكونه أقل من 15 عاماً والأسرة (مطلقة أو سجين). هذا يؤثر إيجاباً على التقييم، ولا حاجة لتفعيل أي خيار.",
+      "isPrisoner": "هل هذا الفرد هو المسجون؟",
+      "prisonTerm": "مدة الحكم الساري",
+      "prisonTermOptions": {
+        "short": "أقل من 6 أشهر",
+        "medium": "6 أشهر – سنتين",
+        "long": "أكثر من سنتين"
+      },
+      "prisonSuspicion": "مستوى الاشتباه بثروة خفية",
+      "prisonSuspicionOptions": {
+        "none": "لا يوجد اشتباه",
+        "light": "اشتباه خفيف",
+        "medium": "اشتباه متوسط",
+        "high": "اشتباه شديد",
+        "veryHigh": "اشتباه شديد جداً (ثروة ظاهرة)"
+      },
+      "prisonSuspicionNote": "القيم السالبة تُقلل درجة الهشاشة عند الاشتباه بوجود أصول مخفية",
+      "hasDisease": "مريض بأمراض مزمنة؟",
+      "hasDisability": "معاق إعاقة مؤثرة؟",
+      "workCorrection": "معاملات تصحيح العمل (للعائل)",
+      "workCorrectionType": "نوع العمل (للتصحيح)",
+      "workCorrectionTypeOptions": {
+        "weak": "عمل ضعيف",
+        "seasonal": "عمل موسمي",
+        "regular": "عمل منتظم",
+        "none": "لا يعمل"
+      },
+      "educationMultiplier": "مضاعف التعليم",
+      "educationMultiplierOptions": {
+        "illiterate": "أمي / يقرأ ويكتب (1x)",
+        "medium": "متوسط / دبلوم (0.75x)",
+        "higher": "تعليم عالٍ (0.5x)"
+      },
+      "notes": "ملاحظة خاصة بالفرد",
+      "notesPh": "أية تفاصيل إضافية تفيد في التقييم...",
+      "cancel": "إلغاء",
+      "save": "حفظ الفرد",
+      "saving": "جار الحفظ...",
+      "delete": "حذف",
+      "cannotDelete": "لا يمكن حذف هذا الفرد",
+      "deleteToast": "تم حذف الفرد مؤقتاً",
+      "deleteToastDesc": "يمكنك التراجع عن الحذف خلال 60 ثانية",
+      "undo": "تراجع",
+      "undoSuccess": "تم التراجع عن الحذف",
+      "deleteError": "حدث خطأ في مزامنة الحذف مع الخادم",
+      "saveError": "احفظ بيانات الأسرة الأساسية أولاً قبل إضافة الأفراد.",
+      "validationError": "أدخل اسم الفرد وتاريخ الميلاد والدور قبل الحفظ.",
+      "persistError": "تعذر حفظ بيانات الفرد. حاول مرة أخرى.",
+      "male": "ذكر",
+      "female": "أنثى",
+      "years": "سنة",
+      "noName": "بدون اسم",
+      "dependent": "معال",
+      "child": "ابن/ابنة",
+      "independent": "مستقل",
+      "student": "طالب",
+      "literate": "متعلم",
+      "working": "يعمل",
+      "notWorking": "لا يعمل",
+      "spouseCard": "الزوج (العائل)",
+      "disease": "مرض مزمن",
+      "disability": "إعاقة",
+      "sonWorking": "هل الابن يعمل؟",
+      "notesPlaceholder": "أدخل أي ملاحظات إضافية هنا...",
+      "displacedState": "فرد وافد (احتساب تلقائي)"
+    },
+    "income": {
+      "title": "قنوات الدخل الثمانية",
+      "desc": "وثق مصادر الدخل بدقة لضمان نزاهة التقييم.",
+      "totalMonthly": "إجمالي الدخل الشهري",
+      "currency": "جنيه",
+      "verification": "التوثيق",
+      "verified": "موثق ✓",
+      "pending": "قيد التحقق",
+      "unverified": "غير موثق",
+      "mandatory": "إلزامي",
+      "amount": "المبلغ",
+      "amountPh": "0",
+      "channels": {
+        "PENSION": "المعاش التأميني",
+        "TAKAFUL_KARAMA": "تكافل وكرامة والضمان الاجتماعي",
+        "CHARITY_1": "جمعية خيرية 1",
+        "CHARITY_2": "جمعية خيرية 2",
+        "CHARITY_3": "جمعية خيرية 3",
+        "DONOR_1": "فاعل خير 1",
+        "DONOR_2": "فاعل خير 2"
+      },
+      "warnings": {
+        "lowVerification": "أقل من 3 مصادر موثقة — يؤثر سلباً على الموثوقية",
+        "unverifiedPension": "المعاش التأميني مسجل ولكن غير موثق"
+      },
+      "alimony": {
+        "title": "النفقة الرسمية",
+        "desc": "(تظهر فقط للحالات المطلقة)",
+        "formal": "نفقة رسمية (موثقة)",
+        "informalSufficient": "نفقة غير رسمية مجزئة",
+        "informalInsufficient": "نفقة غير رسمية غير مجزئة",
+        "none": "لا يوجد نفقة",
+        "correctionSufficient": "سيُطبَّق تصحيح -0.80 على درجة الهشاشة",
+        "correctionInsufficient": "سيُطبَّق تصحيح -0.40 على درجة الهشاشة",
+        "amount": "مبلغ النفقة الرسمية",
+        "amountLabel": "المبلغ:",
+        "subtitle": "في حال كانت المرأة مطلقة أو مهجورة، حدد حالة النفقة",
+        "options": {
+          "formal": "نفقة رسمية (محكمة)",
+          "informalSufficient": "نفقة ودية - كافية",
+          "informalInsufficient": "نفقة ودية - غير كافية",
+          "none": "لا يوجد نفقة"
+        },
+        "correction80": "تقيّم بـ 80%",
+        "correction40": "تقيّم بـ 40%"
+      },
+      "corrections": {
+        "title": "مؤشرات اقتصادية إضافية (النفقة، الأصول، الدعم)",
+        "box1Title": "العروسة والأيتام والمشردون",
+        "brideCount": "عدد العرائس المحتسَبات",
+        "orphanCount": "عدد الأيتام المحتسَبين",
+        "displacedCount": "عدد المشردين المحتسَبين",
+        "autoNote": "تُحسب هذه القيم تلقائياً من بيانات الأفراد",
+        "box3Title": "الأبناء في السجن",
+        "prisonTerm": "مدة الحكم:",
+        "prisonTermShort": "أقل من 6 أشهر",
+        "prisonTermMedium": "6 أشهر - سنتين",
+        "prisonTermLong": "أكثر من سنتين",
+        "prisonTermUnspecified": "غير محدد",
+        "box4Title": "الأصول والمشاريع المملوكة",
+        "noAssets": "لا يوجد أصول",
+        "assetA": "أصول رمزية (حصالة أو بضاعة صغيرة)",
+        "assetB": "أصول بسيطة (محل أو سيارة قديمة)",
+        "assetC": "أصول متوسطة (عقار أو نشاط مستمر)",
+        "assetD": "أصول معتبرة (عقارات متعددة)",
+        "assetE": "أصول كبيرة (ثروة واضحة)",
+        "assetF": "ثروة ظاهرة (دليل غنى صريح)",
+        "box5Title": "مؤشرات اجتماعية واقتصادية أخرى",
+        "familySupport": "دعم عائلي مجهول المصدر",
+        "foodAid": "مساعدات غذائية شهرية ثابتة",
+        "countsTitle": "أعداد الحالات",
+        "brides": "العرائس",
+        "orphans": "الأيتام",
+        "displaced": "الوافدين / اللاجئين",
+        "assetsTitle": "الأصول والمشاريع",
+        "assetsOptions": {
+          "none": "لا يوجد أصول",
+          "a": "درجة أ",
+          "b": "درجة ب",
+          "c": "درجة ج",
+          "d": "درجة د",
+          "e": "درجة هـ",
+          "f": "درجة و"
+        },
+        "otherIndicators": "مؤشرات أخرى"
+      },
+      "errors": {
+        "noHousehold": "احفظ بيانات الأسرة الأساسية أولاً قبل حفظ الدخل.",
+        "saveError": "تعذر حفظ مصدر الدخل. حاول مرة أخرى.",
+        "verifyNoHousehold": "احفظ بيانات الأسرة الأساسية أولاً قبل التوثيق.",
+        "verifyFirst": "احفظ المبلغ أولاً قبل التوثيق",
+        "verifyError": "تعذر تعديل حالة التوثيق. حاول مرة أخرى.",
+        "verifySuccess": "تم التوثيق بنجاح",
+        "unverifySuccess": "تم إلغاء التوثيق"
+      }
+    },
+    "burdens": {
+      "section1": "السكن والأعباء الأساسية",
+      "section2": "الأمراض المزمنة",
+      "section3": "الإعاقات",
+      "housing": {
+        "title": "السكن",
+        "type": "نوع السكن",
+        "options": {
+          "owned": "ملك",
+          "shared": "مشترك مع أسرة أخرى",
+          "donated": "إيجار متبرع به",
+          "rented": "إيجار يدفعه الأسرة"
+        },
+        "rationCard": "الأسرة لا تملك بطاقة تموين"
+      },
+      "debt": {
+        "title": "الديون",
+        "grade": "درجة الدين",
+        "options": {
+          "a": "دين بسيط يُدار",
+          "b": "دين متوسط",
+          "c": "دين ثقيل",
+          "d": "دين حرج جداً"
+        }
+      },
+      "injury": {
+        "title": "الإصابات",
+        "grade": "درجة الإصابة",
+        "options": {
+          "a": "إصابة بسيطة",
+          "b": "إصابة متوسطة",
+          "c": "إصابة شديدة",
+          "d": "إصابة حرجة"
+        }
+      },
+      "surgery": {
+        "title": "العمليات الجراحية",
+        "grade": "درجة العملية",
+        "options": {
+          "a": "أ",
+          "b": "ب",
+          "c": "ج",
+          "d": "د",
+          "e": "هـ (جراحة حرجة جداً)"
+        }
+      },
+      "sonPrison": {
+        "title": "يوجد ابن أعزب في السجن",
+        "desc": "الابن المتزوج يُسجَّل كأسرة منفصلة — هذا البند للأبناء العزاب فقط",
+        "score": "+0.5 نقطة"
+      },
+      "disease": {
+        "title": "الأمراض (مزمنة)",
+        "name": "اسم المرض / الوصف",
+        "person": "الشخص المصاب",
+        "treatmentCost": "تكلفة العلاج",
+        "treatmentOptions": {
+          "none": "لا يوجد/يسير",
+          "cheap": "دوري وغير مكلف",
+          "expensive": "دوري ومكلف",
+          "veryExpensive": "دوري ومكلف جداً"
+        },
+        "followup": "المتابعة الطبية",
+        "followupOptions": {
+          "none": "لا يحتاج/متباعدة",
+          "regular": "زيارات دورية منتظمة",
+          "expensive": "زيارات دورية مكلفة"
+        },
+        "workImpact": "التأثير على العمل",
+        "workImpactOptions": {
+          "none": "لا يؤثر",
+          "slight": "يحد قليلاً",
+          "severe": "يؤثر كثيراً لكن يعمل",
+          "cannotWork": "لا يستطيع العمل"
+        },
+        "limitWarning": "تم الوصول للحد الأقصى المسموح للأمراض",
+        "add": "إضافة مرض مزمن"
+      },
+      "disability": {
+        "title": "الإعاقات",
+        "desc": "وصف الإعاقة",
+        "person": "الشخص المعاق",
+        "workImpact": "التأثير على العمل",
+        "workImpactOptions": {
+          "none": "لا مانع",
+          "slight": "تحد قليلاً",
+          "special": "تتطلب عملاً خاصاً",
+          "cannotWork": "غير قادر إطلاقاً"
+        },
+        "companion": "الحاجة لمرافق",
+        "companionOptions": {
+          "none": "لا يحتاج",
+          "outside": "مرافق خارج المنزل فقط",
+          "full": "اعتماد كلي على المرافق"
+        },
+        "treatmentCost": "تكلفة العلاج (أجهزة/علاج)",
+        "add": "إضافة إعاقة"
+      },
+      "errors": {
+        "noHead": "احفظ بيانات العائل أولاً في تابة الأفراد",
+        "noHousehold": "احفظ بيانات الأسرة الأساسية أولاً قبل حفظ الأحمال.",
+        "deleteError": "تعذر تحديد الأسرة لحذف الحمل.",
+        "saveError": "تعذر حفظ بيانات الأحمال. حاول مرة أخرى.",
+        "updateError": "تعذر تحديد الأسرة لتحديث درجة الحمل.",
+        "gradeError": "تعذر تحديث درجة الحمل. حاول مرة أخرى.",
+        "diseaseSaveError": "تعذر حفظ بيانات المرض. حاول مرة أخرى.",
+        "diseaseDeleteError": "تعذر حذف المرض. حاول مرة أخرى.",
+        "disabilitySaveError": "تعذر حفظ بيانات الإعاقة. حاول مرة أخرى.",
+        "disabilityDeleteError": "تعذر حذف الإعاقة. حاول مرة أخرى."
+      }
+    },
+    "evaluation": {
+      "title": "التقييم التلقائي",
+      "calculate": "حساب التقييم",
+      "recalculate": "إعادة الحساب",
+      "calculating": "جاري الحساب...",
+      "noScore": "لم يتم حساب التقييم بعد. اضغط \"حساب التقييم\" أعلاه.",
+      "scoreLabel": "التقييم الحالي",
+      "delta": "عن آخر تقييم",
+      "calculatedAt": "تاريخ الحساب:",
+      "warnings": "تنبيهات ({count})",
+      "layerBreakdown": "تفصيل الطبقات",
+      "indicators": "المؤشرات والتوصيات",
+      "positiveFactors": "أسباب ارتفاع التقييم",
+      "negativeFactors": "أسباب انخفاض التقييم",
+      "noFactors": "لا توجد عوامل {type} مسجلة",
+      "recommendations": "توصيات النظام",
+      "committee": {
+        "title": "قرار اللجنة",
+        "success": "✓ تم اتخاذ القرار وتسجيله بنجاح",
+        "successDesc": "تُعرض هذه الأسرة الآن في لوحة المتابعة بناءً على هذا القرار.",
+        "assistanceType": "تصنيف المساعدة",
+        "assistancePlaceholder": "اختر نوع المساعدة",
+        "assistanceOptions": {
+          "monthlyCash": "نقدية شهرية",
+          "monthlyMedical": "علاجية شهرية",
+          "seasonalMixed": "موسمية (علاجية/نقدية/عطائية)",
+          "goodsOnly": "عطائية فقط",
+          "none": "لا يستحق"
+        },
+        "categoryClass": "تصنيف الفئة",
+        "categoryPlaceholder": "اختر الفئة",
+        "categoryOptions": {
+          "poor": "فقراء",
+          "veryPoor": "مساكين",
+          "prisonersFam": "أسر سجناء",
+          "orphans": "أيتام",
+          "elderly": "مسنون",
+          "disabled": "ذوو إعاقة",
+          "other": "أخرى"
+        },
+        "reviewStatus": "حالة القرار",
+        "reviewOptions": {
+          "approved": "موافقة",
+          "rejected": "رفض",
+          "needsReview": "يحتاج مراجعة",
+          "escalated": "تصعيد للمشرف"
+        },
+        "decisionNote": "ملاحظة القرار",
+        "decisionNotePh": "اكتب أسباب وحيثيات القرار هنا...",
+        "submit": "تسجيل القرار واعتماده"
+      },
+      "simulation": {
+        "title": "محاكاة — ماذا لو تغيرت البيانات؟",
+        "desc": "هذه المحاكاة لا تُحفظ ولا تؤثر على البيانات الفعلية.",
+        "housingType": "نوع السكن",
+        "housingOptions": {
+          "owned": "ملك",
+          "shared": "مشترك",
+          "donatedRent": "متبرع به",
+          "rented": "إيجار"
+        },
+        "totalIncome": "دخل بديل (جنيه)",
+        "incomePh": "مثال: 3000",
+        "employmentType": "نوع عمل العائل",
+        "employmentOptions": {
+          "none": "لا يعمل",
+          "weak": "يومية ضعيفة",
+          "seasonal": "موسمي",
+          "regular": "منتظم"
+        },
+        "runBtn": "شاهد التأثير",
+        "results": "نتائج المحاكاة",
+        "original": "الأصلية",
+        "simulated": "المحاكاة",
+        "delta": "الفرق",
+        "affectedLayers": "الطبقات المتأثرة:"
+      },
+      "eligibility": {
+        "CRITICAL": "حرجة جداً",
+        "HIGH_NEED": "احتياج عالي",
+        "MODERATE_NEED": "احتياج متوسط",
+        "LOW_NEED": "احتياج منخفض",
+        "NOT_ELIGIBLE": "غير مستحق"
+      },
+      "layers": {
+        "L1_HEAD": "حالة العائل",
+        "L2_DEPENDENTS": "المعالون",
+        "L3_STUDENTS": "الطلاب والتعليم",
+        "L4_VULNERABILITY": "الحالات الخاصة",
+        "L5_BURDENS": "الأعباء الطارئة",
+        "L5B_HOUSING": "السكن",
+        "L6_HEALTH": "الصحة والإعاقات",
+        "L7_CORRECTIONS": "التصحيحات",
+        "L8_INCOME": "الدخل"
+      },
+      "warnings_labels": {
+        "LOW_VERIFICATION_PENALTY": "عدد المصادر الموثقة أقل من الحد الأدنى",
+        "LOW_CONFIDENCE_REVIEW": "مستوى الثقة في البيانات منخفض — يحتاج مراجعة",
+        "MISSING_HEAD_DATA": "بيانات العائل غير مكتملة",
+        "INCOME_MISMATCH": "تناقض في بيانات الدخل",
+        "NO_INCOME_SOURCES": "لم يتم تسجيل أي مصدر دخل",
+        "HIGH_INCOME_WARNING": "الدخل المسجل مرتفع نسبياً",
+        "MISSING_NID": "الرقم القومي مفقود لبعض الأفراد"
+      },
+      "autoEvaluation": "التقييم الآلي",
+      "calculateScore": "حساب التقييم",
+      "notCalculated": "لم يتم الحساب بعد. اضغط \"حساب التقييم\".",
+      "committeeDecision": "قرار اللجنة",
+      "assistanceType": "تصنيف المساعدة",
+      "category": "تصنيف الفئة",
+      "status": "حالة القرار",
+      "notes": "ملاحظات القرار",
+      "submit": "تسجيل واعتماد القرار"
+    }
+  },
+  "view": {
+    "title": "ملف الأسرة:",
+    "approved": "معتمد",
+    "draft": "مسودة",
+    "viewPdf": "عرض الملف الورقي",
+    "editForm": "تعديل الاستمارة",
+    "back": "العودة",
+    "notFound": "الأسرة غير موجودة",
+    "currentScore": "التقييم الحالي",
+    "members": "الأفراد",
+    "membersDesc": "عائل + {count} تابعين",
+    "totalIncome": "إجمالي الدخل",
+    "incomeUnit": "جنيه / شهر",
+    "address": "العنوان",
+    "unspecified": "غير محدد",
+    "noDetails": "بدون تفاصيل إضافية",
+    "basicInfo": "البيانات الأساسية",
+    "socialStatus": "الحالة الاجتماعية",
+    "primaryPhone": "الموبايل الأساسي",
+    "whatsapp": "واتساب",
+    "housingType": "نوع السكن",
+    "searchType": "نوع البحث",
+    "fieldSearch": "ميداني",
+    "deskSearch": "مكتبي",
+    "modestCase": "حالة تعفف",
+    "officeDealings": "تعامل مقر",
+    "members_title": "أفراد الأسرة",
+    "headBadge": "عائل",
+    "son": "ابن",
+    "spouse": "زوج",
+    "dependent": "معال",
+    "male": "ذكر",
+    "female": "أنثى",
+    "student": "طالب",
+    "sick": "مريض",
+    "disabled": "معاق",
+    "orphan": "يتيم",
+    "incomeSources": "مصادر الدخل",
+    "noIncome": "لا توجد مصادر دخل مسجلة",
+    "verified": "موثق",
+    "unverified": "غير موثق",
+    "burdens": "الأعباء الإضافية",
+    "grade": "الفئة",
+    "notes": "ملاحظات",
+    "noNotes": "لا توجد ملاحظات عامة مسجلة لهذه الأسرة."
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "view": "عرض",
+    "add": "إضافة",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "error": "حدث خطأ",
+    "success": "تم بنجاح",
+    "yes": "نعم",
+    "no": "لا",
+    "required": "مطلوب",
+    "optional": "اختياري",
+    "male": "ذكر",
+    "female": "أنثى",
+    "currency": "جنيه",
+    "today": "اليوم",
+    "daysAgo": "منذ {days} أيام",
+    "dayAgo": "منذ يوم",
+    "undefined": "غير محدد"
+  },
+  "dashboard": {
+    "metrics": {
+      "total": "إجمالي الأسر",
+      "incomplete": "ملفات ناقصة",
+      "visit": "زيارة ميدانية",
+      "pending": "بانتظار التقييم",
+      "evaluated": "تم تقييمها"
+    },
+    "actions": {
+      "add": "إضافة أسرة",
+      "export": "تصدير",
+      "columns": "أعمدة",
+      "searchPlaceholder": "ابحث بالاسم، الرقم القومي، الهاتف، أو رقم القيد..."
+    },
+    "filters": {
+      "decision": "القرار",
+      "classification": "التصنيف",
+      "class": "الطبقة"
+    }
+  }
+}

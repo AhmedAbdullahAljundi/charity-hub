@@ -7,8 +7,12 @@
 const { getArabicMessage } = require('../utils/arabicMessages')
 
 function errorHandler(err, req, res, next) {
-  // Log error
-  console.error('Error:', err)
+  // Log error (suppress stack traces for expected operational errors like AuthError)
+  if (err.code === 'AUTH_ERROR' || err.statusCode === 401) {
+    console.warn(`[Auth] ${err.message || 'Unauthorized'}`);
+  } else {
+    console.error('Error:', err);
+  }
 
   // Determine status code
   const statusCode = err.statusCode || err.status || 500

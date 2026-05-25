@@ -276,8 +276,10 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-blue-600 hover:bg-blue-50" title="عرض">
-                        <Eye className="h-3.5 w-3.5" />
+                      <Button asChild variant="ghost" size="icon" className="h-7 w-7 hover:text-blue-600 hover:bg-blue-50" title="عرض">
+                        <Link href={`/dashboard/households/${h.id}/view`}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </Link>
                       </Button>
                       <Button asChild variant="ghost" size="icon" className="h-7 w-7 hover:text-primary hover:bg-primary/10" title="تعديل">
                         <Link href={`/dashboard/households/${h.id}/wizard`}>

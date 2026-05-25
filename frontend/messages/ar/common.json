@@ -25,10 +25,15 @@
     "volunteers": "المتطوعون",
     "analytics": "التحليلات",
     "verification": "مركز التوثيق",
-    "admin": "إدارة القواعد",
-    "audit": "سجل التدقيق",
+    "ruleEditor": "إدارة القواعد",
+    "auditLog": "سجل التدقيق",
     "reports": "التقارير",
-    "users": "المستخدمين والصلاحيات"
+    "users": "المستخدمين والصلاحيات",
+    "groups": {
+      "main": "الرئيسية",
+      "management": "الإدارة",
+      "system": "النظام"
+    }
   },
   "sidebar": {
     "dashboard": "لوحة التحكم",

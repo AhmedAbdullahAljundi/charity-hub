@@ -58,7 +58,7 @@ export default async function RootLocaleLayout({
 
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
-      <body className={`${ibmPlexArabic.variable} ${_geistMono.variable} font-sans antialiased`}>
+      <body suppressHydrationWarning className={`${ibmPlexArabic.variable} ${_geistMono.variable} font-sans antialiased`}>
         <GlobalErrorBoundary>
           <ThemeProvider>
             <NextIntlClientProvider locale={locale} messages={messages}>

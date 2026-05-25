@@ -14,6 +14,7 @@ const householdsRepository = {
 
     if (filters.governorate) where.governorate = filters.governorate;
     if (filters.district) where.district = filters.district;
+    if (filters.exactCode) where.code = filters.exactCode;
     if (filters.isDraft !== undefined) where.isDraft = filters.isDraft === 'true' || filters.isDraft === true;
     if (filters.search) {
       const contains = String(filters.search).trim();

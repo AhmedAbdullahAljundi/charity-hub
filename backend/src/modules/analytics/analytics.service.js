@@ -157,15 +157,31 @@ const analyticsService = {
   },
 
   async verificationStats() {
-    const groups = await prisma.incomeSource.groupBy({
-      by: ['channel', 'verified'],
-      _count: { _all: true },
+    const unverifiedCount = await prisma.incomeSource.count({ where: { verified: 'UNVERIFIED' } });
+    const unverifiedPensionCount = await prisma.incomeSource.count({ where: { verified: 'UNVERIFIED', channel: 'PENSION' } });
+    
+    // For total penalty applied, we sum the penalty rules from ScoreResult
+    const recentScores = await prisma.scoreResult.findMany({
+      orderBy: { calculatedAt: 'desc' },
+      distinct: ['householdId'],
+      select: { layerBreakdown: true }
     });
-    return groups.map((g) => ({
-      channel: g.channel,
-      verified: g.verified,
-      count: g._count._all,
-    }));
+    let penalty = 0;
+    for (const score of recentScores) {
+      if (!Array.isArray(score.layerBreakdown)) continue;
+      const l8 = score.layerBreakdown.find(l => l.layerId === 'L8');
+      if (l8 && l8.triggeredRules) {
+        for (const r of l8.triggeredRules) {
+          if (r.ruleId === 'income_low_verify') penalty += Math.abs(parseFloat(r.points || 0));
+        }
+      }
+    }
+
+    return {
+      unverifiedCount,
+      unverifiedPensionCount,
+      totalPenaltyApplied: penalty
+    };
   },
 };
 

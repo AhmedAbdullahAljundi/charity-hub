@@ -1,396 +1,586 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { useScoringStore } from "@/lib/stores/scoringStore";
 import { useWizardStore } from "@/lib/stores/wizardStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+ Select,
+ SelectContent,
+ SelectItem,
+ SelectTrigger,
+ SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
+ Accordion,
+ AccordionContent,
+ AccordionItem,
+ AccordionTrigger,
 } from "@/components/ui/accordion";
-import { CheckCircle2, AlertTriangle, Play, RefreshCw, Calculator, ShieldAlert, Heart, Activity } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Play, RefreshCw, Calculator, ShieldAlert, Activity, TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+/* ─────────── Arabic Labels ─────────── */
 
 const ELIGIBILITY_COLORS: Record<string, string> = {
-  CRITICAL: "text-rose-600 bg-rose-50 border-rose-200",
-  HIGH_NEED: "text-amber-600 bg-amber-50 border-amber-200",
-  MODERATE_NEED: "text-orange-500 bg-orange-50 border-orange-200",
-  LOW_NEED: "text-blue-600 bg-blue-50 border-blue-200",
-  NOT_ELIGIBLE: "text-slate-600 bg-slate-50 border-slate-200",
+ CRITICAL: "text-rose-600 bg-rose-50 border-rose-200",
+ HIGH_NEED: "text-amber-600 bg-amber-50 border-amber-200",
+ MODERATE_NEED: "text-orange-500 bg-orange-50 border-orange-200",
+ LOW_NEED: "text-blue-600 bg-blue-50 border-blue-200",
+ NOT_ELIGIBLE: "text-slate-600 bg-slate-50 border-slate-200",
 };
 
-const ELIGIBILITY_LABELS: Record<string, string> = {
-  CRITICAL: "حرجة جداً",
-  HIGH_NEED: "احتياج عالي",
-  MODERATE_NEED: "احتياج متوسط",
-  LOW_NEED: "احتياج منخفض",
-  NOT_ELIGIBLE: "غير مستحق",
+const ELIGIBILITY_KEYS: string[] = ["CRITICAL", "HIGH_NEED", "MODERATE_NEED", "LOW_NEED", "NOT_ELIGIBLE"];
+
+const LAYER_KEYS = ['L1_HEAD', 'L2_DEPENDENTS', 'L3_STUDENTS', 'L4_VULNERABILITY', 'L5_BURDENS', 'L5B_HOUSING', 'L6_HEALTH', 'L7_CORRECTIONS', 'L8_INCOME'];
+
+const LAYER_FALLBACK_PATTERNS: [RegExp, string][] = [
+ [/head/i, 'L1_HEAD'],
+ [/depend/i, 'L2_DEPENDENTS'],
+ [/student/i, 'L3_STUDENTS'],
+ [/vuln/i, 'L4_VULNERABILITY'],
+ [/burden/i, 'L5_BURDENS'],
+ [/hous/i, 'L5B_HOUSING'],
+ [/health|disease|disab/i, 'L6_HEALTH'],
+ [/correct/i, 'L7_CORRECTIONS'],
+ [/income/i, 'L8_INCOME'],
+];
+
+/** Maps any layerId variant to readable label via i18n */
+function getLayerLabel(id: string, t: (key: string) => string): string {
+ // Try exact match first
+ if (LAYER_KEYS.includes(id)) return t(`wizard.evaluation.layers.${id}`);
+ // Try matching by prefix (L1, L2, etc.)
+ const shortId = id?.replace(/[^L0-9B]/gi, '').toUpperCase();
+ for (const key of LAYER_KEYS) {
+ const shortKey = key.replace(/[^L0-9B]/gi, '').toUpperCase();
+ if (shortKey === shortId) return t(`wizard.evaluation.layers.${key}`);
+ }
+ // Fallback patterns
+ for (const [pattern, key] of LAYER_FALLBACK_PATTERNS) {
+ if (pattern.test(id)) return t(`wizard.evaluation.layers.${key}`);
+ }
+ return id;
+}
+
+/** Translates warning/factor keys via i18n */
+const WARNING_KEYS = ['LOW_VERIFICATION_PENALTY', 'LOW_CONFIDENCE_REVIEW', 'MISSING_HEAD_DATA', 'INCOME_MISMATCH', 'NO_INCOME_SOURCES', 'HIGH_INCOME_WARNING', 'MISSING_NID'];
+
+/** Translates factor keys to Arabic */
+const FACTOR_LABELS: Record<string, string> = {
+ // Head
+ head_age_lt45: 'عمر العائل (أقل من 45)',
+ head_age_45_55: 'عمر العائل (45-55)',
+ head_age_55_65: 'عمر العائل (55-65)',
+ head_age_gt65: 'عمر العائل (أكبر من 65)',
+ // Dependents
+ dependent_age_lt45: 'معال (أقل من 45)',
+ dependent_age_45_55: 'معال (45-55)',
+ dependent_age_55_65: 'معال (55-65)',
+ dependent_age_gt65: 'معال (أكبر من 65)',
+ // Students
+ student_primary: 'طالب ابتدائي',
+ student_preparatory: 'طالب إعدادي',
+ student_secondary: 'طالب ثانوي',
+ student_university: 'طالب جامعي',
+ // Vulnerability
+ no_provider: 'بلا عائل',
+ orphan: 'يتيم',
+ prison: 'سجين',
+ displaced: 'مشرد',
+ // Corrections
+ correction_head_employment: 'تصحيح عمل العائل',
+ correction_son_employment: 'تصحيح عمل الابن',
+ family_support: 'دعم عائلي',
+ food_assistance: 'مساعدات غذائية',
+ bank_assets: 'أصول بنكية/عينية',
+ // Income
+ income_low_verify: 'ضعف التوثيق',
+ income_divisor_score: 'تقييم مستوى الدخل',
+ // Health
+ disease_treatment: 'تكلفة علاج مرض',
+ disease_followup: 'متابعة مرض',
+ disease_work_impact: 'تأثير مرض على العمل',
+ disability_work_impact: 'تأثير إعاقة على العمل',
+ disability_companion: 'مرافق إعاقة',
+ disability_treatment: 'تكلفة علاج إعاقة',
+ // Burdens
+ bride: 'عروسة',
+ son_prison: 'ابن مسجون',
+ debt: 'ديون',
+ surgery: 'عمليات جراحية',
+ housing_rented: 'سكن إيجار',
+ housing_shared: 'سكن مشترك',
+ // Alimony
+ alimony_informal_sufficient: 'نفقة ودية مجزئة',
+ alimony_informal_insufficient: 'نفقة ودية غير مجزئة',
 };
+
+function translateWarning(w: string, t: (key: string) => string): string {
+ if (WARNING_KEYS.includes(w)) return t(`wizard.evaluation.warnings_labels.${w}`);
+ return w.replace(/_/g, ' ');
+}
+
+function getFactorLabel(f: any, t: (key: string) => string): string {
+ if (typeof f === 'string') return FACTOR_LABELS[f] || f.replace(/_/g, ' ');
+ // Try all possible key fields
+ const key = f.factorKey || f.ruleId || f.labelKey || f.key || f.label || f.name || '';
+ // Check our map
+ if (FACTOR_LABELS[key]) return FACTOR_LABELS[key];
+ // Try partial matching
+ for (const [mapKey, label] of Object.entries(FACTOR_LABELS)) {
+ if (key.includes(mapKey) || mapKey.includes(key)) return label;
+ }
+ // Clean up any remaining technical key
+ if (typeof key === 'string' && key.length > 0) {
+ // If it looks like a UUID or technical ID, try to extract something useful
+ if (/^[a-z_]+$/.test(key)) return key.replace(/_/g, ' ');
+ // If it contains a meaningful prefix, extract it
+ const match = key.match(/^([a-z_]+)/);
+ if (match && FACTOR_LABELS[match[1]]) return FACTOR_LABELS[match[1]];
+ }
+ // Fallback: show the layer info if available
+ if (f.layerId) {
+ const layerName = getLayerLabel(f.layerId, t);
+ return `${layerName}`;
+ }
+ return f.label || f.name || key || id;
+}
+
+function getFactorValue(f: any): number | null {
+ const v = f.value ?? f.score ?? f.weight ?? f.contribution;
+ return v !== undefined && v !== null ? Number(v) : null;
+}
+
+/* ─────────── Component ─────────── */
 
 export function EvaluationStep() {
-  const user = useAuthStore((s) => s.user);
-  const householdId = useWizardStore((s) => s.householdId);
-  
-  const liveScore = useScoringStore((s) => s.liveScore);
-  const isCalculating = useScoringStore((s) => s.isCalculating);
-  const calculate = useScoringStore((s) => s.calculate);
-  const simulate = useScoringStore((s) => s.simulate);
-  const simulationResult = useScoringStore((s) => s.simulationResult);
+ const t = useTranslations("households");
+ const user = useAuthStore((s) => s.user);
+ const householdId = useWizardStore((s) => s.householdId);
 
-  const [decision, setDecision] = useState({
-    humanDecision: "",
-    categoryClass: "",
-    reviewStatus: "PENDING",
-    decisionNote: "",
-  });
-  const [isDecisionSaved, setIsDecisionSaved] = useState(false);
+ const liveScore = useScoringStore((s) => s.liveScore);
+ const isCalculating = useScoringStore((s) => s.isCalculating);
+ const calculate = useScoringStore((s) => s.calculate);
+ const simulate = useScoringStore((s) => s.simulate);
+ const simulationResult = useScoringStore((s) => s.simulationResult);
 
-  const [simFields, setSimFields] = useState({
-    housingType: "RENTED",
-    totalIncome: "",
-    employmentType: "REGULAR",
-  });
+ const [decision, setDecision] = useState({
+ humanDecision: "",
+ categoryClass: "",
+ reviewStatus: "PENDING",
+ decisionNote: "",
+ });
+ const [isDecisionSaved, setIsDecisionSaved] = useState(false);
 
-  const handleCalculate = async () => {
-    if (householdId) await calculate(householdId);
-  };
+ const [simFields, setSimFields] = useState({
+ housingType: "RENTED",
+ totalIncome: "",
+ employmentType: "REGULAR",
+ });
 
-  const submitDecision = async () => {
-    if (!householdId) return;
-    const { decideScore } = await import("@/lib/api/scoring-api");
-    try {
-      await decideScore(householdId, decision);
-      setIsDecisionSaved(true);
-    } catch (e) {
-      console.error("Decision failed", e);
-    }
-  };
+ const handleCalculate = async () => {
+ if (householdId) await calculate(householdId);
+ };
 
-  const runSimulation = async () => {
-    if (!householdId) return;
-    const modifications = [];
-    if (simFields.housingType) modifications.push({ field: "housingType", value: simFields.housingType });
-    if (simFields.totalIncome) modifications.push({ field: "totalIncome", value: Number(simFields.totalIncome) });
-    if (simFields.employmentType) modifications.push({ field: "employmentType", value: simFields.employmentType });
-    await simulate(householdId, modifications);
-  };
+ const submitDecision = async () => {
+ if (!householdId) return;
+ const { decideScore } = await import("@/lib/api/scoring-api");
+ try {
+ await decideScore(householdId, decision);
+ setIsDecisionSaved(true);
+ } catch (e) {
+ console.error("Decision failed", e);
+ }
+ };
 
-  return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500" dir="rtl">
-      
-      {/* PART 1: نتيجة النظام */}
-      <section className="bg-card border rounded-xl p-6 shadow-sm relative overflow-hidden">
-        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-          <Activity className="w-6 h-6 text-primary" /> نتيجة النظام (System Evaluation)
-        </h3>
+ const runSimulation = async () => {
+ if (!householdId) return;
+ const modifications = [];
+ if (simFields.housingType) modifications.push({ field: "housingType", value: simFields.housingType });
+ if (simFields.totalIncome) modifications.push({ field: "totalIncome", value: Number(simFields.totalIncome) });
+ if (simFields.employmentType) modifications.push({ field: "employmentType", value: simFields.employmentType });
+ await simulate(householdId, modifications);
+ };
 
-        {!liveScore ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-            <Calculator className="w-16 h-16 text-muted-foreground/30" />
-            <p className="text-muted-foreground">لم يتم حساب التقييم بعد لهذه الأسرة.</p>
-            <Button onClick={handleCalculate} disabled={!householdId || isCalculating} size="lg">
-              {isCalculating ? <RefreshCw className="w-5 h-5 me-2 animate-spin" /> : <Calculator className="w-5 h-5 me-2" />}
-              احسب النتيجة الآن
-            </Button>
-          </div>
-        ) : (
-          <div className="grid lg:grid-cols-[1fr_300px] gap-8">
-            <div className="space-y-6">
-              
-              <div className="flex items-center gap-6 p-4 bg-muted/10 rounded-xl border border-primary/10">
-                <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
-                  <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="16" fill="none" className="stroke-muted" strokeWidth="3" />
-                    <motion.circle
-                      cx="18" cy="18" r="16" fill="none"
-                      className="stroke-primary"
-                      strokeWidth="3"
-                      strokeDasharray="100"
-                      initial={{ strokeDashoffset: 100 }}
-                      animate={{ strokeDashoffset: 100 - Number(liveScore.normalizedPercent) }}
-                      transition={{ duration: 1, delay: 0.2 }}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-bold">{Math.round(Number(liveScore.normalizedPercent))}%</span>
-                  </div>
-                </div>
+ return (
+ <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col" >
+<div className="flex-1 overflow-y-auto">
+ {/* ══════════════════════════════════════════════════
+ القسم 1: التقييم التلقائي
+ ══════════════════════════════════════════════════ */}
+ <section className="bg-card border rounded-xl shadow-sm overflow-hidden">
+ <div className="flex items-center justify-between p-4 border-b bg-slate-50/50">
+ <h3 className="text-base font-bold flex items-center gap-2">
+ <BarChart3 className="w-5 h-5 text-primary" /> {t("wizard.evaluation.autoEvaluation")}
+ </h3>
+ <Button onClick={handleCalculate} disabled={!householdId || isCalculating} variant="outline" size="sm">
+ {isCalculating ? <RefreshCw className="w-4 h-4 me-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 me-1.5" />}
+ {liveScore ? t("wizard.evaluation.recalculate") : t("wizard.evaluation.calculateScore")}
+ </Button>
+ </div>
 
-                <div className="space-y-2">
-                  <Badge className={`text-sm px-3 py-1 ${ELIGIBILITY_COLORS[liveScore.systemRecommendation] || ""}`}>
-                    {ELIGIBILITY_LABELS[liveScore.systemRecommendation] || liveScore.systemRecommendation}
-                  </Badge>
-                  {liveScore.scoreDelta !== null && liveScore.scoreDelta !== undefined && (
-                    <div className={`text-xs font-medium ${Number(liveScore.scoreDelta) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-                      {Number(liveScore.scoreDelta) >= 0 ? "▲" : "▼"} {Number(liveScore.scoreDelta) > 0 ? "+" : ""}{Number(liveScore.scoreDelta).toFixed(1)} عن آخر تقييم
-                    </div>
-                  )}
-                  <p className="text-sm text-muted-foreground">تاريخ الحساب: {new Date(liveScore.calculatedAt ?? "").toLocaleDateString("ar-EG")}</p>
-                </div>
+ {!liveScore ? (
+ <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
+ <Calculator className="w-12 h-12 text-muted-foreground/20" />
+ <p className="text-sm text-muted-foreground">{t("wizard.evaluation.notCalculated")}</p>
+ </div>
+ ) : (
+ <div className="p-4 space-y-5">
 
-                <div className="ms-auto">
-                  <Button onClick={handleCalculate} disabled={isCalculating} variant="outline" size="sm">
-                    {isCalculating ? <RefreshCw className="w-4 h-4 me-2 animate-spin" /> : <RefreshCw className="w-4 h-4 me-2" />}
-                    أعد الحساب
-                  </Button>
-                </div>
-              </div>
+ {/* Score Summary Row */}
+ <div className="flex items-center gap-5 flex-wrap">
+ {/* Circle */}
+ <div className="relative w-20 h-20 shrink-0 flex items-center justify-center">
+ <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+ <circle cx="18" cy="18" r="15" fill="none" className="stroke-muted" strokeWidth="2.5" />
+ <motion.circle
+ cx="18" cy="18" r="15" fill="none"
+ className="stroke-primary"
+ strokeWidth="2.5"
+ strokeLinecap="round"
+ strokeDasharray="94.25"
+ initial={{ strokeDashoffset: 94.25 }}
+ animate={{ strokeDashoffset: 94.25 - (94.25 * Number(liveScore.normalizedPercent) / 100) }}
+ transition={{ duration: 1, delay: 0.2 }}
+ />
+ </svg>
+ <div className="absolute inset-0 flex items-center justify-center">
+ <span className="text-xl font-bold">{Math.round(Number(liveScore.normalizedPercent))}%</span>
+ </div>
+ </div>
 
-              {/* Layer Breakdown */}
-              <div className="space-y-3">
-                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">تفصيل الطبقات (Layer Breakdown)</h4>
-                <div className="space-y-2">
-                  {liveScore.layerBreakdown?.map((layer) => (
-                    <div key={layer.layerId} className="flex items-center gap-4 text-sm bg-muted/20 p-2 rounded-lg border">
-                      <div className="w-32 font-medium">{layer.layerId}</div>
-                      <div className="w-16 font-mono text-right">{Number(layer.score).toFixed(1)}</div>
-                      <div className="w-16 font-mono text-muted-foreground">/ {layer.cap}</div>
-                      <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
-                        <div 
-                          className="bg-primary h-full" 
-                          style={{ width: `${Math.min(100, (Number(layer.score) / Number(layer.cap)) * 100)}%` }} 
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+ {/* Info */}
+ <div className="flex flex-col gap-1.5">
+ <Badge className={cn("text-sm px-3 py-1 w-fit", ELIGIBILITY_COLORS[liveScore.systemRecommendation] || "")}>
+ {t(`wizard.evaluation.eligibility.${liveScore.systemRecommendation}`) || liveScore.systemRecommendation}
+ </Badge>
+ {liveScore.scoreDelta !== null && liveScore.scoreDelta !== undefined && (
+ <span className={cn("text-xs font-medium", Number(liveScore.scoreDelta) >= 0 ? "text-emerald-600" : "text-rose-600")}>
+ {Number(liveScore.scoreDelta) >= 0 ? "▲" : "▼"} {Number(liveScore.scoreDelta) > 0 ? "+" : ""}{Number(liveScore.scoreDelta).toFixed(1)} {t("wizard.evaluation.fromLastScore")}
+ </span>
+ )}
+ <span className="text-xs text-muted-foreground">
+ {t("wizard.evaluation.calculatedAt")}: {new Date(liveScore.calculatedAt ?? "").toLocaleDateString("ar-EG")}
+ </span>
+ </div>
 
-            </div>
+ {/* Warnings (compact) */}
+ {liveScore.warnings && liveScore.warnings.length > 0 && (
+ <div className="mr-auto bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-sm">
+ <h4 className="text-xs font-bold text-amber-800 flex items-center gap-1 mb-1">
+ <AlertTriangle className="w-3 h-3" /> تنبيهات ({liveScore.warnings.length})
+ </h4>
+ <ul className="space-y-0.5">
+ {liveScore.warnings.map((w: string, i: number) => (
+ <li key={i} className="text-xs text-amber-700">{translateWarning(w)}</li>
+ ))}
+ </ul>
+ </div>
+ )}
+ </div>
 
-            <div className="space-y-6">
-              
-              {/* Warnings & Recs */}
-              {liveScore.warnings && liveScore.warnings.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-rose-700 flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> تحذيرات النظام</h4>
-                  <div className="flex flex-col gap-1">
-                    {liveScore.warnings.map((w, i) => (
-                      <Badge key={i} variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 justify-start h-auto text-wrap text-right">{w}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+ {/* Layer Breakdown Table */}
+ <div className="space-y-2">
+ <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("wizard.evaluation.layerBreakdown")}</h4>
+ <div className="bg-slate-50/50 border rounded-lg divide-y divide-border/50 max-h-60 overflow-y-auto">
+ {liveScore.layerBreakdown?.map((layer: any) => {
+ const score = Number(layer.score);
+ const cap = Number(layer.cap);
+ const isNeg = score < 0;
+ const pct = Math.min(100, (Math.abs(score) / Math.abs(cap)) * 100);
+ const barColor = isNeg ? 'bg-red-400' : pct > 60 ? 'bg-rose-500' : pct > 30 ? 'bg-amber-400' : 'bg-emerald-500';
+ return (
+ <div key={layer.layerId} className="flex items-center gap-3 px-3 py-2 text-sm">
+ <span className="w-36 font-medium text-slate-700 truncate">{getLayerLabel(layer.layerId)}</span>
+ <span className={cn("w-14 font-mono text-left text-xs tabular-nums", isNeg ? "text-red-500 font-semibold" : "text-slate-800")}>
+ {score.toFixed(2)}
+ </span>
+ <span className="text-[10px] text-muted-foreground w-10">/ {cap}</span>
+ <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
+ <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${pct}%` }} />
+ </div>
+ </div>
+ );
+ })}
+ </div>
+ </div>
+ </div>
+ )}
+ </section>
 
-              {liveScore.recommendations && liveScore.recommendations.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-emerald-700 flex items-center gap-1"><CheckCircle2 className="w-4 h-4" /> التوصيات</h4>
-                  <div className="flex flex-col gap-1">
-                    {liveScore.recommendations.map((r, i) => (
-                      <Badge key={i} variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 justify-start h-auto text-wrap text-right">{r}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+ {/* ══════════════════════════════════════════════════
+ القسم 2: المؤشرات والتوصيات
+ ══════════════════════════════════════════════════ */}
+ {liveScore && (
+ <section className="bg-card border rounded-xl shadow-sm overflow-hidden">
+ <div className="p-4 border-b bg-slate-50/50">
+ <h3 className="text-base font-bold flex items-center gap-2">
+ <Activity className="w-5 h-5 text-indigo-500" /> {t("wizard.evaluation.indicatorsAndRecommendations")}
+ </h3>
+ </div>
+ <div className="p-4">
+ <div className="grid md:grid-cols-2 gap-4">
+ {/* Positive Factors */}
+ <div className="bg-emerald-50/60 rounded-xl border border-emerald-100 p-4">
+ <h4 className="text-sm font-bold text-emerald-800 flex items-center gap-1.5 mb-3">
+ <TrendingUp className="w-4 h-4" /> {t("wizard.evaluation.positiveFactors")}
+ </h4>
+ {liveScore.topPositiveFactors && liveScore.topPositiveFactors.length > 0 ? (
+ <div className="space-y-1.5">
+ {liveScore.topPositiveFactors.map((f: any, i: number) => {
+ const val = getFactorValue(f);
+ return (
+ <div key={i} className="flex justify-between items-center bg-white/70 rounded-lg px-3 py-1.5 border border-emerald-100/50">
+ <span className="text-sm text-emerald-900">{getFactorLabel(f, t)}</span>
+ {val !== null && (
+ <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+ +{Math.abs(val).toFixed(2)}
+ </span>
+ )}
+ </div>
+ );
+ })}
+ </div>
+ ) : (
+ <p className="text-sm text-emerald-600/70 italic">{t("wizard.evaluation.noPositiveFactors")}</p>
+ )}
+ </div>
 
-              {/* Top Factors */}
-              <div className="grid gap-4">
-                <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
-                  <h5 className="text-xs font-bold text-emerald-800 mb-2">أعلى عوامل إيجابية</h5>
-                  <ul className="text-xs space-y-1 text-emerald-700 list-disc list-inside">
-                    {liveScore.topPositiveFactors?.map((f: any, i) => <li key={i}>{f.name ?? String(f)}</li>) || <li>لا يوجد</li>}
-                  </ul>
-                </div>
-                <div className="bg-rose-50/50 p-3 rounded-xl border border-rose-100">
-                  <h5 className="text-xs font-bold text-rose-800 mb-2">أعلى عوامل سلبية</h5>
-                  <ul className="text-xs space-y-1 text-rose-700 list-disc list-inside">
-                    {liveScore.topNegativeFactors?.map((f: any, i) => <li key={i}>{f.name ?? String(f)}</li>) || <li>لا يوجد</li>}
-                  </ul>
-                </div>
-              </div>
+ {/* Negative Factors */}
+ <div className="bg-rose-50/60 rounded-xl border border-rose-100 p-4">
+ <h4 className="text-sm font-bold text-rose-800 flex items-center gap-1.5 mb-3">
+ <TrendingDown className="w-4 h-4" /> {t("wizard.evaluation.negativeFactors")}
+ </h4>
+ {liveScore.topNegativeFactors && liveScore.topNegativeFactors.length > 0 ? (
+ <div className="space-y-1.5">
+ {liveScore.topNegativeFactors.map((f: any, i: number) => {
+ const val = getFactorValue(f);
+ return (
+ <div key={i} className="flex justify-between items-center bg-white/70 rounded-lg px-3 py-1.5 border border-rose-100/50">
+ <span className="text-sm text-rose-900">{getFactorLabel(f, t)}</span>
+ {val !== null && (
+ <span className="text-xs font-mono font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">
+ {val.toFixed(2)}
+ </span>
+ )}
+ </div>
+ );
+ })}
+ </div>
+ ) : (
+ <p className="text-sm text-rose-600/70 italic">{t("wizard.evaluation.noNegativeFactors")}</p>
+ )}
+ </div>
+ </div>
 
-            </div>
-          </div>
-        )}
-      </section>
+ {/* Recommendations */}
+ {liveScore.recommendations && liveScore.recommendations.length > 0 && (
+ <div className="mt-4 bg-blue-50/50 rounded-xl border border-blue-100 p-4">
+ <h4 className="text-sm font-bold text-blue-800 flex items-center gap-1.5 mb-2">
+ <CheckCircle2 className="w-4 h-4" /> {t("wizard.evaluation.systemRecommendations")}
+ </h4>
+ <ul className="space-y-1">
+ {liveScore.recommendations.map((r: string, i: number) => (
+ <li key={i} className="text-sm text-blue-800 flex items-start gap-2">
+ <span className="text-blue-400 mt-0.5">•</span>
+ <span>{r}</span>
+ </li>
+ ))}
+ </ul>
+ </div>
+ )}
+ </div>
+ </section>
+ )}
 
-      {/* PART 2: قرار اللجنة */}
-      {user?.role === "SUPERVISOR" && liveScore && (
-        <section className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm relative">
-          <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-            <ShieldAlert className="w-6 h-6 text-indigo-600" /> قرار اللجنة (Committee Decision)
-          </h3>
+ {/* ══════════════════════════════════════════════════
+ القسم 3: قرار اللجنة
+ ══════════════════════════════════════════════════ */}
+ {liveScore && (
+ <section className="bg-card border rounded-xl shadow-sm overflow-hidden">
+ <div className="p-4 border-b bg-indigo-50/30">
+ <h3 className="text-base font-bold flex items-center gap-2">
+ <ShieldAlert className="w-5 h-5 text-indigo-600" /> {t("wizard.evaluation.committeeDecision")}
+ </h3>
+ </div>
 
-          {isDecisionSaved ? (
-            <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-lg p-4 flex items-center gap-3 text-emerald-700 dark:text-emerald-400">
-              <CheckCircle2 className="w-5 h-5" />
-              <div>
-                <p className="font-bold">✓ تم اتخاذ القرار وتسجيله بنجاح</p>
-                <p className="text-sm opacity-90 mt-1">تُعرض هذه الأسرة الآن في لوحة المتابعة الميدانية بناءً على قرارك.</p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>نوع المساعدة المقررة</Label>
-                <Select value={decision.humanDecision} onValueChange={(v) => setDecision({ ...decision, humanDecision: v })}>
-                  <SelectTrigger><SelectValue placeholder="اختر المساعدة" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MONTHLY_CASH">مساعدة نقدية شهرية</SelectItem>
-                    <SelectItem value="MONTHLY_MEDICAL">علاجية شهرية</SelectItem>
-                    <SelectItem value="SEASONAL_MEDICAL">علاجية موسمية</SelectItem>
-                    <SelectItem value="SEASONAL_CASH">عطاء ومال موسمي</SelectItem>
-                    <SelectItem value="ALL_SEASONAL">علاجية ومالية وعطائية موسمية</SelectItem>
-                    <SelectItem value="GOODS_ONLY">عطائية فقط</SelectItem>
-                    <SelectItem value="NONE">لا يستحق</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+ <div className="p-4">
+ {isDecisionSaved ? (
+ <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-center gap-3 text-emerald-700">
+ <CheckCircle2 className="w-5 h-5 shrink-0" />
+ <div>
+ <p className="font-bold">✓ {t("wizard.evaluation.decisionSaved")}</p>
+ <p className="text-sm opacity-90 mt-1">{t("wizard.evaluation.decisionSavedDesc")}</p>
+ </div>
+ </div>
+ ) : (
+ <div className="grid gap-5 sm:grid-cols-2">
+ <div className="space-y-2">
+ <Label className="text-sm font-semibold">{t("wizard.evaluation.decisionType")}</Label>
+ <Select value={decision.humanDecision} onValueChange={(v) => setDecision({ ...decision, humanDecision: v })}>
+ <SelectTrigger><SelectValue placeholder="" /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="MONTHLY_CASH">{t("wizard.evaluation.decisionOptions.cash")}</SelectItem>
+ <SelectItem value="MONTHLY_MEDICAL">{t("wizard.evaluation.decisionOptions.medical")}</SelectItem>
+ <SelectItem value="SEASONAL_MIXED">{t("wizard.evaluation.decisionOptions.mixed")}</SelectItem>
+ <SelectItem value="GOODS_ONLY">{t("wizard.evaluation.decisionOptions.goods")}</SelectItem>
+ <SelectItem value="NONE">{t("wizard.evaluation.decisionOptions.none")}</SelectItem>
+ </SelectContent>
+ </Select>
+ </div>
 
-              <div className="space-y-2">
-                <Label>تصنيف الفئة</Label>
-                <Select value={decision.categoryClass} onValueChange={(v) => setDecision({ ...decision, categoryClass: v })}>
-                  <SelectTrigger><SelectValue placeholder="اختر الفئة" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="POOR">فقراء</SelectItem>
-                    <SelectItem value="VERY_POOR">مساكين</SelectItem>
-                    <SelectItem value="PRISONERS_FAM">أسر سجناء</SelectItem>
-                    <SelectItem value="ORPHANS">أيتام</SelectItem>
-                    <SelectItem value="ELDERLY">مسنون</SelectItem>
-                    <SelectItem value="DISABLED">ذوو إعاقة</SelectItem>
-                    <SelectItem value="OTHER">أخرى</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+ <div className="space-y-2">
+ <Label className="text-sm font-semibold">{t("wizard.evaluation.categoryClass")}</Label>
+ <Select value={decision.categoryClass} onValueChange={(v) => setDecision({ ...decision, categoryClass: v })}>
+ <SelectTrigger><SelectValue placeholder="" /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="POOR">{t("wizard.evaluation.categoryOptions.poor")}</SelectItem>
+ <SelectItem value="VERY_POOR">{t("wizard.evaluation.categoryOptions.veryPoor")}</SelectItem>
+ <SelectItem value="PRISONERS_FAM">{t("wizard.evaluation.categoryOptions.prisoners")}</SelectItem>
+ <SelectItem value="ORPHANS">{t("wizard.evaluation.categoryOptions.orphans")}</SelectItem>
+ <SelectItem value="ELDERLY">{t("wizard.evaluation.categoryOptions.elderly")}</SelectItem>
+ <SelectItem value="DISABLED">{t("wizard.evaluation.categoryOptions.disabled")}</SelectItem>
+ <SelectItem value="OTHER">{t("wizard.evaluation.categoryOptions.other")}</SelectItem>
+ </SelectContent>
+ </Select>
+ </div>
 
-              <div className="space-y-2">
-                <Label>قرار النظام للمتابعة</Label>
-                <Select value={decision.reviewStatus} onValueChange={(v) => setDecision({ ...decision, reviewStatus: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="APPROVED">موافقة</SelectItem>
-                    <SelectItem value="REJECTED">رفض</SelectItem>
-                    <SelectItem value="NEEDS_REVIEW">يحتاج مراجعة</SelectItem>
-                    <SelectItem value="ESCALATED">تصعيد للمشرف</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+ <div className="space-y-2">
+ <Label className="text-sm font-semibold">{t("wizard.evaluation.reviewStatus")}</Label>
+ <Select value={decision.reviewStatus} onValueChange={(v) => setDecision({ ...decision, reviewStatus: v })}>
+ <SelectTrigger><SelectValue /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="APPROVED">{t("wizard.evaluation.statusOptions.approved")}</SelectItem>
+ <SelectItem value="REJECTED">{t("wizard.evaluation.statusOptions.rejected")}</SelectItem>
+ <SelectItem value="NEEDS_REVIEW">{t("wizard.evaluation.statusOptions.needsReview")}</SelectItem>
+ <SelectItem value="ESCALATED">{t("wizard.evaluation.statusOptions.escalated")}</SelectItem>
+ </SelectContent>
+ </Select>
+ </div>
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label>ملاحظة القرار</Label>
-                <Textarea 
-                  placeholder="اكتب أسباب وحيثيات القرار هنا..." 
-                  value={decision.decisionNote} 
-                  onChange={(e) => setDecision({ ...decision, decisionNote: e.target.value })} 
-                />
-              </div>
+ <div className="space-y-2 sm:col-span-2">
+ <Label className="text-sm font-semibold">{t("wizard.evaluation.decisionNote")}</Label>
+ <Textarea
+ className="resize-none min-h-[80px]"
+ placeholder={t("wizard.evaluation.decisionNotePlaceholder")}
+ value={decision.decisionNote}
+ onChange={(e) => setDecision({ ...decision, decisionNote: e.target.value })}
+ />
+ </div>
 
-              <div className="sm:col-span-2 flex justify-end pt-4 border-t">
-                <Button onClick={submitDecision} disabled={!decision.humanDecision || !decision.categoryClass} className="w-full sm:w-auto">
-                  تسجيل القرار واعتماده
-                </Button>
-              </div>
-            </div>
-          )}
-        </section>
-      )}
+ <div className="sm:col-span-2 flex justify-end pt-2 border-t">
+ <Button onClick={submitDecision} disabled={!decision.humanDecision || !decision.categoryClass} className="min-w-[200px]">
+ {t("wizard.evaluation.submitDecision")}
+ </Button>
+ </div>
+ </div>
+ )}
+ </div>
+ </section>
+ )}
 
-      {/* PART 3: ماذا لو؟ */}
-      {liveScore && (
-        <section>
-          <Accordion type="single" collapsible className="bg-card border rounded-xl px-4">
-            <AccordionItem value="sim" className="border-none">
-              <AccordionTrigger className="text-lg font-semibold hover:no-underline py-4 flex gap-2">
-                <Play className="w-5 h-5 text-indigo-500" />
-                محاكاة — ماذا لو تغيرت البيانات؟
-              </AccordionTrigger>
-              <AccordionContent className="space-y-6 pt-2 pb-6">
-                
-                <p className="text-sm text-muted-foreground mb-4">هذه المحاكاة لا تُحفظ ولا تؤثر على البيانات الفعلية في قاعدة البيانات.</p>
-                
-                <div className="grid gap-4 sm:grid-cols-3 bg-muted/20 p-4 rounded-xl border">
-                  <div className="space-y-2">
-                    <Label className="text-xs">نوع السكن الافتراضي</Label>
-                    <Select value={simFields.housingType} onValueChange={(v) => setSimFields({ ...simFields, housingType: v })}>
-                      <SelectTrigger className="h-8 text-xs bg-white dark:bg-black"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="OWNED">ملك (0.0)</SelectItem>
-                        <SelectItem value="SHARED">مشترك (0.3)</SelectItem>
-                        <SelectItem value="DONATED_RENT">متبرع به (0.4)</SelectItem>
-                        <SelectItem value="RENTED">إيجار (0.7)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-xs">دخل افتراضي بديل (جنيه)</Label>
-                    <Input className="h-8 text-xs bg-white dark:bg-black" type="number" placeholder="مثال: 3000" value={simFields.totalIncome} onChange={(e) => setSimFields({ ...simFields, totalIncome: e.target.value })} />
-                  </div>
+ {/* ══════════════════════════════════════════════════
+ المحاكاة (ماذا لو)
+ ══════════════════════════════════════════════════ */}
+ {liveScore && (
+ <section>
+ <Accordion type="single" collapsible className="bg-card border rounded-xl">
+ <AccordionItem value="sim" className="border-none">
+ <AccordionTrigger className="text-sm font-semibold hover:no-underline px-4 py-3 flex gap-2">
+ <Play className="w-4 h-4 text-indigo-500" />
+ {t("wizard.evaluation.simulation.title")}
+ </AccordionTrigger>
+ <AccordionContent className="space-y-4 pt-1 pb-4 px-4">
 
-                  <div className="space-y-2">
-                    <Label className="text-xs">نوع عمل العائل</Label>
-                    <Select value={simFields.employmentType} onValueChange={(v) => setSimFields({ ...simFields, employmentType: v })}>
-                      <SelectTrigger className="h-8 text-xs bg-white dark:bg-black"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="NONE">لا يعمل</SelectItem>
-                        <SelectItem value="WEAK">يومية ضعيفة</SelectItem>
-                        <SelectItem value="SEASONAL">موسمي</SelectItem>
-                        <SelectItem value="REGULAR">منتظم</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+ <p className="text-xs text-muted-foreground">{t("wizard.evaluation.simulation.disclaimer")}</p>
 
-                  <div className="sm:col-span-3 flex justify-end">
-                    <Button variant="secondary" onClick={runSimulation} className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-300">
-                      شاهد التأثير (بدون حفظ)
-                    </Button>
-                  </div>
-                </div>
+ <div className="grid gap-3 sm:grid-cols-3 bg-muted/20 p-3 rounded-xl border">
+ <div className="space-y-1.5">
+ <Label className="text-xs">{t("wizard.burdens.housing.type")}</Label>
+ <Select value={simFields.housingType} onValueChange={(v) => setSimFields({ ...simFields, housingType: v })}>
+ <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="OWNED">{t("wizard.burdens.housing.options.owned")}</SelectItem>
+ <SelectItem value="SHARED">{t("wizard.burdens.housing.options.shared")}</SelectItem>
+ <SelectItem value="DONATED_RENT">{t("wizard.burdens.housing.options.donated")}</SelectItem>
+ <SelectItem value="RENTED">{t("wizard.burdens.housing.options.rented")}</SelectItem>
+ </SelectContent>
+ </Select>
+ </div>
 
-                {simulationResult && (
-                  <div className="mt-4 p-4 border-2 border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-950/20 rounded-xl space-y-4">
-                    <h4 className="font-bold text-indigo-800 dark:text-indigo-400">نتائج المحاكاة</h4>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1 bg-white dark:bg-black p-3 rounded-lg border text-center">
-                        <p className="text-xs text-muted-foreground mb-1">الدرجة الأصلية</p>
-                        <p className="text-xl font-bold">{Math.round(simulationResult.originalScore.normalizedPercent)}%</p>
-                      </div>
-                      <div className="text-2xl text-muted-foreground">→</div>
-                      <div className="flex-1 bg-indigo-100 dark:bg-indigo-900 p-3 rounded-lg border border-indigo-200 text-center">
-                        <p className="text-xs text-indigo-700 dark:text-indigo-300 mb-1">الدرجة المحاكاة</p>
-                        <p className="text-xl font-bold text-indigo-900 dark:text-indigo-100">{Math.round(simulationResult.simulatedScore.normalizedPercent)}%</p>
-                      </div>
-                      <div className="flex-1 bg-white dark:bg-black p-3 rounded-lg border text-center">
-                        <p className="text-xs text-muted-foreground mb-1">الفرق</p>
-                        <p className={`text-xl font-bold ${simulationResult.scoreDelta > 0 ? "text-emerald-600" : simulationResult.scoreDelta < 0 ? "text-rose-600" : "text-slate-600"}`}>
-                          {simulationResult.scoreDelta > 0 ? "+" : ""}{simulationResult.scoreDelta.toFixed(1)}
-                        </p>
-                      </div>
-                    </div>
+ <div className="space-y-1.5">
+ <Label className="text-xs">{t("wizard.evaluation.simulation.altIncome")}</Label>
+ <Input className="h-8 text-xs" type="number" placeholder="3000" value={simFields.totalIncome} onChange={(e) => setSimFields({ ...simFields, totalIncome: e.target.value })} />
+ </div>
 
-                    <div className="space-y-2 pt-2">
-                      <p className="text-xs font-semibold">الطبقات المتأثرة:</p>
-                      {simulationResult.affectedLayers.map((l, i) => (
-                        <div key={i} className="text-xs flex justify-between bg-white/50 dark:bg-black/50 p-2 rounded">
-                          <span className="font-medium">{l.layerId}</span>
-                          <span className="text-muted-foreground">{l.before} → <span className="font-bold text-foreground">{l.after}</span></span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </section>
-      )}
+ <div className="space-y-1.5">
+ <Label className="text-xs">{t("wizard.persons.workType")}</Label>
+ <Select value={simFields.employmentType} onValueChange={(v) => setSimFields({ ...simFields, employmentType: v })}>
+ <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="NONE">{t("wizard.persons.workCorrectionOptions.none")}</SelectItem>
+ <SelectItem value="WEAK">{t("wizard.persons.workTypeOptions.weak")}</SelectItem>
+ <SelectItem value="SEASONAL">{t("wizard.persons.workTypeOptions.seasonal")}</SelectItem>
+ <SelectItem value="REGULAR">{t("wizard.persons.workTypeOptions.regular")}</SelectItem>
+ </SelectContent>
+ </Select>
+ </div>
 
-    </div>
-  );
+ <div className="sm:col-span-3 flex justify-end">
+ <Button variant="secondary" onClick={runSimulation} size="sm" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200">
+ {t("wizard.evaluation.simulation.run")}
+ </Button>
+ </div>
+ </div>
+
+ {simulationResult && (
+ <div className="p-4 border-2 border-indigo-200 bg-indigo-50/30 rounded-xl space-y-3 max-h-48 overflow-y-auto">
+ <h4 className="font-bold text-sm text-indigo-800">{t("wizard.evaluation.simulation.results")}</h4>
+
+ <div className="flex items-center gap-3">
+ <div className="flex-1 bg-white p-2.5 rounded-lg border text-center">
+ <p className="text-[10px] text-muted-foreground mb-0.5">{t("wizard.evaluation.simulation.original")}</p>
+ <p className="text-lg font-bold">{Math.round(simulationResult.originalScore.normalizedPercent)}%</p>
+ </div>
+ <span className="text-lg text-muted-foreground">→</span>
+ <div className="flex-1 bg-indigo-100 p-2.5 rounded-lg border border-indigo-200 text-center">
+ <p className="text-[10px] text-indigo-600 mb-0.5">{t("wizard.evaluation.simulation.simulated")}</p>
+ <p className="text-lg font-bold text-indigo-900">{Math.round(simulationResult.simulatedScore.normalizedPercent)}%</p>
+ </div>
+ <div className="flex-1 bg-white p-2.5 rounded-lg border text-center">
+ <p className="text-[10px] text-muted-foreground mb-0.5">{t("wizard.evaluation.simulation.difference")}</p>
+ <p className={cn("text-lg font-bold", simulationResult.scoreDelta > 0 ? "text-emerald-600" : simulationResult.scoreDelta < 0 ? "text-rose-600" : "text-slate-600")}>
+ {simulationResult.scoreDelta > 0 ? "+" : ""}{simulationResult.scoreDelta.toFixed(1)}
+ </p>
+ </div>
+ </div>
+
+ <div className="space-y-1 pt-1">
+ <p className="text-xs font-semibold">{t("wizard.evaluation.simulation.affectedLayers")}</p>
+ {simulationResult.affectedLayers.map((l: any, i: number) => (
+ <div key={i} className="text-xs flex justify-between bg-white/60 p-1.5 rounded">
+ <span className="font-medium">{getLayerLabel(l.layerId)}</span>
+ <span className="text-muted-foreground">{l.before} → <span className="font-bold text-foreground">{l.after}</span></span>
+ </div>
+ ))}
+ </div>
+ </div>
+ )}
+
+ </AccordionContent>
+ </AccordionItem>
+ </Accordion>
+ </section>
+ )}
+
+ </div></div>
+ );
 }

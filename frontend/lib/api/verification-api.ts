@@ -18,11 +18,11 @@ export async function getVerificationList(params?: Record<string, string>) {
 }
 
 export async function verifySingleIncome(householdId: string, incomeId: string, note?: string) {
-  const { data } = await api.patch<ApiResponse<any>>(`/households/${householdId}/income/${incomeId}/verify`, { note });
+  const { data } = await api.patch<ApiResponse<any>>(`/households/${householdId}/income/${incomeId}/verify`, { verificationNote: note, verified: "VERIFIED" });
   return data.data;
 }
 
 export async function bulkVerifyIncome(ids: string[], note?: string) {
-  const { data } = await api.patch<ApiResponse<any[]>>("/verification/bulk", { ids, note });
+  const { data } = await api.patch<ApiResponse<any[]>>("/verification/bulk", { ids, verificationNote: note, verified: "VERIFIED" });
   return data.data;
 }

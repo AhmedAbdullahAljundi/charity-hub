@@ -25,10 +25,15 @@
     "volunteers": "Volunteers",
     "analytics": "Analytics",
     "verification": "Verification Center",
-    "admin": "Rule Admin",
-    "audit": "Audit Log",
+    "ruleEditor": "Rule Engine",
+    "auditLog": "Audit Log",
     "reports": "Reports",
-    "users": "Users & Permissions"
+    "users": "Users & Roles",
+    "groups": {
+      "main": "Main",
+      "management": "Management",
+      "system": "System"
+    }
   },
   "sidebar": {
     "dashboard": "Dashboard",

@@ -27,7 +27,7 @@ import { useAuthStore } from "@/lib/stores/authStore";
 
 const menuGroups = [
   {
-    label: "الرئيسية",
+    labelKey: "groups.main",
     items: [
       { key: "dashboard", href: "/dashboard", icon: LayoutDashboard },
       { key: "households", href: "/dashboard/households", icon: Users },
@@ -37,19 +37,19 @@ const menuGroups = [
     ]
   },
   {
-    label: "الإدارة",
+    labelKey: "groups.management",
     items: [
       { key: "analytics", href: "/dashboard/analytics", icon: BarChart3 },
-      { key: "verification", href: "/dashboard/verification", icon: ShieldCheck },
+      { key: "verification", href: "/dashboard/verification", icon: ShieldCheck, roles: ["ADMIN", "RESEARCHER"] },
       { key: "reports", href: "/dashboard/reports", icon: FileText },
     ]
   },
   {
-    label: "النظام",
+    labelKey: "groups.system",
     items: [
-      { key: "audit", href: "/dashboard/audit", icon: History },
-      { key: "users", href: "/dashboard/users", icon: Shield },
-      { key: "admin", href: "/dashboard/admin", icon: Settings },
+      { key: "auditLog", href: "/dashboard/audit", icon: History, roles: ["ADMIN"] },
+      { key: "users", href: "/dashboard/users", icon: Shield, roles: ["ADMIN"] },
+      { key: "ruleEditor", href: "/dashboard/admin/rules", icon: Settings, roles: ["ADMIN"] },
     ]
   }
 ];
@@ -83,18 +83,25 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
 
       <ScrollArea className="flex-1 py-3">
         <nav className="flex flex-col gap-4">
-          {menuGroups.map((group, gIndex) => (
-            <div key={gIndex} className="flex flex-col gap-1 px-2.5">
-              {!collapsed && (
-                <div className="flex items-center gap-3 px-3 py-1 mb-1">
-                  <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">{group.label}</span>
-                  <div className="h-px flex-1 bg-slate-700/50"></div>
-                </div>
-              )}
-              {collapsed && gIndex > 0 && (
-                <div className="mx-4 my-2 h-px bg-slate-700/50"></div>
-              )}
-              {group.items.map((item) => {
+          {menuGroups.map((group, gIndex) => {
+            const filteredItems = group.items.filter((item) => {
+              if (!(item as any).roles) return true;
+              return user && (item as any).roles.includes(user.role);
+            });
+            if (filteredItems.length === 0) return null;
+
+            return (
+              <div key={gIndex} className="flex flex-col gap-1 px-2.5">
+                {!collapsed && (
+                  <div className="flex items-center gap-3 px-3 py-1 mb-1">
+                    <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">{t(group.labelKey as any)}</span>
+                    <div className="h-px flex-1 bg-slate-700/50"></div>
+                  </div>
+                )}
+                {collapsed && gIndex > 0 && (
+                  <div className="mx-4 my-2 h-px bg-slate-700/50"></div>
+                )}
+                {filteredItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -120,7 +127,7 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
                 );
               })}
             </div>
-          ))}
+          )})}
         </nav>
       </ScrollArea>
 
