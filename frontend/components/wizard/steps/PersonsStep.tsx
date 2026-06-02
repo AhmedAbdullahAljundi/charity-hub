@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { getStudentHistory } from "@/lib/api/education-api";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Edit2, Trash2, GraduationCap, Stethoscope, HeartPulse, ShieldAlert, Heart, Home, AlertCircle, Briefcase, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
  Dialog,
@@ -163,6 +165,30 @@ export function PersonsStep() {
  const [isModalOpen, setIsModalOpen] = useState(false);
  const [isSaving, setIsSaving] = useState(false);
  const [educationModalOpen, setEducationModalOpen] = useState(false);
+
+  const [eduScores, setEduScores] = useState<Record<string, { totalScore: number | null; studentLevel: string | null; quranLastSurah: string | null }>>({});
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAll = async () => {
+      const results: Record<string, { totalScore: number | null; studentLevel: string | null; quranLastSurah: string | null }> = {};
+      for (const m of members) {
+        if (m.id && m.isStudent) {
+          try {
+            const hist = await getStudentHistory(m.id);
+            if (hist && hist.length > 0) {
+              const latest = hist[0];
+              results[m.id] = { totalScore: latest.totalScore ?? 0, studentLevel: latest.studentLevel, quranLastSurah: latest.quranLastSurah };
+            }
+          } catch(e) {}
+        }
+      }
+      if (isMounted) setEduScores(results);
+    };
+    fetchAll();
+    return () => { isMounted = false; };
+  }, [members]);
+
  const [educationPersonId, setEducationPersonId] = useState<string>("");
 
  const openNew = () => {
@@ -502,14 +528,39 @@ export function PersonsStep() {
     });
   };
 
- // Conditionals for the form
- const age = draft.nationalId ? extractNationalIdInfo(draft.nationalId)?.age ?? 0 : 0;
- const gender = draft.gender ?? "MALE";
  
- const isSonOrDaughter = draft.relationship === "SON" || draft.relationship === "DAUGHTER";
+  const getProgressInfo = (m: any) => {
+    let empValue = 0;
+    if (m.employmentType === "NONE") empValue = 0;
+    else if (m.employmentQuality === "WEAK") empValue = 30;
+    else if (m.employmentQuality === "SEASONAL" || m.employmentQuality === "UNSTABLE") empValue = 50;
+    else if (m.employmentQuality === "SUFFICIENT" || m.employmentQuality === "REGULAR") empValue = 80;
+    else empValue = 100;
+
+    let eduValue = 0;
+    if (m.isStudent && m.id && eduScores[m.id]) {
+      eduValue = eduScores[m.id].totalScore || 0;
+    } else {
+      if (m.educationLevel === "ILLITERATE") eduValue = 10;
+      else if (m.educationLevel === "MEDIUM") eduValue = 40;
+      else if (m.educationLevel === "HIGHER_LIMITED") eduValue = 70;
+      else if (m.educationLevel === "HIGHER_STABLE") eduValue = 100;
+    }
+
+    return { empValue, eduValue };
+  };
+
+  
+
+  // Conditionals for the form
+  const age = draft.nationalId ? extractNationalIdInfo(draft.nationalId)?.age ?? 0 : 0;
+  const isOtherFather = draft.role === "CHILD" && fd.socialStatus === "DIVORCED" && draft.relationship === "SON_OTHER_FATHER";
+  const gender = draft.gender ?? "MALE";
+  
+  const isSonOrDaughter = draft.relationship === "SON" || draft.relationship === "DAUGHTER";
   const isIndependentSon = isSonOrDaughter && gender === "MALE" && draft.role === "INDEPENDENT" && age >= 15 && !draft.isStudent;
   const hideEducationMain = age < 15 || isIndependentSon;
-  
+
   const showBrideToggle = draft.role === "CHILD" && gender === "FEMALE" && age >= 13 && age <= 25 && draft.maritalStatus === "SINGLE";
   const showOrphan = flags.hasWidow && draft.role === "CHILD";
   const isDisplacedReason = flags.hasDivorce || flags.hasPrison || flags.absenceReason === "other";
@@ -576,7 +627,37 @@ export function PersonsStep() {
  {m.isPrisoner && <Badge variant="secondary" className="bg-slate-800 text-slate-100 hover:bg-slate-700 text-[10px] px-1.5 py-0 h-4 rounded">{t("tags.prisoner")}</Badge>}
  {m.isBride && <Badge variant="secondary" className="bg-pink-100 text-pink-700 hover:bg-pink-200 text-[10px] px-1.5 py-0 h-4 rounded border border-pink-200">{t("tags.bride")}</Badge>}
  {m.isOrphan && <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200 text-[10px] px-1.5 py-0 h-4 rounded border border-purple-200">{t("tags.orphan")}</Badge>}
+ {m.isDisplaced && <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-200 text-[10px] px-1.5 py-0 h-4 rounded border border-orange-200">{t("tags.displaced")}</Badge>}
+ {m.maritalStatus && m.role !== "HEAD" && m.role !== "SPOUSE" && (
+   <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 rounded text-slate-600 bg-white">{t("wizard.persons.maritalOptions." + m.maritalStatus.toLowerCase())}</Badge>
+ )}
+ {m.isSpecialEducation && (
+   <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] px-1.5 py-0 h-4 rounded border border-emerald-200">تعليم خاص</Badge>
+ )}
+ {m.id && eduScores[m.id]?.quranLastSurah && (
+   <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 rounded text-teal-700 bg-teal-50 border-teal-200">{eduScores[m.id].quranLastSurah}</Badge>
+ )}
  </div>
+
+ {/* Progress Bars */}
+ {!(m as any)._isHeadOrSpouse && m.role !== "CHILD" && (
+   <div className="space-y-2 mt-3 pt-3 border-t border-slate-100">
+     <div className="space-y-1">
+       <div className="flex justify-between text-[10px] text-muted-foreground">
+         <span>{t("wizard.persons.employmentQuality")}</span>
+         <span className="font-medium text-blue-600">{getProgressInfo(m).empValue}%</span>
+       </div>
+       <Progress value={getProgressInfo(m).empValue} className="h-1.5 bg-blue-100" indicatorColor="#3b82f6" dir="rtl" />
+     </div>
+     <div className="space-y-1">
+       <div className="flex justify-between text-[10px] text-muted-foreground">
+         <span>{t("wizard.persons.education")}</span>
+         <span className="font-medium text-emerald-600">{getProgressInfo(m).eduValue}%</span>
+       </div>
+       <Progress value={getProgressInfo(m).eduValue} className="h-1.5 bg-emerald-100" indicatorColor="#10b981" dir="rtl" />
+     </div>
+   </div>
+ )}
  </div>
 
  <div className="absolute bottom-4 left-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur rounded-lg p-1 shadow-sm border border-slate-200">
@@ -634,6 +715,12 @@ export function PersonsStep() {
    }}
    disabled={draft.role === "SPOUSE"} 
  />
+ {isOtherFather && (
+ <p className="text-[10px] text-amber-600 font-medium flex items-center gap-1 mt-1">
+ <AlertCircle className="w-3 h-3" />
+ ملاحظة: سيتم إضافة اسم الأب القديم (الزوج السابق) تلقائياً لهذا الابن.
+ </p>
+ )}
  </div>
  
  <div className="space-y-1.5">
