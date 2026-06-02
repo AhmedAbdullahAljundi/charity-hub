@@ -13,11 +13,25 @@ export interface WizardPersonForm extends Partial<PersonDto> {
   personId?: string;
   nationalId?: string;
   relationship?: string;
+  otherRelationshipName?: string;
   notes?: string;
   hasDisease?: boolean;
   hasDisability?: boolean;
-  diseasesDraft?: Array<Partial<{ id?: string; treatmentCost: string; followup: string; workImpact: string }>>;
-  disabilitiesDraft?: Array<Partial<{ id?: string; workImpact: string; companion: string; treatmentCost: string }>>;
+  isStudent?: boolean;
+  studentLevel?: string;
+  isSpecialEducation?: boolean;
+  isPrisoner?: boolean;
+  prisonTerm?: string;
+  prisonSuspicion?: string;
+  isBride?: boolean;
+  brideHasSponsor?: boolean;
+  isOrphan?: boolean;
+  isSonContributor?: boolean;
+  sonMarried?: boolean;
+  sonSameHouse?: boolean;
+  employmentQuality?: string;
+  diseasesDraft?: Array<Partial<{ id?: string; name?: string; treatmentCost: string; followup: string; workImpact: string }>>;
+  disabilitiesDraft?: Array<Partial<{ id?: string; description?: string; workImpact: string; companion: string; treatmentCost: string }>>;
   workCorrection?: { type: string; multiplier: number; educationMultiplier?: number };
 }
 
@@ -25,6 +39,7 @@ export interface WizardFormData {
   code?: string;
   familyName?: string;
   wifeName?: string;
+  wifePersonId?: string;
   wifeNationalId?: string;
   wifeEmploymentQuality?: string;
   wifeEducationLevel?: string;
@@ -36,11 +51,12 @@ export interface WizardFormData {
   deathDate?: string;
   primaryPhone?: string;
   secondaryPhone?: string;
+  backupPhone?: string;
   whatsappPhone?: string;
   addressRegion?: string;
   addressStreet?: string;
   addressDetails?: string;
-  searchType?: "DESK" | "FIELD";
+  searchType?: string | null;
   isModest?: boolean;
   officeDealings?: boolean;
   fieldNotes?: string;
@@ -79,7 +95,7 @@ export interface WizardFormData {
     sonInPrisonId?: string;
     // Removed: social indicators had no backend implementation
   };
-  income?: Record<string, { amount: number; verified?: boolean; note?: string; id?: string }>;
+  income?: Record<string, { amount: number; verified?: string; note?: string; id?: string }>;
   diseases?: Array<any>;
   disabilities?: Array<any>;
 }
@@ -111,7 +127,7 @@ function deriveFlags(form: WizardFormData): ConditionalFlags {
   else if (absent) mappedReason = "other";
 
   const members = form.members ?? [];
-  const socialStatusDivorce = form.socialStatus === "DIVORCED" || form.socialStatus === "مطلقة" || form.socialStatus === "DIVORCE" as any;
+  const socialStatusDivorce = form.socialStatus === "DIVORCED" || form.socialStatus === ("مطلقة" as any) || form.socialStatus === "DIVORCE" as any;
 
   return {
     headIsAbsent: absent,
@@ -137,7 +153,10 @@ interface WizardState {
   autosaveStatus: AutosaveStatus;
   lastSavedAt: Date | null;
   conditionalFlags: ConditionalFlags;
+  personDraft: WizardPersonForm | null;
+  personEditingIdx: number | null;
   setHouseholdId: (id: string | null) => void;
+  setPersonDraft: (draft: WizardPersonForm | null, idx?: number | null) => void;
   setField: (path: string, value: unknown) => void;
   setFormData: (data: WizardFormData) => void;
   setActiveTab: (tab: 1 | 2 | 3 | 4 | 5) => void;
@@ -172,10 +191,27 @@ function extractNationalIdInfo(nationalId?: string) {
 }
 
 function buildHeadPayload(formData: WizardFormData) {
+  if (formData.socialStatus === "SINGLE_OTHER") {
+    if (!formData.wifeName) return null;
+    const info = formData.wifeNationalId ? extractNationalIdInfo(formData.wifeNationalId) : null;
+    return {
+      name: formData.wifeName,
+      nationalId: formData.wifeNationalId,
+      gender: "FEMALE",
+      birthDate: info?.birthDate,
+      role: "HEAD",
+      isHead: true,
+      residencyStatus: "RESIDENT",
+      employmentType: formData.wifeEmploymentQuality || "NONE",
+      educationLevel: formData.wifeEducationLevel || "ILLITERATE",
+      maritalStatus: "SINGLE"
+    };
+  }
+
   const head = formData.head;
   if (!head?.name) return null;
-  const nationalIdInfo = extractNationalIdInfo(head.nationalId);
-  const maritalStatus = formData.socialStatus === "SINGLE_OTHER" ? "SINGLE" : formData.socialStatus || "MARRIED";
+  const nationalIdInfo = head.nationalId ? extractNationalIdInfo(head.nationalId) : null;
+  const maritalStatus = formData.socialStatus || "MARRIED";
   const payload: Record<string, unknown> = {
     name: head.name,
     nationalId: head.nationalId,
@@ -189,6 +225,25 @@ function buildHeadPayload(formData: WizardFormData) {
     maritalStatus,
   };
   return payload;
+}
+
+function buildSpousePayload(formData: WizardFormData) {
+  if (formData.socialStatus === "SINGLE_OTHER") return null;
+  if (!formData.wifeName) return null;
+  const info = formData.wifeNationalId ? extractNationalIdInfo(formData.wifeNationalId) : null;
+  return {
+    name: formData.wifeName,
+    nationalId: formData.wifeNationalId,
+    gender: "FEMALE",
+    birthDate: info?.birthDate,
+    role: "SPOUSE",
+    isHead: false,
+    residencyStatus: "RESIDENT",
+    employmentType: formData.wifeEmploymentQuality || "NONE",
+    educationLevel: formData.wifeEducationLevel || "ILLITERATE",
+    maritalStatus: formData.socialStatus || "MARRIED",
+    alimonyStatus: formData.socialStatus === "DIVORCED" ? (formData.alimonyStatus || null) : null
+  };
 }
 
 function setNested(obj: WizardFormData, path: string, value: unknown): WizardFormData {
@@ -212,8 +267,11 @@ export const useWizardStore = create<WizardState>((set, get) => ({
   autosaveStatus: "idle",
   lastSavedAt: null,
   conditionalFlags: deriveFlags(initialForm),
+  personDraft: null,
+  personEditingIdx: null,
 
   setHouseholdId: (id) => set({ householdId: id }),
+  setPersonDraft: (draft, idx = null) => set({ personDraft: draft, personEditingIdx: idx }),
 
   setField: (path, value) => {
     const formData = setNested(get().formData, path, value);
@@ -237,13 +295,12 @@ export const useWizardStore = create<WizardState>((set, get) => ({
     const { householdId, formData, isDirty } = get();
     if (!isDirty) return;
 
+    let currentlySaving = "";
     set({ autosaveStatus: "saving" });
     try {
       const payload = {
         code: formData.code,
-        familyName: formData.familyName || (formData.wifeName ? `أسرة ${formData.wifeName}` : undefined),
-        wifeName: formData.wifeName,
-        wifeNationalId: formData.wifeNationalId,
+        familyName: formData.familyName,
         governorate: formData.governorate || formData.addressRegion || "1",
         district: formData.district || "default",
         village: formData.village || "default",
@@ -258,6 +315,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         bankAssetGrade: formData.bankAssetGrade,
         primaryPhone: formData.primaryPhone,
         secondaryPhone: formData.secondaryPhone,
+        backupPhone: formData.backupPhone,
         whatsappPhone: formData.whatsappPhone,
         socialStatus: formData.socialStatus,
         divorceYear: formData.divorceYear,
@@ -290,11 +348,8 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       }
 
       const headPayload = buildHeadPayload(formData);
-      // attach work correction if present
-      if (headPayload && formData.workCorrection) {
-        headPayload.workCorrection = formData.workCorrection;
-      }
       if (id && headPayload?.birthDate) {
+        currentlySaving = "head";
         const headId = formData.head?.personId || formData.head?.id;
         const savedHead = headId
           ? await updatePerson(id, headId, headPayload)
@@ -307,6 +362,16 @@ export const useWizardStore = create<WizardState>((set, get) => ({
           formData: nextFormData,
           conditionalFlags: deriveFlags(nextFormData),
         });
+      }
+
+      const spousePayload = buildSpousePayload(formData);
+      if (id && spousePayload && spousePayload.birthDate) {
+        currentlySaving = "spouse";
+        const spouseId = formData.wifePersonId;
+        const savedSpouse = spouseId 
+          ? await updatePerson(id, spouseId, spousePayload)
+          : await createPerson(id, spousePayload);
+        set({ formData: { ...get().formData, wifePersonId: savedSpouse.id } });
       }
 
       if (id && formData.socialStatus === "DIVORCED") {
@@ -332,6 +397,21 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       const msg = e?.response?.data?.message || e?.message || String(e);
       if (msg.includes('nationalId') || msg.includes('National ID') || msg.includes('الرقم القومي')) {
         toast.error("الرقم القومي المدخل مسجل مسبقاً في النظام. يرجى المراجعة.");
+        let errorFieldId = "";
+        if (currentlySaving === "head") {
+          errorFieldId = formData.socialStatus === "SINGLE_OTHER" ? "wifeNationalId" : "headNationalId";
+        } else if (currentlySaving === "spouse") {
+          errorFieldId = "wifeNationalId";
+        }
+        if (errorFieldId) {
+          setTimeout(() => {
+            const el = document.getElementById(errorFieldId);
+            if (el) {
+              el.focus();
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }, 100);
+        }
       } else if (msg.includes('Household code already exists') || msg.includes('Unique constraint')) {
         toast.error("رقم القيد أو الرقم القومي المدخل مسجل مسبقاً لأسرة أخرى. يرجى المراجعة.");
       } else {
@@ -353,8 +433,28 @@ export const useWizardStore = create<WizardState>((set, get) => ({
     }),
 
   loadFromHousehold: (h) => {
-    const head = h.persons?.find((p) => p.isHead) ?? h.persons?.[0];
-    const members = (h.persons ?? []).filter((p) => !p.isHead);
+    // Extract HEAD and SPOUSE based on roles/genders
+    const dbHead = h.persons?.find((p) => p.isHead) ?? h.persons?.[0];
+    const dbSpouse = h.persons?.find((p) => p.role === "SPOUSE");
+    const otherMembers = (h.persons ?? []).filter((p) => p.id !== dbHead?.id && p.id !== dbSpouse?.id);
+
+    let uiWife = null;
+    let uiHead = null;
+
+    if (h.socialStatus === "MARRIED" || h.socialStatus === "DIVORCED" || h.socialStatus === "WIDOWED") {
+      if (dbHead?.gender === "FEMALE" || dbSpouse?.gender === "MALE") {
+        uiWife = dbHead?.gender === "FEMALE" ? dbHead : (dbSpouse?.gender === "FEMALE" ? dbSpouse : null);
+        uiHead = dbHead?.gender === "MALE" ? dbHead : (dbSpouse?.gender === "MALE" ? dbSpouse : null);
+      } else {
+        uiHead = dbHead?.gender === "MALE" || !dbHead?.gender ? dbHead : null;
+        uiWife = dbSpouse?.gender === "FEMALE" || !dbSpouse?.gender ? dbSpouse : null;
+      }
+    } else {
+      // For SINGLE or OTHER, the head is the wife (ربه الاسرة in UI)
+      uiWife = dbHead;
+      uiHead = dbHead; // uiHead also maps to the same person, but UI hides husband section
+    }
+
     const income: WizardFormData["income"] = {};
     for (const src of h.incomeSources ?? []) {
       income[src.channel] = {
@@ -364,11 +464,19 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         id: src.id,
       };
     }
+
     const formData: WizardFormData = {
       code: h.code,
+      familyName: (h as any).familyName || (uiWife?.name ? `أسرة ${uiWife.name}` : (uiHead?.name ? `أسرة ${uiHead.name}` : undefined)),
+      wifeName: uiWife?.name,
+      wifePersonId: uiWife?.id,
+      wifeNationalId: uiWife?.nationalId,
+      wifeEmploymentQuality: uiWife?.employmentType ?? undefined,
+      wifeEducationLevel: uiWife?.educationLevel ?? undefined,
+      alimonyStatus: (uiWife?.alimonyStatus as any) ?? undefined,
       governorate: h.governorate,
-      district: h.district,
-      village: h.village,
+      district: h.district === "default" ? undefined : h.district,
+      village: h.village === "default" ? undefined : h.village,
       address: h.address ?? undefined,
       addressRegion: h.addressRegion ?? undefined,
       addressStreet: h.addressStreet ?? undefined,
@@ -380,6 +488,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       bankAssetGrade: h.bankAssetGrade,
       primaryPhone: h.primaryPhone ?? undefined,
       secondaryPhone: h.secondaryPhone ?? undefined,
+      backupPhone: h.backupPhone ?? undefined,
       whatsappPhone: h.whatsappPhone ?? undefined,
       socialStatus: h.socialStatus ?? undefined,
       divorceYear: h.divorceYear ?? undefined,
@@ -394,21 +503,15 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       notes: h.notes ?? undefined,
       fieldNotes: h.fieldNotes ?? undefined,
       pdfUrl: h.pdfUrl ?? undefined,
-      pastSpouses: h.pastSpouses ? (h.pastSpouses as any) : undefined,
-      head: head ? { ...head, personId: head.id, hasDisease: (head.diseases?.length ?? 0) > 0, hasDisability: (head.disabilities?.length ?? 0) > 0 } : initialForm.head,
-      members: members.map((m) => ({
+      pastSpouses: (h as any).pastSpouses ? (h as any).pastSpouses : undefined,
+      head: uiHead ? { ...uiHead, personId: uiHead.id, hasDisease: (uiHead.diseases?.length ?? 0) > 0, hasDisability: (uiHead.disabilities?.length ?? 0) > 0 } : initialForm.head,
+      members: otherMembers.map((m) => ({
         ...m,
         hasDisease: (m.diseases?.length ?? 0) > 0,
         hasDisability: (m.disabilities?.length ?? 0) > 0,
       })),
-      diseases: (head?.diseases ?? []).map((d) => ({
-        ...d,
-        personId: head.id,
-      })),
-      disabilities: (head?.disabilities ?? []).map((d) => ({
-        ...d,
-        personId: head.id,
-      })),
+      diseases: (h.persons ?? []).flatMap((p) => (p.diseases ?? []).map((d) => ({ ...d, personId: p.id }))),
+      disabilities: (h.persons ?? []).flatMap((p) => (p.disabilities ?? []).map((d) => ({ ...d, personId: p.id }))),
       burdens: {
         ...(h.temporaryBurdens ?? []).reduce<NonNullable<WizardFormData["burdens"]>>((acc, burden) => {
           if (burden.type === "DEBT") {

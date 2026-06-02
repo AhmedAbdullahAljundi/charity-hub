@@ -377,7 +377,7 @@ function HouseholdRow({
  const income = Math.abs(Number(household.totalMonthlyIncome || 0));
  const classification = score?.classificationTag || extractClassification(household.latestClassification || score?.decisionNote);
  const phones = [household.primaryPhone, household.secondaryPhone].filter(Boolean) as string[];
- const familyName = wife?.name || household.spouseName || husband?.name || household.headName || household.code;
+ const familyName = (household as any).familyName || wife?.name || (household as any).spouseName || husband?.name || (household as any).headName || household.code;
 
  return (
  <tr className={cn("group h-[56px] border-b border-[var(--border-subtle)] text-sm transition-[background-color] duration-150 hover:bg-[var(--surface-raised)]", selected && "bg-green-50/60 dark:bg-green-950/20")}>

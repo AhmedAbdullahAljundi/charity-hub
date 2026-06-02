@@ -62,7 +62,9 @@ api.interceptors.response.use(
         window.location.href = `/${locale}/login`;
       }
     } else if (error.response?.status && error.response.status >= 500) {
-      toast.error("A server error occurred. Please try again later.", { id: "global-500" });
+      const locale = typeof window !== "undefined" ? localStorage.getItem(LOCALE_KEY) || "ar" : "ar";
+      const msg = locale === "ar" ? "حدث خطأ في الخادم. يرجى المحاولة لاحقاً." : "A server error occurred. Please try again later.";
+      toast.error(msg, { id: "global-500" });
     }
     return Promise.reject(error);
   }

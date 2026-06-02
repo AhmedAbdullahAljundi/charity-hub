@@ -113,9 +113,9 @@ export const useDashboardStore = create<DashboardState>()((set, get) => ({
 
     const s = parseOk(0);
     if (s.ok) {
-      familyClassification = Array.isArray(s.data?.byLevel) ? s.data.byLevel : [];
+      familyClassification = Array.isArray((s.data as any)?.byLevel) ? (s.data as any).byLevel : [];
       // Calculate basic stats from distribution
-      const totalFam = s.data?.totalHouseholds || familyClassification.reduce((acc, curr: any) => acc + (curr.count || 0), 0);
+      const totalFam = (s.data as any)?.totalHouseholds || familyClassification.reduce((acc, curr: any) => acc + (curr.count || 0), 0);
       statsPayload = { ...prev.stats, totalFamilies: totalFam };
     } else {
       errors.stats = s.reason;

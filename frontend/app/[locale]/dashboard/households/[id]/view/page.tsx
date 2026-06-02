@@ -7,10 +7,16 @@ import { HouseholdDto } from "@/lib/types/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Activity, Users, MapPin, Briefcase, FileText, Download, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowRight, Activity, Users, MapPin, Briefcase, FileText, Download, CheckCircle2, AlertCircle, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const StudentRecordModal = dynamic(
+  () => import("@/components/education/StudentRecordModal"),
+  { ssr: false }
+);
 
 const ELIGIBILITY_COLORS: Record<string, string> = {
  CRITICAL: "text-rose-700 bg-rose-100 border-rose-200",
@@ -28,12 +34,14 @@ const ELIGIBILITY_LABELS: Record<string, string> = {
  NOT_ELIGIBLE: "غير مستحق",
 };
 
-export default function HouseholdViewPage() {
+ export default function HouseholdViewPage() {
  const params = useParams();
  const router = useRouter();
  const id = params.id as string;
  const [household, setHousehold] = useState<HouseholdDto | null>(null);
  const [loading, setLoading] = useState(true);
+ const [modalOpen, setModalOpen] = useState(false);
+ const [selectedPersonId, setSelectedPersonId] = useState<string>("");
 
  useEffect(() => {
  async function loadData() {
@@ -61,6 +69,20 @@ export default function HouseholdViewPage() {
  <Skeleton className="h-48 rounded-xl" />
  <Skeleton className="h-48 rounded-xl" />
  </div>
+
+ {modalOpen && household && (
+  <StudentRecordModal
+    open={modalOpen}
+    onOpenChange={setModalOpen}
+    onSaved={() => {
+      setModalOpen(false);
+      router.refresh();
+    }}
+    prefillHouseholdId={household.id}
+    prefillPersonId={selectedPersonId}
+    prefillPersons={household.persons}
+  />
+ )}
  </div>
  );
  }
@@ -76,10 +98,10 @@ export default function HouseholdViewPage() {
  );
  }
 
- const score = household.scores?.[0];
- const membersCount = household.persons?.length || 0;
- const incomes = household.incomeSources || [];
- const totalIncome = incomes.reduce((sum, inc) => sum + (inc.monthlyAmount || 0), 0);
+  const score = household.scoreResults?.[0] || household.latestScore;
+  const membersCount = household.persons?.length || 0;
+  const incomes = household.incomeSources || [];
+  const totalIncome = incomes.reduce((sum, inc) => sum + parseFloat(inc.monthlyAmount || "0"), 0);
 
  return (
  <div className="container mx-auto py-8 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500" >
@@ -93,10 +115,10 @@ export default function HouseholdViewPage() {
  <div>
  <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
  ملف الأسرة: {household.code}
- {household.status === "PUBLISHED" && <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200">معتمد</Badge>}
- {household.status === "DRAFT" && <Badge variant="secondary">مسودة</Badge>}
+ {!household.isDraft && household.latestDecisionStatus === "APPROVED" && <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200">معتمد</Badge>}
+ {household.isDraft && <Badge variant="secondary">مسودة</Badge>}
  </h1>
- <p className="text-sm text-slate-500 mt-1">تاريخ التسجيل: {new Date(household.registrationDate).toLocaleDateString("ar-EG")}</p>
+ <p className="text-sm text-slate-500 mt-1">تاريخ التسجيل: {household.registrationDate ? new Date(household.registrationDate).toLocaleDateString("ar-EG") : ""}</p>
  </div>
  </div>
  <div className="flex gap-2">
@@ -122,7 +144,7 @@ export default function HouseholdViewPage() {
  <div>
  <p className="text-slate-400 text-sm font-medium mb-1">التقييم الحالي</p>
  <div className="text-4xl font-bold font-mono">
- {score ? `${Math.round(score.normalizedPercent)}%` : "N/A"}
+ {score ? `${Math.round(Number(score.normalizedPercent))}%` : "N/A"}
  </div>
  </div>
  {score && (
@@ -210,6 +232,14 @@ export default function HouseholdViewPage() {
  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">واتساب</p>
  <p className="font-semibold text-slate-800" dir="ltr">{household.whatsappPhone || "-"}</p>
  </div>
+ <div>
+ <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">رقم احتياطي 1</p>
+ <p className="font-semibold text-slate-800" dir="ltr">{household.secondaryPhone || "-"}</p>
+ </div>
+ <div>
+ <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">رقم احتياطي 2</p>
+ <p className="font-semibold text-slate-800" dir="ltr">{household.backupPhone || "-"}</p>
+ </div>
  </div>
  <div className="p-5 space-y-4 bg-slate-50/30">
  <div>
@@ -242,7 +272,7 @@ export default function HouseholdViewPage() {
  <CardContent className="p-0">
  <div className="divide-y divide-slate-100">
  {household.persons?.map(p => (
- <div key={p.id} className="p-4 hover:bg-slate-50 flex items-center justify-between gap-4">
+ <div key={p.id} className="p-4 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
  <div>
  <div className="flex items-center gap-2">
  <span className="font-semibold text-slate-800">{p.name}</span>
@@ -260,11 +290,25 @@ export default function HouseholdViewPage() {
  )}
  </div>
  </div>
+ <div className="flex items-center gap-4">
  <div className="flex gap-1.5 flex-wrap justify-end max-w-[150px]">
  {p.isStudent && <Badge variant="outline" className="text-[10px] border-blue-200 text-blue-700 bg-blue-50">طالب</Badge>}
  {(p.diseases?.length ?? 0) > 0 && <Badge variant="outline" className="text-[10px] border-rose-200 text-rose-700 bg-rose-50">مريض</Badge>}
  {(p.disabilities?.length ?? 0) > 0 && <Badge variant="outline" className="text-[10px] border-orange-200 text-orange-700 bg-orange-50">معاق</Badge>}
  {p.isOrphan && <Badge variant="outline" className="text-[10px] border-purple-200 text-purple-700 bg-purple-50">يتيم</Badge>}
+ </div>
+ <Button 
+   variant="outline" 
+   size="sm" 
+   className="h-8 gap-1 border-slate-200"
+   onClick={() => {
+     setSelectedPersonId(p.id);
+     setModalOpen(true);
+   }}
+ >
+   <GraduationCap className="h-3 w-3 text-emerald-600" />
+   <span className="text-xs">التعليم</span>
+ </Button>
  </div>
  </div>
  ))}
@@ -291,7 +335,7 @@ export default function HouseholdViewPage() {
  <div>
  <p className="font-medium text-slate-800 text-sm">{inc.channel}</p>
  <div className="mt-1">
- {inc.status === "VERIFIED" ? (
+ {inc.verified === "VERIFIED" ? (
  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
  <CheckCircle2 className="w-3 h-3" /> موثق
  </span>
@@ -336,6 +380,18 @@ export default function HouseholdViewPage() {
  </CardHeader>
  <CardContent className="pt-0 text-sm text-slate-600 whitespace-pre-wrap">
  {household.notes || "لا توجد ملاحظات عامة مسجلة لهذه الأسرة."}
+ </CardContent>
+ </Card>
+
+ <Card className="bg-slate-50 border border-slate-200 shadow-sm mt-6">
+ <CardHeader className="pb-2 flex flex-row items-center justify-between">
+ <CardTitle className="text-sm font-bold text-slate-700">المتابعة التعليمية</CardTitle>
+ <Button variant="ghost" size="sm" onClick={() => router.push(`/${params.locale}/dashboard/education?householdId=${id}`)} className="text-blue-600 h-6 px-2 text-xs">
+ عرض السجلات
+ </Button>
+ </CardHeader>
+ <CardContent className="pt-0 text-xs text-slate-600">
+ يمكنكم عرض سجلات الطلاب وتقييمات الحفظ من وحدة المتابعة التعليمية.
  </CardContent>
  </Card>
 

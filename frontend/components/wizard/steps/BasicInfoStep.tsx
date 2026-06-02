@@ -16,7 +16,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useWizardStore } from "@/lib/stores/wizardStore";
 import api from "@/lib/api/client";
-import { AlertCircle, CheckCircle2, Loader2, Info, Link2, FileText } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Info, Link2, FileText, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -53,9 +53,19 @@ export function BasicInfoStep() {
  const [codeSuccess, setCodeSuccess] = useState<string | null>(null);
 
  // Phone errors
- const [primaryPhoneError, setPrimaryPhoneError] = useState<string | null>(null);
- const [wifeNidError, setWifeNidError] = useState<string | null>(null);
- const [headNidError, setHeadNidError] = useState<string | null>(null);
+  const [primaryPhoneError, setPrimaryPhoneError] = useState<string | null>(null);
+  const [secondaryPhoneError, setSecondaryPhoneError] = useState<string | null>(null);
+  const [backupPhoneError, setBackupPhoneError] = useState<string | null>(null);
+  const [wifeNidError, setWifeNidError] = useState<string | null>(null);
+  const [headNidError, setHeadNidError] = useState<string | null>(null);
+
+  const [showSecondaryPhone, setShowSecondaryPhone] = useState(false);
+  const [showBackupPhone, setShowBackupPhone] = useState(false);
+
+  useEffect(() => {
+    if (fd.secondaryPhone) setShowSecondaryPhone(true);
+    if (fd.backupPhone) setShowBackupPhone(true);
+  }, [fd.secondaryPhone, fd.backupPhone]);
 
  useEffect(() => {
   if (!fd.code && !householdId) {
@@ -200,34 +210,9 @@ export function BasicInfoStep() {
  <Input className={inputClass} value={fd.wifeName ?? ""}
  onChange={(e) => setField("wifeName", e.target.value)}
  onBlur={() => {
- if (fd.wifeName) {
- // Auto-fill family name if not manually set
- if (!fd.familyName) {
- setField("familyName", `${t("wizard.familyPrefix")} ${fd.wifeName}`);
- }
- // Auto-create/update HEAD member for wife
- const wifeNidInfo = fd.wifeNationalId ? extractNationalIdInfo(fd.wifeNationalId) : null;
- const headExists = fd.members?.find(m => m.role === "HEAD");
- if (!headExists) {
- const wifeMember: any = {
- _localKey: "head-wife-auto",
- name: fd.wifeName,
- nationalId: fd.wifeNationalId || "",
- role: "HEAD",
- isHead: true,
- gender: "FEMALE",
- birthDate: wifeNidInfo?.birthDate,
- residencyStatus: "RESIDENT",
- employmentType: fd.wifeEmploymentQuality || "NONE",
- educationLevel: fd.wifeEducationLevel || "ILLITERATE",
- maritalStatus: fd.socialStatus === "SINGLE_OTHER" ? "SINGLE" : fd.socialStatus || "MARRIED",
- };
- setField("members", [...(fd.members || []), wifeMember]);
- } else {
- const newMembers = fd.members!.map(m => m.role === "HEAD" ? { ...m, name: fd.wifeName, nationalId: fd.wifeNationalId || m.nationalId } : m);
- setField("members", newMembers);
- }
- }
+  if (fd.wifeName && !fd.familyName) {
+  setField("familyName", `${t("wizard.familyPrefix")} ${fd.wifeName}`);
+  }
  }}
  />
  </div>
@@ -235,13 +220,16 @@ export function BasicInfoStep() {
  <div className="space-y-1.5">
  <Label className={labelClass}>{t("wizard.basic.wifeNid")} <span className="text-destructive">*</span></Label>
  <Input 
+ id="wifeNationalId"
  className={inputClass}
  value={fd.wifeNationalId ?? ""} 
  onChange={(e) => {
- setField("wifeNationalId", e.target.value);
- setWifeNidError(validateNid(e.target.value));
+   const rawVal = e.target.value;
+   const sanitizedVal = rawVal.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString()).replace(/\D/g, "").slice(0, 14);
+   e.target.value = sanitizedVal;
+   setField("wifeNationalId", sanitizedVal);
+   setWifeNidError(validateNid(sanitizedVal));
  }}
- maxLength={14}
  />
  {wifeNidError ? (
  <p className="text-xs text-destructive mt-1">{wifeNidError}</p>
@@ -338,39 +326,21 @@ export function BasicInfoStep() {
  className={inputClass} 
  value={head.name ?? ""} 
  onChange={(e) => setField("head.name", e.target.value)}
- onBlur={() => {
- if ((fd.socialStatus === "MARRIED" || fd.socialStatus === "DIVORCED" || fd.socialStatus === "WIDOWED") && head.name) {
- const spouseExists = fd.members?.find(m => m.role === "SPOUSE");
- if (!spouseExists) {
- const spouseMember: any = {
- _localKey: "spouse-auto",
- name: head.name,
- nationalId: head.nationalId || "",
- role: "SPOUSE",
- isHead: false,
- gender: "MALE",
- residencyStatus: head.residencyStatus || "RESIDENT",
- employmentType: head.employmentType || "NONE",
- educationLevel: head.educationLevel || "ILLITERATE",
- };
- setField("members", [...(fd.members || []), spouseMember]);
- } else {
- const newMembers = fd.members!.map(m => m.role === "SPOUSE" ? { ...m, name: head.name } : m);
- setField("members", newMembers);
- }
- }
- }}
  />
  </div>
  
  <div className="space-y-1.5">
  <Label className={labelClass}>{t("wizard.basic.husband.nid")} <span className="text-destructive">*</span></Label>
  <Input 
+ id="headNationalId"
  className={inputClass}
  value={head.nationalId ?? ""} 
  onChange={(e) => {
- setField("head.nationalId", e.target.value);
- setHeadNidError(validateNid(e.target.value));
+   const rawVal = e.target.value;
+   const sanitizedVal = rawVal.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString()).replace(/\D/g, "").slice(0, 14);
+   e.target.value = sanitizedVal;
+   setField("head.nationalId", sanitizedVal);
+   setHeadNidError(validateNid(sanitizedVal));
  }}
  onBlur={() => {
  if ((fd.socialStatus === "MARRIED" || fd.socialStatus === "DIVORCED" || fd.socialStatus === "WIDOWED") && head.nationalId) {
@@ -617,6 +587,54 @@ export function BasicInfoStep() {
  )}
  </div>
  </div>
+
+ {showSecondaryPhone && (
+ <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
+ <Label className={labelClass}>{t("wizard.basic.contact.secondaryPhone")} (اختياري)</Label>
+ <Input 
+ dir="ltr"
+ className={cn("text-right", inputClass)}
+ placeholder="01XXXXXXXXX"
+ value={fd.secondaryPhone ?? ""} 
+ onChange={(e) => {
+ setField("secondaryPhone", e.target.value);
+ validatePhone(e.target.value, setSecondaryPhoneError);
+ }} 
+ />
+ {secondaryPhoneError && <p className="text-xs text-destructive mt-1">{secondaryPhoneError}</p>}
+ </div>
+ )}
+
+ {showBackupPhone && (
+ <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
+ <Label className={labelClass}>{t("wizard.basic.contact.backupPhone")} (اختياري)</Label>
+ <Input 
+ dir="ltr"
+ className={cn("text-right", inputClass)}
+ placeholder="01XXXXXXXXX"
+ value={fd.backupPhone ?? ""} 
+ onChange={(e) => {
+ setField("backupPhone", e.target.value);
+ validatePhone(e.target.value, setBackupPhoneError);
+ }} 
+ />
+ {backupPhoneError && <p className="text-xs text-destructive mt-1">{backupPhoneError}</p>}
+ </div>
+ )}
+
+ </div>
+ 
+ <div className="flex gap-2 mb-4">
+ {!showSecondaryPhone && (
+ <Button type="button" variant="outline" size="sm" onClick={() => setShowSecondaryPhone(true)} className="border-dashed text-slate-500 hover:text-slate-700">
+ <Plus className="w-4 h-4 ml-1" /> إضافة رقم احتياطي 1
+ </Button>
+ )}
+ {showSecondaryPhone && !showBackupPhone && (
+ <Button type="button" variant="outline" size="sm" onClick={() => setShowBackupPhone(true)} className="border-dashed text-slate-500 hover:text-slate-700">
+ <Plus className="w-4 h-4 ml-1" /> إضافة رقم احتياطي 2
+ </Button>
+ )}
  </div>
  
  <div className="flex flex-col lg:flex-row gap-4 items-end">
@@ -643,7 +661,7 @@ export function BasicInfoStep() {
  </div>
 
  <div className="space-y-1.5 w-full flex-1">
- <Label className={labelClass}>{t("wizard.basic.contact.addressDetails")}</Label>
+ <Label className={labelClass}>{t("wizard.basic.contact.addressDetails")} <span className="text-destructive">*</span></Label>
  <Input className={inputClass} value={fd.addressDetails ?? ""} onChange={(e) => setField("addressDetails", e.target.value)} />
  </div>
  </div>
@@ -662,7 +680,12 @@ export function BasicInfoStep() {
  <Label className="text-xs text-muted-foreground">{t("wizard.basic.search.officeDealings")}</Label>
  <Switch className="scale-75" checked={fd.officeDealings ?? false} onCheckedChange={(v) => {
  setField("officeDealings", v);
- if (v && fd.searchType === "FIELD") setField("searchType", "DESK");
+ if (v && fd.searchType?.includes("FIELD")) {
+   let current = fd.searchType ? fd.searchType.split(",") : [];
+   current = current.filter(x => x !== "FIELD");
+   if (!current.includes("DESK")) current.push("DESK");
+   setField("searchType", current.join(","));
+ }
  }} />
  </div>
  </div>
@@ -672,17 +695,22 @@ export function BasicInfoStep() {
  <div className="space-y-2 border border-slate-200 rounded-lg p-3 bg-slate-50 flex-1 flex items-center justify-between">
  <div className="flex items-center gap-3">
  <Switch 
- checked={fd.searchType === "DESK"} 
+ checked={fd.searchType?.includes("DESK") ?? false} 
  onCheckedChange={(v) => {
- if (v) {
- setField("searchType", "DESK");
- setField("registrationDate", new Date().toISOString().split("T")[0]);
- }
+   let current = fd.searchType ? fd.searchType.split(",") : [];
+   if (v) {
+     if (!current.includes("DESK")) current.push("DESK");
+     setField("searchType", current.join(","));
+     setField("registrationDate", new Date().toISOString().split("T")[0]);
+   } else {
+     current = current.filter(x => x !== "DESK");
+     setField("searchType", current.length ? current.join(",") : null);
+   }
  }} 
  />
  <Label className="text-sm font-semibold text-slate-700">{t("wizard.basic.search.desk")}</Label>
  </div>
- {fd.searchType === "DESK" && (
+ {fd.searchType?.includes("DESK") && (
  <span className="text-xs text-slate-500 font-mono" dir="ltr">{fd.registrationDate}</span>
  )}
  </div>
@@ -690,18 +718,23 @@ export function BasicInfoStep() {
  <div className={cn("space-y-2 border border-slate-200 rounded-lg p-3 bg-slate-50 flex-1 flex items-center justify-between", fd.officeDealings ? "opacity-50 pointer-events-none" : "")}>
  <div className="flex items-center gap-3">
  <Switch 
- checked={fd.searchType === "FIELD"} 
+ checked={fd.searchType?.includes("FIELD") ?? false} 
  onCheckedChange={(v) => {
- if (v) {
- setField("searchType", "FIELD");
- setField("registrationDate", new Date().toISOString().split("T")[0]);
- }
+   let current = fd.searchType ? fd.searchType.split(",") : [];
+   if (v) {
+     if (!current.includes("FIELD")) current.push("FIELD");
+     setField("searchType", current.join(","));
+     setField("registrationDate", new Date().toISOString().split("T")[0]);
+   } else {
+     current = current.filter(x => x !== "FIELD");
+     setField("searchType", current.length ? current.join(",") : null);
+   }
  }} 
  disabled={fd.officeDealings}
  />
  <Label className="text-sm font-semibold text-slate-700">{t("wizard.basic.search.field")}</Label>
  </div>
- {fd.searchType === "FIELD" && (
+ {fd.searchType?.includes("FIELD") && (
  <div className="flex flex-col items-end">
  <span className="text-xs text-slate-500 font-mono" dir="ltr">{fd.registrationDate}</span>
  {fd.registrationDate && (new Date().getTime() - new Date(fd.registrationDate).getTime()) > 31536000000 && (

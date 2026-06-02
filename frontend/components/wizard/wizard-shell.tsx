@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,11 +18,19 @@ const TAB_IDS = [1, 2, 3, 4, 5] as const;
 const TAB_KEYS = ["basic", "persons", "income", "burdens", "evaluation"] as const;
 
 function FamilyNameHeader({ mode }: { mode: "edit" | "view" }) {
- const fd = useWizardStore((s) => s.formData);
- const t = useTranslations("households");
- const rawName = fd.head?.name || fd.wifeName;
- const familyNameStr = rawName ? `${t("wizard.familyPrefix")} ${rawName}` : t("wizard.newFamily");
- const actionText = t("wizard.title");
+  const fd = useWizardStore((s) => s.formData);
+  const t = useTranslations("households");
+  
+  let familyNameStr = t("wizard.newFamily");
+  if (fd.familyName) {
+    familyNameStr = fd.familyName;
+  } else if (fd.wifeName) {
+    familyNameStr = `${t("wizard.familyPrefix")} ${fd.wifeName}`;
+  } else if (fd.head?.name) {
+    familyNameStr = `${t("wizard.familyPrefix")} ${fd.head.name}`;
+  }
+
+  const actionText = t("wizard.title");
  
  return (
  <div className="flex flex-col md:flex-row md:items-center text-slate-800 dark:text-slate-100">
@@ -86,18 +95,32 @@ export function WizardShell({
  }, [isDirty, mode]);
 
  const onNext = useCallback(async () => {
- if (mode === "edit") {
- await autoSave();
- }
- if (activeTab < 5) setActiveTab((activeTab + 1) as 1|2|3|4|5);
+    if (activeTab === 1) {
+      const fd = useWizardStore.getState().formData;
+      if (!fd.addressDetails || !fd.addressDetails.trim()) {
+        toast.error("يرجى إدخال العنوان التفصيلي قبل الانتقال للخطوة التالية.");
+        return;
+      }
+    }
+    if (mode === "edit") {
+      await autoSave();
+    }
+    if (activeTab < 5) setActiveTab((activeTab + 1) as 1|2|3|4|5);
  }, [autoSave, activeTab, setActiveTab, mode]);
 
  const handleTabChange = useCallback(async (newTab: 1 | 2 | 3 | 4 | 5) => {
- if (mode === "edit" && isDirty) {
- await autoSave();
- }
- setActiveTab(newTab);
- }, [autoSave, isDirty, mode, setActiveTab]);
+    if (activeTab === 1 && newTab !== 1) {
+      const fd = useWizardStore.getState().formData;
+      if (!fd.addressDetails || !fd.addressDetails.trim()) {
+        toast.error("يرجى إدخال العنوان التفصيلي قبل الانتقال للخطوة التالية.");
+        return;
+      }
+    }
+    if (mode === "edit") {
+      await autoSave();
+    }
+    setActiveTab(newTab);
+  }, [autoSave, activeTab, isDirty, mode, setActiveTab]);
 
  const onPrev = useCallback(() => {
  if (activeTab > 1) setActiveTab((activeTab - 1) as 1|2|3|4|5);

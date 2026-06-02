@@ -1,7 +1,7 @@
 const prisma = require('../../config/prisma');
 
 const householdInclude = {
-  persons: { include: { diseases: true, disabilities: true } },
+  persons: { include: { diseases: true, disabilities: true, academicRecords: { orderBy: { academicYear: 'desc' }, take: 1 } } },
   incomeSources: true,
   temporaryBurdens: true,
 };
@@ -28,6 +28,7 @@ const householdsRepository = {
             { address: { contains, mode: 'insensitive' } },
             { primaryPhone: { contains, mode: 'insensitive' } },
             { secondaryPhone: { contains, mode: 'insensitive' } },
+            { backupPhone: { contains, mode: 'insensitive' } },
             { whatsappPhone: { contains, mode: 'insensitive' } },
             {
               persons: {

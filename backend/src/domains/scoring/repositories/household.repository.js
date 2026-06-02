@@ -9,6 +9,7 @@ const householdRepository = {
           include: {
             diseases: true,
             disabilities: true,
+            academicRecords: true,
           },
         },
         incomeSources: true,

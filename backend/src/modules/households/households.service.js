@@ -51,12 +51,14 @@ const householdsService = {
     try {
       const row = await householdsRepository.create({
         code,
+        familyName: body.familyName,
         governorate: body.governorate,
         district: body.district,
         village: body.village,
         address: body.address,
         primaryPhone: body.primaryPhone,
         secondaryPhone: body.secondaryPhone,
+        backupPhone: body.backupPhone,
         whatsappPhone: body.whatsappPhone,
         socialStatus: body.socialStatus,
         divorceYear: body.divorceYear ? parseInt(body.divorceYear, 10) : undefined,
@@ -95,12 +97,14 @@ const householdsService = {
     await assertHouseholdAccessById(user, id);
     const row = await householdsRepository.update(id, {
       code: body.code,
+      familyName: body.familyName,
       governorate: body.governorate,
       district: body.district,
       village: body.village,
       address: body.address,
       primaryPhone: body.primaryPhone,
       secondaryPhone: body.secondaryPhone,
+      backupPhone: body.backupPhone,
       whatsappPhone: body.whatsappPhone,
       socialStatus: body.socialStatus,
       divorceYear: body.divorceYear ? parseInt(body.divorceYear, 10) : undefined,

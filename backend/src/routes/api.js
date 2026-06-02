@@ -18,5 +18,6 @@ router.use('/admin', require('../modules/admin/admin.routes'));
 router.use('/analytics', require('../modules/analytics/analytics.routes'));
 router.use('/audit-logs', require('../modules/audit/audit.routes'));
 router.use('/verification', require('../modules/verification/verification.routes'));
+router.use('/education', require('../modules/education/education.routes'));
 
 module.exports = router;

@@ -98,6 +98,7 @@ const FACTOR_LABELS: Record<string, string> = {
  // Corrections
  correction_head_employment: 'تصحيح عمل العائل',
  correction_son_employment: 'تصحيح عمل الابن',
+ correction_son_contributor: 'تصحيح مساهمة الابن',
  family_support: 'دعم عائلي',
  food_assistance: 'مساعدات غذائية',
  bank_assets: 'أصول بنكية/عينية',
@@ -151,7 +152,7 @@ function getFactorLabel(f: any, t: (key: string) => string): string {
  const layerName = getLayerLabel(f.layerId, t);
  return `${layerName}`;
  }
- return f.label || f.name || key || id;
+ return f.label || f.name || key || f.id;
 }
 
 function getFactorValue(f: any): number | null {
@@ -280,7 +281,7 @@ export function EvaluationStep() {
  </h4>
  <ul className="space-y-0.5">
  {liveScore.warnings.map((w: string, i: number) => (
- <li key={i} className="text-xs text-amber-700">{translateWarning(w)}</li>
+ <li key={i} className="text-xs text-amber-700">{translateWarning(w, t)}</li>
  ))}
  </ul>
  </div>
@@ -299,7 +300,7 @@ export function EvaluationStep() {
  const barColor = isNeg ? 'bg-red-400' : pct > 60 ? 'bg-rose-500' : pct > 30 ? 'bg-amber-400' : 'bg-emerald-500';
  return (
  <div key={layer.layerId} className="flex items-center gap-3 px-3 py-2 text-sm">
- <span className="w-36 font-medium text-slate-700 truncate">{getLayerLabel(layer.layerId)}</span>
+ <span className="w-36 font-medium text-slate-700 truncate">{getLayerLabel(layer.layerId, t)}</span>
  <span className={cn("w-14 font-mono text-left text-xs tabular-nums", isNeg ? "text-red-500 font-semibold" : "text-slate-800")}>
  {score.toFixed(2)}
  </span>
@@ -567,7 +568,7 @@ export function EvaluationStep() {
  <p className="text-xs font-semibold">{t("wizard.evaluation.simulation.affectedLayers")}</p>
  {simulationResult.affectedLayers.map((l: any, i: number) => (
  <div key={i} className="text-xs flex justify-between bg-white/60 p-1.5 rounded">
- <span className="font-medium">{getLayerLabel(l.layerId)}</span>
+ <span className="font-medium">{getLayerLabel(l.layerId, t)}</span>
  <span className="text-muted-foreground">{l.before} → <span className="font-bold text-foreground">{l.after}</span></span>
  </div>
  ))}

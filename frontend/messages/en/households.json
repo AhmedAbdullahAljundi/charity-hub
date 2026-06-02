@@ -247,18 +247,18 @@
       "pastSpouseName": "Name",
       "pastSpouseNid": "National ID (Optional)",
       "contact": {
-        "section": "Contact & Residence Information",
+        "section": "Contact & Address",
         "primaryPhone": "Primary Mobile Number",
-        "primaryPhonePh": "01XXXXXXXXX",
-        "whatsapp": "WhatsApp Number",
-        "whatsappOpen": "Open WhatsApp Chat",
+        "whatsappPhone": "WhatsApp Phone",
+        "secondaryPhone": "Backup Mobile 1",
+        "backupPhone": "Backup Mobile 2",
+        "whatsappOpen": "Open in WhatsApp",
         "region": "Region",
         "district": "District Name",
         "village": "Village Name",
         "street": "Street Name",
         "details": "House Location (Details)",
         "select": "Select",
-        "whatsappPhone": "WhatsApp Phone",
         "addressDetails": "Address Details"
       },
       "search": {
@@ -293,13 +293,12 @@
       "nidPh": "14 digits",
       "relationship": "Relationship to Family",
       "relationshipOptions": {
-        "spouse": "Spouse",
         "son": "Son",
         "daughter": "Daughter",
-        "father": "Father",
-        "mother": "Mother",
-        "brother": "Brother",
-        "sister": "Sister",
+        "paternalUncle": "Paternal Uncle",
+        "paternalAunt": "Paternal Aunt",
+        "maternalUncle": "Maternal Uncle",
+        "maternalAunt": "Maternal Aunt",
         "grandfather": "Grandfather",
         "grandmother": "Grandmother",
         "other": "Other Relative",
@@ -323,17 +322,17 @@
       },
       "education": "Education Level",
       "educationOptions": {
-        "illiterate": "Illiterate / Literate (1x)",
-        "medium": "Medium / Diploma (0.75x)",
-        "higherLimited": "Limited Higher Education (0.5x)",
-        "higherStable": "Stable Higher Education (0.5x)"
+        "illiterate": "Illiterate / Read & Write",
+        "medium": "Medium / Diploma",
+        "higherLimited": "Higher (Limited Ops)",
+        "higherStable": "Higher (Stable Ops)"
       },
       "employmentQuality": "Employment Type (Dependent Adult)",
       "employmentQualityOptions": {
         "none": "Not working",
-        "weak": "Very little work (-0.20)",
-        "unstable": "Irregular / Intermittent work (-0.40)",
-        "sufficient": "Regular part-time work (-0.60)"
+        "weak": "Weak / Unstable Work",
+        "unstable": "Irregular / Fluctuating Work",
+        "sufficient": "Sufficient Work"
       },
       "correction": "Calculated correction: {value} points on vulnerability score",
       "isStudent": "Enrolled in education? (Student)",
@@ -355,7 +354,9 @@
       "workTypeOptions": {
         "weak": "Weak daily wages",
         "seasonal": "Seasonal",
-        "regular": "Regular"
+        "regular": "Regular",
+        "none": "Not Working",
+        "abroad": "Traveler"
       },
       "sonMarried": "Married?",
       "sonSameHouse": "Lives with family?",
@@ -426,7 +427,10 @@
       "spouseCard": "Spouse (Head)",
       "disease": "Chronic Disease",
       "disability": "Disability",
-      "sonWorking": "Is the son working?",
+      "sonWorking": "Son's Work",
+      "sonWorkingDesc": "Son's Work Details (Economic Impact)",
+      "isMarried": "Married?",
+      "sameHouse": "Lives in same house?",
       "notesPlaceholder": "Enter any additional notes here...",
       "displacedState": "Incoming Dependent (Automatic)"
     },
@@ -503,7 +507,7 @@
         "countsTitle": "Status Counts",
         "brides": "Brides",
         "orphans": "Orphans",
-        "displaced": "Displaced/Refugees",
+        "displaced": "Displaced Children",
         "assetsTitle": "Assets & Projects",
         "assetsOptions": {
           "none": "No assets",

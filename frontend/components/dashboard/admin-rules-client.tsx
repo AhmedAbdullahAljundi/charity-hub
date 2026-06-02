@@ -44,15 +44,15 @@ export function AdminRulesClient() {
   const fetchRules = useCallback(async () => {
     setLoading(true);
     try {
-      const rawData = await getRules();
+      const rawData: any = await getRules();
       const data = Array.isArray(rawData) ? rawData : (rawData?.data || rawData?.rules || []);
       setRules(data);
       // auto expand all layers by default
       const layers = [...new Set(data.map((r: any) => r.layer))];
-      const initialExpanded = layers.reduce((acc: any, layer: any) => {
-        acc[layer] = true;
-        return acc;
-      }, {});
+      const initialExpanded: Record<string, boolean> = {};
+      layers.forEach((layer: any) => {
+        initialExpanded[layer] = true;
+      });
       setExpandedLayers(initialExpanded);
     } catch (e) {
       console.error(e);

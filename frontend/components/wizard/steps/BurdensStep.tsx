@@ -84,7 +84,11 @@ export function BurdensStep() {
  const burdens = fd.burdens ?? {};
  const diseases = fd.diseases ?? [];
  const disabilities = fd.disabilities ?? [];
- const members = [...(fd.head?.name ? [{ id: fd.head.personId || fd.head.id, _localKey: "head", name: fd.head.name, role: "HEAD", gender: fd.head.gender }] : []), ...(fd.members || [])];
+ const members = [
+  ...(fd.head?.name ? [{ id: fd.head.personId || fd.head.id, _localKey: "head", name: fd.head.name, role: "HEAD", gender: fd.head.gender }] : []),
+  ...(fd.wifeName ? [{ id: fd.wifePersonId, _localKey: "wife", name: fd.wifeName, role: "SPOUSE", gender: "FEMALE" }] : []),
+  ...(fd.members || [])
+ ];
  
  const hasMaleChild = fd.members?.some(m => m.role === "CHILD" && m.gender === "MALE");
 
@@ -104,33 +108,15 @@ export function BurdensStep() {
  return { hid, headPersonId };
  };
 
- const normalizeTreatmentCost = (value?: string | null) => {
- if (value === "PERIODIC_VERY_EXPENSIVE") return "VERY_EXPENSIVE";
- return value || "NONE";
- };
+ const normalizeTreatmentCost = (value?: string | null) => { return value || "NONE"; };
 
- const normalizeDiseaseFollowup = (value?: string | null) => {
- if (value === "PERIODIC_REGULAR") return "REGULAR";
- if (value === "PERIODIC_EXPENSIVE") return "EXPENSIVE";
- return value || "NONE_OR_RARE";
- };
+ const normalizeDiseaseFollowup = (value?: string | null) => { return value || "NONE_OR_RARE"; };
 
- const normalizeDiseaseWorkImpact = (value?: string | null) => {
- if (value === "SLIGHT") return "MINOR";
- if (value === "SEVERE_BUT_WORKING") return "MAJOR_WORKS";
- return value || "NONE";
- };
+ const normalizeDiseaseWorkImpact = (value?: string | null) => { return value || "NONE"; };
 
- const normalizeDisabilityWorkImpact = (value?: string | null) => {
- if (value === "SLIGHT") return "LIMITED";
- if (value === "REQUIRES_SPECIAL") return "SPECIAL_WORK";
- return value || "NONE";
- };
+ const normalizeDisabilityWorkImpact = (value?: string | null) => { return value || "NONE"; };
 
- const normalizeCompanion = (value?: string | null) => {
- if (value === "FULL_DEPENDENCE") return "FULLY_DEPENDENT";
- return value || "NONE";
- };
+ const normalizeCompanion = (value?: string | null) => { return value || "NONE"; };
 
  const persistDisease = async (idx: number, disease: DiseaseDraft) => {
  const ids = await getHeadPersistenceIds();
@@ -141,6 +127,7 @@ export function BurdensStep() {
  treatmentCost: normalizeTreatmentCost(disease.treatmentCost),
  followup: normalizeDiseaseFollowup(disease.followup),
  workImpact: normalizeDiseaseWorkImpact(disease.workImpact),
+ personId: disease.personId || ids.headPersonId,
  };
 
  try {
@@ -168,6 +155,7 @@ export function BurdensStep() {
  workImpact: normalizeDisabilityWorkImpact(disability.workImpact),
  companion: normalizeCompanion(disability.companion),
  treatmentCost: normalizeTreatmentCost(disability.treatmentCost),
+ personId: disability.personId || ids.headPersonId,
  };
 
  try {
@@ -499,7 +487,7 @@ export function BurdensStep() {
  <SelectItem value="NONE">{t("wizard.burdens.disease.treatmentOptions.none")}</SelectItem>
  <SelectItem value="PERIODIC_CHEAP">{t("wizard.burdens.disease.treatmentOptions.cheap")}</SelectItem>
  <SelectItem value="PERIODIC_EXPENSIVE">{t("wizard.burdens.disease.treatmentOptions.expensive")}</SelectItem>
- <SelectItem value="PERIODIC_VERY_EXPENSIVE">{t("wizard.burdens.disease.treatmentOptions.veryExpensive")}</SelectItem>
+ <SelectItem value="VERY_EXPENSIVE">{t("wizard.burdens.disease.treatmentOptions.veryExpensive")}</SelectItem>
  </SelectContent>
  </Select>
  </div>
@@ -510,8 +498,8 @@ export function BurdensStep() {
  <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
  <SelectContent>
  <SelectItem value="NONE_OR_RARE">{t("wizard.burdens.disease.followupOptions.none")}</SelectItem>
- <SelectItem value="PERIODIC_REGULAR">{t("wizard.burdens.disease.followupOptions.regular")}</SelectItem>
- <SelectItem value="PERIODIC_EXPENSIVE">{t("wizard.burdens.disease.followupOptions.expensive")}</SelectItem>
+ <SelectItem value="REGULAR">{t("wizard.burdens.disease.followupOptions.regular")}</SelectItem>
+ <SelectItem value="EXPENSIVE">{t("wizard.burdens.disease.followupOptions.expensive")}</SelectItem>
  </SelectContent>
  </Select>
  </div>
@@ -522,8 +510,8 @@ export function BurdensStep() {
  <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
  <SelectContent>
  <SelectItem value="NONE">{t("wizard.burdens.disease.workImpactOptions.none")}</SelectItem>
- <SelectItem value="SLIGHT">{t("wizard.burdens.disease.workImpactOptions.slight")}</SelectItem>
- <SelectItem value="SEVERE_BUT_WORKING">{t("wizard.burdens.disease.workImpactOptions.severe")}</SelectItem>
+ <SelectItem value="MINOR">{t("wizard.burdens.disease.workImpactOptions.slight")}</SelectItem>
+ <SelectItem value="MAJOR_WORKS">{t("wizard.burdens.disease.workImpactOptions.severe")}</SelectItem>
  <SelectItem value="CANNOT_WORK">{t("wizard.burdens.disease.workImpactOptions.cannotWork")}</SelectItem>
  </SelectContent>
  </Select>
@@ -583,8 +571,8 @@ export function BurdensStep() {
  <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
  <SelectContent>
  <SelectItem value="NONE">{t("wizard.burdens.disability.workImpactOptions.none")}</SelectItem>
- <SelectItem value="SLIGHT">{t("wizard.burdens.disability.workImpactOptions.slight")}</SelectItem>
- <SelectItem value="REQUIRES_SPECIAL">{t("wizard.burdens.disability.workImpactOptions.special")}</SelectItem>
+ <SelectItem value="LIMITED">{t("wizard.burdens.disability.workImpactOptions.slight")}</SelectItem>
+ <SelectItem value="SPECIAL_WORK">{t("wizard.burdens.disability.workImpactOptions.special")}</SelectItem>
  <SelectItem value="CANNOT_WORK">{t("wizard.burdens.disability.workImpactOptions.cannotWork")}</SelectItem>
  </SelectContent>
  </Select>
@@ -597,7 +585,7 @@ export function BurdensStep() {
  <SelectContent>
  <SelectItem value="NONE">{t("wizard.burdens.disability.companionOptions.none")}</SelectItem>
  <SelectItem value="OUTSIDE_ONLY">{t("wizard.burdens.disability.companionOptions.outside")}</SelectItem>
- <SelectItem value="FULL_DEPENDENCE">{t("wizard.burdens.disability.companionOptions.full")}</SelectItem>
+ <SelectItem value="FULLY_DEPENDENT">{t("wizard.burdens.disability.companionOptions.full")}</SelectItem>
  </SelectContent>
  </Select>
  </div>
@@ -610,7 +598,7 @@ export function BurdensStep() {
  <SelectItem value="NONE">{t("wizard.burdens.disease.treatmentOptions.none")}</SelectItem>
  <SelectItem value="PERIODIC_CHEAP">{t("wizard.burdens.disease.treatmentOptions.cheap")}</SelectItem>
  <SelectItem value="PERIODIC_EXPENSIVE">{t("wizard.burdens.disease.treatmentOptions.expensive")}</SelectItem>
- <SelectItem value="PERIODIC_VERY_EXPENSIVE">{t("wizard.burdens.disease.treatmentOptions.veryExpensive")}</SelectItem>
+ <SelectItem value="VERY_EXPENSIVE">{t("wizard.burdens.disease.treatmentOptions.veryExpensive")}</SelectItem>
  </SelectContent>
  </Select>
  </div>

@@ -98,7 +98,7 @@ function calculateL5(ctx) {
       p.age >= 13 &&
       p.age <= 25 &&
       isSingle &&
-      p.role === 'DEPENDENT_ADULT' &&
+      p.role === 'CHILD' &&
       p.isBride === true
     );
   });

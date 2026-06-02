@@ -51,14 +51,14 @@ const personsService = {
 
   async updateDisease(user, householdId, personId, diseaseId, body) {
     await assertHouseholdAccessById(user, householdId);
-    const disease = await prisma.disease.findFirst({ where: { id: diseaseId, personId } });
+    const disease = await prisma.disease.findFirst({ where: { id: diseaseId, person: { householdId } } });
     if (!disease) throw new NotFoundError('Disease');
     return prisma.disease.update({ where: { id: diseaseId }, data: body });
   },
 
   async removeDisease(user, householdId, personId, diseaseId) {
     await assertHouseholdAccessById(user, householdId);
-    await prisma.disease.deleteMany({ where: { id: diseaseId, personId } });
+    await prisma.disease.deleteMany({ where: { id: diseaseId, person: { householdId } } });
   },
 
   async createDisability(user, householdId, personId, body) {
@@ -69,14 +69,14 @@ const personsService = {
 
   async updateDisability(user, householdId, personId, disabilityId, body) {
     await assertHouseholdAccessById(user, householdId);
-    const row = await prisma.disability.findFirst({ where: { id: disabilityId, personId } });
+    const row = await prisma.disability.findFirst({ where: { id: disabilityId, person: { householdId } } });
     if (!row) throw new NotFoundError('Disability');
     return prisma.disability.update({ where: { id: disabilityId }, data: body });
   },
 
   async removeDisability(user, householdId, personId, disabilityId) {
     await assertHouseholdAccessById(user, householdId);
-    await prisma.disability.deleteMany({ where: { id: disabilityId, personId } });
+    await prisma.disability.deleteMany({ where: { id: disabilityId, person: { householdId } } });
   },
 };
 

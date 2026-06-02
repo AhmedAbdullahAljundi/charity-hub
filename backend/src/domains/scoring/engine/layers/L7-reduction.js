@@ -46,36 +46,56 @@ function calculateL7(ctx) {
   }
 
   for (const person of input.persons) {
-    if (!person.isSonContributor) continue;
-    const empKey = sonEmploymentKey(person.employmentType);
-    if (!empKey) continue;
-
-    let table;
-    if (!person.sonMarried && person.sonSameHouse) {
-      table = WEIGHTS.CORRECTIONS.SON_SINGLE_SAME_HOUSE;
-    } else if (person.sonMarried && person.sonSameHouse) {
-      table = WEIGHTS.CORRECTIONS.SON_MARRIED_SAME_HOUSE;
-    } else if (person.sonMarried && !person.sonSameHouse) {
-      table = WEIGHTS.CORRECTIONS.SON_MARRIED_OUTSIDE_HOUSE;
-    } else {
-      continue;
+    if (person.isSonContributor) {
+      const empKey = sonEmploymentKey(person.employmentType);
+      if (!empKey) continue;
+  
+      let table;
+      if (!person.sonMarried && person.sonSameHouse) {
+        table = WEIGHTS.CORRECTIONS.SON_SINGLE_SAME_HOUSE;
+      } else if (person.sonMarried && person.sonSameHouse) {
+        table = WEIGHTS.CORRECTIONS.SON_MARRIED_SAME_HOUSE;
+      } else if (person.sonMarried && !person.sonSameHouse) {
+        table = WEIGHTS.CORRECTIONS.SON_MARRIED_OUTSIDE_HOUSE;
+      } else {
+        continue;
+      }
+  
+      const baseRaw = table[empKey];
+      if (!baseRaw) continue;
+      const base = toDecimal(baseRaw);
+      const final = mul(base, person.educationMultiplier);
+      contributions.push(final);
+      rules.push(
+        triggeredRule(
+          'correction_son_contributor',
+          'rules.correction_son',
+          `Son contributor ${person.employmentType}`,
+          'WEIGHTS.CORRECTIONS.SON',
+          final,
+          final
+        )
+      );
+    } else if (!person.markedAsL4Processed && (person.role === 'SPOUSE' || person.role === 'INDEPENDENT')) {
+      // Standard employment correction for Wife or Independent members who aren't son contributors
+      if (person.employmentQuality && person.employmentQuality !== 'NONE') {
+        const corrRaw = WEIGHTS.DEPENDENT_ADULT.EMPLOYMENT_CORRECTION[person.employmentQuality];
+        if (corrRaw) {
+          const corr = mul(corrRaw, person.educationMultiplier);
+          contributions.push(corr);
+          rules.push(
+            triggeredRule(
+              `correction_${person.role.toLowerCase()}_employment_${person.employmentQuality.toLowerCase()}_${person.id}`,
+              `rules.correction_${person.role.toLowerCase()}_employment`,
+              `${person.role} employment ${person.employmentQuality}`,
+              'WEIGHTS.DEPENDENT_ADULT.EMPLOYMENT_CORRECTION',
+              corr,
+              corr
+            )
+          );
+        }
+      }
     }
-
-    const baseRaw = table[empKey];
-    if (!baseRaw) continue;
-    const base = toDecimal(baseRaw);
-    const final = mul(base, person.educationMultiplier);
-    contributions.push(final);
-    rules.push(
-      triggeredRule(
-        'correction_son_contributor',
-        'rules.correction_son',
-        `Son contributor ${person.employmentType}`,
-        'WEIGHTS.CORRECTIONS.SON',
-        final,
-        final
-      )
-    );
   }
 
   if (input.hasFamilySupport) {

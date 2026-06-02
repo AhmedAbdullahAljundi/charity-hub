@@ -38,6 +38,7 @@ function normalizeHousehold(raw) {
       educationLevel,
       educationMultiplier: multiplier.toNumber(),
       isStudent: Boolean(p.isStudent),
+      isSpecialEducation: Boolean(p.isSpecialEducation),
       studentLevel: p.studentLevel ?? null,
       alimonyStatus: p.alimonyStatus ?? null,
       isSonContributor: Boolean(p.isSonContributor),
@@ -63,6 +64,11 @@ function normalizeHousehold(raw) {
         treatmentCost: d.treatmentCost,
       })),
       markedAsL4Processed: false,
+      educationRecords: (p.academicRecords || []).map(r => ({
+        personId: p.id,
+        isRepeating: Boolean(r.isRepeating),
+        overallGrade: r.overallGrade,
+      })),
     };
   });
 
@@ -89,7 +95,12 @@ function normalizeHousehold(raw) {
     hasDivorce: absenceReason === 'ABSENT_DIVORCE',
     hasPrisonerHead: absenceReason === 'ABSENT_PRISON',
     hasOrphans: persons.some((p) => p.isOrphan),
-    orphanCount: persons.filter((p) => p.isOrphan).length,
+    orphanCount: persons.filter((p) => p.isOrphan && p.role === 'CHILD').length,
+    displacedCount: persons.filter((p) => 
+      (absenceReason === 'ABSENT_DIVORCE' || absenceReason === 'ABSENT_PRISON') && 
+      p.role === 'CHILD'
+    ).length,
+    brideCount: persons.filter((p) => p.isBride).length,
     hasAnyDisease: persons.some((p) => p.diseases.length > 0),
     hasAnyDisability: persons.some((p) => p.disabilities.length > 0),
     hasAnyBride: persons.some((p) => p.isBride),
@@ -109,6 +120,7 @@ function normalizeHousehold(raw) {
     hasFoodAid: Boolean(raw.hasFoodAid),
     bankAssetGrade: raw.bankAssetGrade ?? null,
     persons,
+    educationRecords: persons.flatMap(p => p.educationRecords || []),
     incomeSources,
     temporaryBurdens,
     flags,

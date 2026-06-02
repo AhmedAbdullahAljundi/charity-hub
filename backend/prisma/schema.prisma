@@ -17,6 +17,30 @@ datasource db {
 // Never use Float for anything that affects scoring calculations.
 // ─────────────────────────────────────────────────────────────────
 
+// ════ EDUCATION MODULE ═══════════════════════════════════════
+
+enum GradeInputType {
+  LETTER
+  NUMERIC
+}
+
+enum LetterGrade {
+  FAIL
+  PASS
+  GOOD
+  VERY_GOOD
+  EXCELLENT
+}
+
+enum QuranInstitute {
+  IBN_MASOOD
+  UQBA_BIN_AAMER
+  DESOUKI_MOSQUE
+  SHARIA_SOCIETY
+  IQRAA
+  OTHER
+}
+
 // ════ ENUMS ══════════════════════════════════════════════════════
 
 enum Gender {
@@ -63,15 +87,16 @@ enum EducationLevel {
 }
 
 enum StudentLevel {
-  CHILD
+  NONE
   KINDERGARTEN
   PRIMARY
   PREPARATORY
   SECONDARY_GENERAL
-  SECONDARY_VOCATIONAL_FEMALE
-  SECONDARY_VOCATIONAL_MALE
+  SECONDARY_INDUSTRIAL_COMMERCIAL_BOYS
+  SECONDARY_INDUSTRIAL_COMMERCIAL_GIRLS
   UNIVERSITY_SCIENTIFIC
-  UNIVERSITY_HUMANITIES
+  UNIVERSITY_THEORETICAL
+  SPECIAL_EDUCATION
 }
 
 enum PersonRole {
@@ -246,12 +271,14 @@ model RefreshToken {
 model Household {
   id               String            @id @default(cuid())
   code             String            @unique
+  familyName       String?
   governorate      String
   district         String
   village          String
   address          String?
   primaryPhone     String?
   secondaryPhone   String?
+  backupPhone      String?
   whatsappPhone    String?
   socialStatus     String?
   divorceYear      Int?
@@ -286,6 +313,7 @@ model Household {
   temporaryBurdens TemporaryBurden[]
   scoreResults     ScoreResult[]
   auditLogs        AuditLog[]
+  academicRecords  StudentAcademicRecord[]
 
   @@index([governorate, district])
   @@index([isDraft])
@@ -307,6 +335,7 @@ model Person {
   isHead            Boolean            @default(false)
   isStudent         Boolean            @default(false)
   studentLevel      StudentLevel?
+  isSpecialEducation Boolean           @default(false)
   employmentType    EmploymentType     @default(NONE)
   employmentQuality EmploymentQuality?
   educationLevel    EducationLevel     @default(ILLITERATE)
@@ -324,6 +353,7 @@ model Person {
   notes             String?
   diseases          Disease[]
   disabilities      Disability[]
+  academicRecords   StudentAcademicRecord[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -471,4 +501,45 @@ model AuditLog {
   @@index([userId])
   @@index([createdAt])
   @@index([entity, entityId])
+}
+
+model StudentAcademicRecord {
+  id                   String         @id @default(cuid())
+  personId             String
+  person               Person         @relation(fields: [personId], references: [id], onDelete: Cascade)
+  householdId          String
+  household            Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  academicYear         String
+  studentLevel         StudentLevel
+  isSpecialEducation   Boolean        @default(false)
+  gradeYear            Int?
+  schoolName           String?
+  isRepeating          Boolean        @default(false)
+  gradeInputType       GradeInputType @default(LETTER)
+  subjects             Json           @default("[]")
+  averageScore         Decimal?       @db.Decimal(5, 2)
+  overallGrade         LetterGrade?
+  quranJuzCount        Decimal?       @db.Decimal(4, 1)
+  quranProgress        Decimal?       @db.Decimal(5, 2)
+  quranLastSurah       String?
+  quranCustomText      String?
+  quranTeacher         String?
+  quranInstitute       QuranInstitute?
+  quranCustomInstitute String?
+  quranGrade           Decimal?       @db.Decimal(5, 2)
+  quranAttendancePercent Int?
+  quranOverallScore    Decimal?       @db.Decimal(5, 2)
+  totalScore           Decimal?       @db.Decimal(5, 2)
+  notes                String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  createdById          String?
+
+  @@unique([personId, academicYear])
+  @@index([householdId])
+  @@index([personId])
+  @@index([academicYear])
+  @@index([studentLevel])
+  @@index([totalScore])
+  @@index([quranProgress])
 }

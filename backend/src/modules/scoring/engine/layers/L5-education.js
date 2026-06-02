@@ -58,6 +58,12 @@ function calculateL5(dto) {
     const age = member.age != null ? member.age : (member.birthDate ? Math.floor((now - new Date(member.birthDate)) / 31557600000) : null);
     if (age == null || age < 6 || age > 18) continue;
 
+    // If they are marked as special education, skip scoring (calculate as 0 points) as per user requirements
+    if (member.isSpecialEducation) {
+      skipped.push(skippedRule('L5_SPECIAL_EDU', 'special_education', `Child is marked as special education: ${member.name}`));
+      continue;
+    }
+
     // Check education records for this member
     const memberRecords = educationRecords.filter(e => e.personId === member.id);
 
@@ -73,13 +79,13 @@ function calculateL5(dto) {
       ));
       total = add(total, L5.NOT_ENROLLED_PER_CHILD);
     } else {
-      // Check dropout risk
-      const hasDropoutRisk = memberRecords.some(e => e.dropoutRisk || e.academicStatus === 'DROPPED');
+      // Check dropout risk or academic failure
+      const hasDropoutRisk = memberRecords.some(e => e.overallGrade === 'FAIL' || e.isRepeating);
       if (hasDropoutRisk) {
         rules.push(triggeredRule(
           'L5_DROPOUT', 
           'dropout_risk', 
-          `High dropout risk or already dropped out: ${member.name}`, 
+          `High dropout risk or repeating year: ${member.name}`, 
           'L5.DROPOUT_RISK_PER_CHILD', 
           L5.DROPOUT_RISK_PER_CHILD, 
           L5.DROPOUT_RISK_PER_CHILD

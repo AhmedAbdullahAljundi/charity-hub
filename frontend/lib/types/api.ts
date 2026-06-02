@@ -28,6 +28,7 @@ export interface AuthTokens {
   user: ApiUser;
 }
 
+
 export interface PersonDto {
   id: string;
   name: string;
@@ -40,6 +41,7 @@ export interface PersonDto {
   isHead?: boolean;
   isStudent?: boolean;
   studentLevel?: string | null;
+  isSpecialEducation?: boolean;
   employmentType?: string;
   employmentQuality?: string | null;
   educationLevel?: string;
@@ -106,6 +108,7 @@ export interface HouseholdDto {
   bankAssetGrade?: string | null;
   primaryPhone?: string | null;
   secondaryPhone?: string | null;
+  backupPhone?: string | null;
   whatsappPhone?: string | null;
   socialStatus?: "MARRIED" | "DIVORCED" | "WIDOWED" | "SINGLE_OTHER" | null;
   divorceYear?: string | null;

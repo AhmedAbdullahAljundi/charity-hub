@@ -255,18 +255,18 @@
       "pastSpouseName": "الاسم",
       "pastSpouseNid": "الرقم القومي (اختياري)",
       "contact": {
-        "section": "بيانات التواصل ومحل الإقامة",
+        "section": "التواصل والعنوان",
         "primaryPhone": "رقم الموبايل الأساسي",
-        "primaryPhonePh": "01XXXXXXXXX",
-        "whatsapp": "رقم الواتساب",
-        "whatsappOpen": "فتح محادثة واتساب",
+        "whatsappPhone": "رقم الواتساب",
+        "secondaryPhone": "رقم موبايل احتياطي 1",
+        "backupPhone": "رقم موبايل احتياطي 2",
+        "whatsappOpen": "فتح في واتساب",
         "region": "المنطقة",
         "district": "اسم المقاطعة",
         "village": "اسم القرية",
         "street": "اسم الشارع",
         "details": "مكان البيت (بالتفصيل)",
         "select": "اختر",
-        "whatsappPhone": "رقم الواتساب",
         "addressDetails": "تفاصيل العنوان"
       },
       "search": {
@@ -301,13 +301,12 @@
       "nidPh": "14 رقماً",
       "relationship": "الصلة بالأسرة",
       "relationshipOptions": {
-        "spouse": "زوج / زوجة",
         "son": "ابن",
         "daughter": "ابنة",
-        "father": "أب",
-        "mother": "أم",
-        "brother": "أخ",
-        "sister": "أخت",
+        "paternalUncle": "عم",
+        "paternalAunt": "عمة",
+        "maternalUncle": "خال",
+        "maternalAunt": "خالة",
         "grandfather": "جد",
         "grandmother": "جدة",
         "other": "قريب آخر",
@@ -319,7 +318,7 @@
         "spouse": "زوج / زوجة",
         "dependentAdult": "بالغ معال",
         "independent": "مستقل",
-        "child": "تابع / طفل",
+        "child": "ابن معال",
         "select": "اختر حالة الفرد"
       },
       "maritalStatus": "الحالة الاجتماعية",
@@ -329,19 +328,28 @@
         "divorced": "مطلق/ة",
         "widowed": "أرمل/ة"
       },
-      "education": "مستوى التعليم",
+      "education": "مستوى التعليم المؤثر على العمل",
       "educationOptions": {
-        "illiterate": "أمي / يقرأ ويكتب (1×)",
-        "medium": "متوسط / دبلوم (0.75×)",
-        "higherLimited": "تعليم عالٍ محدود (0.5×)",
-        "higherStable": "تعليم عالٍ مستقر (0.5×)"
+        "illiterate": "أمي / يقرأ ويكتب",
+        "medium": "متوسط / دبلوم",
+        "higherLimited": "جامعي فرصة محدودة",
+        "higherStable": "جامعي فرصة مستقرة"
       },
-      "employmentQuality": "نوع العمل (بالغ معال)",
+      "employmentQuality": "مستوى انتظام العمل",
       "employmentQualityOptions": {
         "none": "لا يعمل",
-        "weak": "عمل قليل جداً  (−0.20)",
-        "unstable": "عمل غير منتظم / متقطع  (−0.40)",
-        "sufficient": "عمل منتظم مجزئ  (−0.60)"
+        "weak": "عمل ضعيف / متقطع",
+        "unstable": "عمل غير منتظم / متذبذب",
+        "sufficient": "عمل مجزئ / كافٍ"
+      },
+      "workType": "نوع العمل",
+      "workTypeOptions": {
+        "weak": "عمل ضعيف / متقطع",
+        "seasonal": "عمل موسمي",
+        "regular": "عمل منتظم / مستقر"
+      },
+      "workCorrectionOptions": {
+        "none": "لا يوجد"
       },
       "correction": "التصحيح المحسوب: {value} نقطة على درجة الهشاشة",
       "isStudent": "مقيد بالتعليم؟ (طالب)",
@@ -363,7 +371,9 @@
       "workTypeOptions": {
         "weak": "يومية ضعيفة",
         "seasonal": "موسمي",
-        "regular": "منتظم"
+        "regular": "منتظم",
+        "none": "لا يعمل",
+        "abroad": "مسافر"
       },
       "sonMarried": "متزوج؟",
       "sonSameHouse": "يسكن مع الأسرة؟",
@@ -401,9 +411,9 @@
       },
       "educationMultiplier": "مضاعف التعليم",
       "educationMultiplierOptions": {
-        "illiterate": "أمي / يقرأ ويكتب (1x)",
-        "medium": "متوسط / دبلوم (0.75x)",
-        "higher": "تعليم عالٍ (0.5x)"
+        "illiterate": "أمي / يقرأ ويكتب",
+        "medium": "متوسط / دبلوم",
+        "higher": "تعليم عالٍ"
       },
       "notes": "ملاحظة خاصة بالفرد",
       "notesPh": "أية تفاصيل إضافية تفيد في التقييم...",
@@ -434,7 +444,10 @@
       "spouseCard": "الزوج (العائل)",
       "disease": "مرض مزمن",
       "disability": "إعاقة",
-      "sonWorking": "هل الابن يعمل؟",
+      "sonWorking": "عمل الابن",
+      "sonWorkingDesc": "تفاصيل عمل الابن (مؤثر اقتصادياً)",
+      "isMarried": "متزوج؟",
+      "sameHouse": "يسكن في نفس المنزل؟",
       "notesPlaceholder": "أدخل أي ملاحظات إضافية هنا...",
       "displacedState": "فرد وافد (احتساب تلقائي)"
     },
@@ -511,8 +524,8 @@
         "countsTitle": "أعداد الحالات",
         "brides": "العرائس",
         "orphans": "الأيتام",
-        "displaced": "الوافدين / اللاجئين",
-        "assetsTitle": "الأصول والمشاريع",
+        "displaced": "المشردين / أبناء الشقاق",
+        "assetsTitle": "أصول وممتلكات",
         "assetsOptions": {
           "none": "لا يوجد أصول",
           "a": "درجة أ",
@@ -751,8 +764,59 @@
       },
       "autoEvaluation": "التقييم الآلي",
       "calculateScore": "حساب التقييم",
+      "recalculate": "إعادة الحساب",
       "notCalculated": "لم يتم الحساب بعد. اضغط \"حساب التقييم\".",
+      "fromLastScore": "من آخر تقييم",
+      "calculatedAt": "تاريخ التقييم",
+      "layerBreakdown": "تفصيل طبقات التقييم",
+      "indicatorsAndRecommendations": "المؤشرات والتوصيات",
+      "positiveFactors": "عوامل إيجابية",
+      "noPositiveFactors": "لا توجد عوامل إيجابية",
+      "negativeFactors": "عوامل سلبية",
+      "noNegativeFactors": "لا توجد عوامل سلبية",
+      "systemRecommendations": "توصيات النظام",
       "committeeDecision": "قرار اللجنة",
+      "decisionSaved": "تم الحفظ",
+      "decisionSavedDesc": "تم حفظ قرار اللجنة بنجاح",
+      "decisionType": "نوع المساعدة المقررة",
+      "decisionOptions": {
+        "cash": "مساعدة نقدية شهرية",
+        "medical": "مساعدة طبية",
+        "mixed": "مساعدة عينية وموسمية",
+        "goods": "مواد عينية فقط",
+        "none": "لا مساعدة"
+      },
+      "categoryClass": "تصنيف الفئة",
+      "categoryOptions": {
+        "poor": "فقير",
+        "veryPoor": "فقير جداً",
+        "prisoners": "أسر سجناء",
+        "orphans": "أيتام",
+        "elderly": "مسنين",
+        "disabled": "ذوي احتياجات خاصة",
+        "other": "أخرى"
+      },
+      "reviewStatus": "حالة المراجعة",
+      "statusOptions": {
+        "approved": "معتمد",
+        "rejected": "مرفوض",
+        "needsReview": "يحتاج مراجعة",
+        "escalated": "مصعد للإدارة"
+      },
+      "decisionNote": "ملاحظات القرار",
+      "decisionNotePlaceholder": "اكتب أي ملاحظات حول القرار هنا...",
+      "submitDecision": "حفظ القرار",
+      "simulation": {
+        "title": "محاكاة التقييم (ماذا لو؟)",
+        "disclaimer": "يمكنك محاكاة تغيير الدخل لمشاهدة تأثيره على السكور بدون حفظ.",
+        "altIncome": "الدخل البديل للمحاكاة (ج.م)",
+        "run": "تنفيذ المحاكاة",
+        "results": "نتائج المحاكاة:",
+        "original": "السكور الأصلي",
+        "simulated": "السكور المتوقع",
+        "difference": "الفرق",
+        "affectedLayers": "الطبقات المتأثرة"
+      },
       "assistanceType": "تصنيف المساعدة",
       "category": "تصنيف الفئة",
       "status": "حالة القرار",

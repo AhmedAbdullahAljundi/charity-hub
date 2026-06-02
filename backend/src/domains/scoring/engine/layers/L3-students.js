@@ -8,16 +8,27 @@ function calculateL3(ctx) {
 
   for (const person of ctx.input.persons) {
     if (!person.isStudent || !person.studentLevel) continue;
-    const w = WEIGHTS.STUDENT[person.studentLevel];
-    if (!w) continue;
-    const weight = toDecimal(w);
+    
+    let weight = ZERO;
+    let weightSrc = '';
+    
+    if (person.isSpecialEducation) {
+      weightSrc = 'SPECIAL_EDUCATION (0)';
+      // Weight is already ZERO
+    } else {
+      const w = WEIGHTS.STUDENT[person.studentLevel];
+      if (!w) continue;
+      weight = toDecimal(w);
+      weightSrc = `WEIGHTS.STUDENT.${person.studentLevel}`;
+    }
+
     contributions.push(weight);
     rules.push(
       triggeredRule(
         `student_${person.studentLevel.toLowerCase()}`,
         'rules.student_level',
         `Student ${person.name}`,
-        `WEIGHTS.STUDENT.${person.studentLevel}`,
+        weightSrc,
         weight,
         weight
       )

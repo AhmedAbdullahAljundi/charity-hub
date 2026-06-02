@@ -16,6 +16,7 @@ import arHouseholds from "../messages/ar/households.json";
 import arVerification from "../messages/ar/verification.json";
 import arRuleEditor from "../messages/ar/ruleEditor.json";
 import arAnalytics from "../messages/ar/analytics.json";
+import arEducation from "../messages/ar/education.json";
 
 import enCommon from "../messages/en/common.json";
 import enDomain from "../messages/en/domain.json";
@@ -31,6 +32,7 @@ import enHouseholds from "../messages/en/households.json";
 import enVerification from "../messages/en/verification.json";
 import enRuleEditor from "../messages/en/ruleEditor.json";
 import enAnalytics from "../messages/en/analytics.json";
+import enEducation from "../messages/en/education.json";
 
 const messagesMap = {
   ar: {
@@ -48,6 +50,7 @@ const messagesMap = {
     verification: arVerification,
     ruleEditor: arRuleEditor,
     analytics: arAnalytics,
+    education: arEducation,
     nav: arCommon.nav,
   },
   en: {
@@ -65,6 +68,7 @@ const messagesMap = {
     verification: enVerification,
     ruleEditor: enRuleEditor,
     analytics: enAnalytics,
+    education: enEducation,
     nav: enCommon.nav,
   }
 };
@@ -95,7 +99,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       families: data.families,
       validation: formsData.validation,
       auth: formsData.auth,
-      education: surfaceData.education,
+      education: data.education,
       medical: surfaceData.medical,
       audit: surfaceData.audit,
       reports: surfaceData.reports,

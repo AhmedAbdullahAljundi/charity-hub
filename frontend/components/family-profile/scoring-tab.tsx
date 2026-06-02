@@ -10,27 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Loader2, BarChart3, TrendingUp, AlertCircle, ShieldAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-// Lazy-load Recharts components to reduce initial JS bundle size and improve page load performance
-const ResponsiveContainer = dynamic(
-  () => import("recharts").then((mod) => mod.ResponsiveContainer),
-  { ssr: false }
-);
-const RadarChart = dynamic(
-  () => import("recharts").then((mod) => mod.RadarChart),
-  { ssr: false }
-);
-const PolarGrid = dynamic(
-  () => import("recharts").then((mod) => mod.PolarGrid),
-  { ssr: false }
-);
-const PolarAngleAxis = dynamic(
-  () => import("recharts").then((mod) => mod.PolarAngleAxis),
-  { ssr: false }
-);
-const Radar = dynamic(
-  () => import("recharts").then((mod) => mod.Radar),
-  { ssr: false }
-);
+import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar } from "recharts";
 
 interface ScoringTabProps {
   family: any;
