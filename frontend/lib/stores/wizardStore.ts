@@ -23,9 +23,10 @@ export interface WizardPersonForm extends Partial<PersonDto> {
   isPrisoner?: boolean;
   prisonTerm?: string;
   prisonSuspicion?: string;
+  isOrphan?: boolean;
+  isDisplaced?: boolean;
   isBride?: boolean;
   brideHasSponsor?: boolean;
-  isOrphan?: boolean;
   isSonContributor?: boolean;
   sonMarried?: boolean;
   sonSameHouse?: boolean;
@@ -43,7 +44,7 @@ export interface WizardFormData {
   wifeNationalId?: string;
   wifeEmploymentQuality?: string;
   wifeEducationLevel?: string;
-  socialStatus?: "MARRIED" | "DIVORCED" | "WIDOWED" | "SINGLE_OTHER";
+  socialStatus?: "MARRIED" | "DIVORCED" | "WIDOWED" | "WIDOWED_MARRIED" | "SINGLE_OTHER";
   divorceYear?: string;
   divorceDocNumber?: string;
   marriageCount?: number;
@@ -239,7 +240,7 @@ function buildSpousePayload(formData: WizardFormData) {
     role: "SPOUSE",
     isHead: false,
     residencyStatus: "RESIDENT",
-    employmentType: formData.wifeEmploymentQuality || "NONE",
+    employmentQuality: formData.wifeEmploymentQuality || "NONE",
     educationLevel: formData.wifeEducationLevel || "ILLITERATE",
     maritalStatus: formData.socialStatus || "MARRIED",
     alimonyStatus: formData.socialStatus === "DIVORCED" ? (formData.alimonyStatus || null) : null
@@ -441,7 +442,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
     let uiWife = null;
     let uiHead = null;
 
-    if (h.socialStatus === "MARRIED" || h.socialStatus === "DIVORCED" || h.socialStatus === "WIDOWED") {
+    if (h.socialStatus === "MARRIED" || h.socialStatus === "DIVORCED" || h.socialStatus === "WIDOWED" || h.socialStatus === "WIDOWED_MARRIED") {
       if (dbHead?.gender === "FEMALE" || dbSpouse?.gender === "MALE") {
         uiWife = dbHead?.gender === "FEMALE" ? dbHead : (dbSpouse?.gender === "FEMALE" ? dbSpouse : null);
         uiHead = dbHead?.gender === "MALE" ? dbHead : (dbSpouse?.gender === "MALE" ? dbSpouse : null);
@@ -471,7 +472,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       wifeName: uiWife?.name,
       wifePersonId: uiWife?.id,
       wifeNationalId: uiWife?.nationalId,
-      wifeEmploymentQuality: uiWife?.employmentType ?? undefined,
+      wifeEmploymentQuality: uiWife?.employmentQuality ?? undefined,
       wifeEducationLevel: uiWife?.educationLevel ?? undefined,
       alimonyStatus: (uiWife?.alimonyStatus as any) ?? undefined,
       governorate: h.governorate,

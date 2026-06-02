@@ -20,21 +20,7 @@ function calculateL5(ctx) {
         rules.push(triggeredRule('burden_bride', 'rules.burden_bride', 'Bride burden', 'WEIGHTS.BURDENS.BRIDE', w, w));
         break;
       }
-      case 'SON_IN_PRISON': {
-        const w = weights.get('burden_son_in_prison', WEIGHTS.BURDENS.SON_IN_PRISON);
-        contributions.push(w);
-        rules.push(
-          triggeredRule(
-            'burden_son_in_prison',
-            'rules.burden_son_in_prison',
-            'Son in prison',
-            'WEIGHTS.BURDENS.SON_IN_PRISON',
-            w,
-            w
-          )
-        );
-        break;
-      }
+
       case 'DEBT': {
         const w = gradeWeight(WEIGHTS.BURDENS.DEBT, burden.grade);
         if (!w.isZero()) {
@@ -136,6 +122,23 @@ function calculateL5(ctx) {
         'rules.burden_no_ration',
         'No ration card',
         'WEIGHTS.BURDENS.NO_RATION_CARD',
+        w,
+        w
+      )
+    );
+  }
+
+  // Iterate over all imprisoned children
+  const sonsInPrison = input.persons.filter((p) => p.isPrisoner && p.role !== 'HEAD' && p.role !== 'SPOUSE');
+  for (const son of sonsInPrison) {
+    const w = weights.get('burden_son_in_prison', WEIGHTS.BURDENS.SON_IN_PRISON);
+    contributions.push(w);
+    rules.push(
+      triggeredRule(
+        `burden_son_in_prison_${son.id}`,
+        'rules.burden_son_in_prison',
+        `Son in prison (${son.name})`,
+        'WEIGHTS.BURDENS.SON_IN_PRISON',
         w,
         w
       )

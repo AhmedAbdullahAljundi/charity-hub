@@ -177,7 +177,7 @@ function EducationContent() {
       r.overallGrade ? t(`grades.${r.overallGrade}`) : "",
       r.quranJuzCount ?? "",
       r.quranGrade ?? "",
-      r.quranAbsenceDays ?? "",
+      r.quranAttendancePercent ?? "",
       r.totalScore ?? ""
     ]);
 

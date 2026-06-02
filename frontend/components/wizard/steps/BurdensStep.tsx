@@ -35,16 +35,16 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type BurdenType = "DEBT" | "INJURY" | "SURGERY" | "SON_IN_PRISON";
+type BurdenType = "DEBT" | "INJURY" | "SURGERY";
 type DiseaseDraft = NonNullable<ReturnType<typeof useWizardStore.getState>["formData"]["diseases"]>[number];
 type DisabilityDraft = NonNullable<ReturnType<typeof useWizardStore.getState>["formData"]["disabilities"]>[number];
 
 const BURDEN_CONFIG: Record<
  BurdenType,
  {
- enabledKey: "hasDebt" | "hasInjury" | "hasSurgery" | "hasSonInPrison";
- gradeKey: "debtGrade" | "injuryGrade" | "surgeryGrade" | "sonInPrisonGrade";
- idKey: "debtId" | "injuryId" | "surgeryId" | "sonInPrisonId";
+ enabledKey: "hasDebt" | "hasInjury" | "hasSurgery";
+ gradeKey: "debtGrade" | "injuryGrade" | "surgeryGrade";
+ idKey: "debtId" | "injuryId" | "surgeryId";
  description: string;
  }
 > = {
@@ -66,12 +66,6 @@ const BURDEN_CONFIG: Record<
  idKey: "surgeryId",
  description: "Temporary surgery burden from wizard",
  },
- SON_IN_PRISON: {
- enabledKey: "hasSonInPrison",
- gradeKey: "sonInPrisonGrade",
- idKey: "sonInPrisonId",
- description: "Temporary son in prison burden from wizard",
- },
 };
 
 export function BurdensStep() {
@@ -90,8 +84,6 @@ export function BurdensStep() {
   ...(fd.members || [])
  ];
  
- const hasMaleChild = fd.members?.some(m => m.role === "CHILD" && m.gender === "MALE");
-
  const ensureHouseholdId = async () => {
  if (householdId) return householdId;
  await autoSave();
@@ -427,22 +419,6 @@ export function BurdensStep() {
  </div>
  )}
  </div>
-
- {/* ابن في السجن */}
- {hasMaleChild && (
- <div className="space-y-3 bg-slate-50 border border-slate-200 p-4 rounded-xl sm:col-span-2 md:col-span-3">
- <div className="flex items-center justify-between">
- <div>
- <Label className="font-semibold text-slate-800">{t("wizard.burdens.sonPrison.title")}</Label>
- <p className="text-[10px] text-muted-foreground mt-1">
- {t("wizard.burdens.sonPrison.desc")}
- <span className="text-rose-600 font-bold mr-2">{t("wizard.burdens.sonPrison.score")}</span>
- </p>
- </div>
- <Switch checked={burdens.hasSonInPrison ?? false} onCheckedChange={(v) => void persistBurdenToggle("SON_IN_PRISON", v)} />
- </div>
- </div>
- )}
  </div>
 
  </AccordionContent>

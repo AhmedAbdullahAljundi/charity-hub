@@ -41,7 +41,7 @@ export default function EducationRecordViewPage() {
             <p>عدد الأجزاء: {current.quranJuzCount}</p>
             <p>نسبة الحفظ: {current.quranProgress}%</p>
             <p>الدرجة: {current.quranGrade}</p>
-            <p>أيام الغياب: {current.quranAbsenceDays}</p>
+            <p>نسبة الحضور: {current.quranAttendancePercent}%</p>
           </div>
         </div>
       </div>

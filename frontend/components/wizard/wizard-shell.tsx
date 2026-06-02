@@ -25,9 +25,9 @@ function FamilyNameHeader({ mode }: { mode: "edit" | "view" }) {
   if (fd.familyName) {
     familyNameStr = fd.familyName;
   } else if (fd.wifeName) {
-    familyNameStr = `${t("wizard.familyPrefix")} ${fd.wifeName}`;
+    familyNameStr = fd.wifeName;
   } else if (fd.head?.name) {
-    familyNameStr = `${t("wizard.familyPrefix")} ${fd.head.name}`;
+    familyNameStr = fd.head.name;
   }
 
   const actionText = t("wizard.title");
@@ -144,14 +144,14 @@ export function WizardShell({
  {mode === "edit" && <AutosaveIndicator />}
  </div>
 
- <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+ <div className="flex w-full gap-2 overflow-x-auto pb-2 scrollbar-hide">
  {TAB_IDS.map((id, i) => (
  <button
  key={id}
  type="button"
  onClick={() => void handleTabChange(id)}
  className={cn(
- "shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-all select-none border",
+ "flex-1 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-all select-none border whitespace-nowrap text-center",
  activeTab === id
  ? "bg-primary text-primary-foreground border-primary shadow-sm"
  : "bg-card text-muted-foreground border-border hover:bg-muted"

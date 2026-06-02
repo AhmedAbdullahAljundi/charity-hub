@@ -51,6 +51,7 @@ function normalizeHousehold(raw) {
       prisonSuspicion:
         p.prisonSuspicion != null ? toDecimal(p.prisonSuspicion).toNumber() : null,
       isOrphan: Boolean(p.isOrphan),
+      isDisplaced: Boolean(p.isDisplaced),
       diseases: (p.diseases || []).map((d) => ({
         name: d.name,
         treatmentCost: d.treatmentCost,
@@ -96,10 +97,7 @@ function normalizeHousehold(raw) {
     hasPrisonerHead: absenceReason === 'ABSENT_PRISON',
     hasOrphans: persons.some((p) => p.isOrphan),
     orphanCount: persons.filter((p) => p.isOrphan && p.role === 'CHILD').length,
-    displacedCount: persons.filter((p) => 
-      (absenceReason === 'ABSENT_DIVORCE' || absenceReason === 'ABSENT_PRISON') && 
-      p.role === 'CHILD'
-    ).length,
+    displacedCount: persons.filter((p) => p.isDisplaced && p.role === 'CHILD').length,
     brideCount: persons.filter((p) => p.isBride).length,
     hasAnyDisease: persons.some((p) => p.diseases.length > 0),
     hasAnyDisability: persons.some((p) => p.disabilities.length > 0),

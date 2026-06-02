@@ -22,20 +22,32 @@ function educationMultiplier(person) {
 /**
  * Spouse / dependent adult base + employment correction (L2 / L4 pattern).
  */
-function dependentAdultContribution(person, weights, prefix = 'dependent') {
+function dependentAdultContribution(person, weights, prefix = 'dependent', skipAgeWeight = false) {
   const { weight, ruleId } = ageBand(person.age, WEIGHTS.DEPENDENT_ADULT.AGE_BANDS);
   const rules = [];
-  let total = weight;
-  rules.push(
-    triggeredRule(
-      ruleId ?? `${prefix}_age`,
-      `${prefix}_age_band`,
-      `Age ${person.age} band`,
-      `WEIGHTS.DEPENDENT_ADULT.AGE_BANDS`,
-      weight,
-      weight
-    )
-  );
+  let total = ZERO;
+  
+  if (!skipAgeWeight) {
+    total = weight;
+    rules.push(
+      triggeredRule(
+        ruleId ?? `${prefix}_age`,
+        `${prefix}_age_band`,
+        `Age ${person.age} band`,
+        `WEIGHTS.DEPENDENT_ADULT.AGE_BANDS`,
+        weight,
+        weight
+      )
+    );
+  } else {
+    rules.push(
+      skippedRule(
+        `${prefix}_age_band`,
+        `Age ${person.age} band`,
+        'Skipped due to WIDOWED_MARRIED status'
+      )
+    );
+  }
 
   if (person.employmentQuality) {
     const corrRaw = WEIGHTS.DEPENDENT_ADULT.EMPLOYMENT_CORRECTION[person.employmentQuality];

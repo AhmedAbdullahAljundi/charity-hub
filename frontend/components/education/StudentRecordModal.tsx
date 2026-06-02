@@ -23,6 +23,7 @@ export default function StudentRecordModal({
   prefillPersonId,
   prefillPersons,
   prefillLevel,
+  prefillIsSpecialEducation,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -31,6 +32,7 @@ export default function StudentRecordModal({
   prefillPersonId?: string;
   prefillPersons?: any[];
   prefillLevel?: string;
+  prefillIsSpecialEducation?: boolean;
 }) {
   const t = useTranslations("education");
   const [loading, setLoading] = useState(false);
@@ -48,7 +50,7 @@ export default function StudentRecordModal({
       ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` 
       : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`,
     studentLevel: prefillLevel || "NONE",
-    isSpecialEducation: false,
+    isSpecialEducation: prefillIsSpecialEducation || false,
     gradeYear: "",
     schoolName: "",
     gradeInputType: "LETTER",
@@ -81,14 +83,14 @@ export default function StudentRecordModal({
       if (prefillHouseholdId && prefillPersons) {
         setSelectedHousehold({ id: prefillHouseholdId });
         setPersons(prefillPersons);
-        setFormData(f => ({ ...f, personId: prefillPersonId || "", studentLevel: prefillLevel || "NONE" }));
+        setFormData(f => ({ ...f, personId: prefillPersonId || "", studentLevel: prefillLevel || "NONE", isSpecialEducation: prefillIsSpecialEducation ?? false }));
       } else {
         setSelectedHousehold(null);
         setPersons([]);
-        setFormData(f => ({ ...f, personId: "", studentLevel: "NONE" }));
+        setFormData(f => ({ ...f, personId: "", studentLevel: "NONE", isSpecialEducation: false }));
       }
     }
-  }, [open, prefillHouseholdId, prefillPersonId, prefillPersons, prefillLevel]);
+  }, [open, prefillHouseholdId, prefillPersonId, prefillPersons, prefillLevel, prefillIsSpecialEducation]);
 
   useEffect(() => {
     if (open && formData.personId) {

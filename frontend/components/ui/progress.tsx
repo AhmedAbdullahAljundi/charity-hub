@@ -24,7 +24,7 @@ function Progress({
         data-slot="progress-indicator"
         className="h-full w-full flex-1 transition-all"
         style={{ 
-          transform: `translateX(-${100 - (value || 0)}%)`,
+          transform: `translateX(${props.dir === 'rtl' ? (100 - (value || 0)) : -(100 - (value || 0))}%)`,
           backgroundColor: indicatorColor || 'hsl(var(--primary))'
         }}
       />

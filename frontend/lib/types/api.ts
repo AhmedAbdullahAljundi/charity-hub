@@ -51,10 +51,11 @@ export interface PersonDto {
   sonSameHouse?: boolean;
   isBride?: boolean;
   brideHasSponsor?: boolean;
+  isOrphan?: boolean;
+  isDisplaced?: boolean;
   isPrisoner?: boolean;
   prisonTerm?: string | null;
   prisonSuspicion?: string | null;
-  isOrphan?: boolean;
   diseases?: DiseaseDto[];
   disabilities?: DisabilityDto[];
 }
@@ -110,7 +111,7 @@ export interface HouseholdDto {
   secondaryPhone?: string | null;
   backupPhone?: string | null;
   whatsappPhone?: string | null;
-  socialStatus?: "MARRIED" | "DIVORCED" | "WIDOWED" | "SINGLE_OTHER" | null;
+  socialStatus?: "MARRIED" | "DIVORCED" | "WIDOWED" | "WIDOWED_MARRIED" | "SINGLE_OTHER" | null;
   divorceYear?: string | null;
   divorceDocNumber?: string | null;
   marriageCount?: number | null;

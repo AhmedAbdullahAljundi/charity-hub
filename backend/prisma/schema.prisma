@@ -349,6 +349,7 @@ model Person {
   prisonTerm        PrisonTerm?
   prisonSuspicion   Decimal?           @db.Decimal(4, 2)
   isOrphan          Boolean            @default(false)
+  isDisplaced       Boolean            @default(false)
   relationship      String?
   notes             String?
   diseases          Disease[]

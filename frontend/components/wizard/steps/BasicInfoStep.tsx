@@ -86,11 +86,11 @@ export function BasicInfoStep() {
   }, [fd.code, householdId]);
 
   useEffect(() => {
-  if (!fd.registrationDate && !householdId) {
+  if (!fd.registrationDate) {
   const today = new Date().toISOString().split("T")[0];
   setField("registrationDate", today);
   }
-  }, [fd.registrationDate, householdId, setField]);
+  }, [fd.registrationDate, setField]);
 
   const checkCodeUnique = async (code: string) => {
   if (!code) return;
@@ -138,80 +138,139 @@ export function BasicInfoStep() {
  const labelClass = "text-sm font-medium";
 
  return (
- <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" >
- 
- {/* SECTION 1: الأساسيات */}
- <section className="space-y-4">
- <h3 className="text-sm font-semibold uppercase text-muted-foreground border-b pb-1.5">{t("wizard.basic.section")}</h3>
- <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
- <div className="space-y-1.5 lg:col-span-3">
- <Label className={labelClass}>{t("wizard.familyPrefix")} <span className="text-destructive">*</span></Label>
- <Input 
- className={inputClass} 
- value={fd.familyName || (fd.wifeName ? `${t("wizard.familyPrefix")} ${fd.wifeName}` : "")} 
- onChange={(e) => setField("familyName", e.target.value)} 
- placeholder="" 
- />
- </div>
- <div className="space-y-1.5">
- <Label className={labelClass}>{t("wizard.basic.codeLabel")} <span className="text-destructive">*</span></Label>
- <div className="flex gap-2">
- <Input
-  className={inputClass}
-  type="text"
-  value={fd.code ?? ""}
-  onChange={(e) => {
-  setField("code", e.target.value);
-  setCodeError(null);
-  setCodeSuccess(null);
-  }}
-  onBlur={(e) => checkCodeUnique(e.target.value)}
-  placeholder={suggestedCode ? `${t("wizard.basic.codePlaceholder")} (مقترح: ${suggestedCode})` : t("wizard.basic.codePlaceholder")}
-  />
- {isCheckingCode && <Loader2 className="h-5 w-5 animate-spin mt-2 text-muted-foreground" />}
- </div>
- {codeError && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{codeError}</p>}
- {codeSuccess && <p className="text-xs text-emerald-600 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" />{codeSuccess}</p>}
- </div>
+  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" >
+  
+  {/* SECTION 1: الأساسيات */}
+  <section className="bg-card text-card-foreground border rounded-xl p-6 shadow-sm">
+   <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-6">
+     <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+     {t("wizard.basic.section")}
+   </h3>
+   <div className="flex flex-col gap-5">
+    {/* Row 1: Family Name & PDF URL */}
+    <div className="flex flex-wrap gap-4 items-start">
+      {/* ── Family Name Dropdown Logic ── */}
+      {(() => {
+        const availableFamilyNames = [];
+        if (fd.wifeName) availableFamilyNames.push({ name: fd.wifeName, role: "الزوجة" });
+        if (fd.head?.name) availableFamilyNames.push({ name: fd.head.name, role: "الزوج/العائل" });
+        if (fd.members?.length) {
+          fd.members.forEach(m => {
+            if (m.name && m.name !== fd.wifeName && m.name !== fd.head?.name) {
+              let rLabel = m.role === "CHILD" ? "ابن/ـة" : "فرد";
+              availableFamilyNames.push({ name: m.name, role: rLabel });
+            }
+          });
+        }
+        const currentFamilyNameBase = fd.familyName ? fd.familyName.replace(/^(أسرة|عائلة)\s*/, "") : (fd.wifeName || "");
+        const uniqueFamilyNames = Array.from(new Map(availableFamilyNames.map(item => [item.name, item])).values());
+        if (currentFamilyNameBase && !uniqueFamilyNames.some(n => n.name === currentFamilyNameBase)) {
+          uniqueFamilyNames.push({ name: currentFamilyNameBase, role: "مخصص" });
+        }
 
- <div className="space-y-1.5">
- <Label className={labelClass}>{t("wizard.basic.pdfUrl")}</Label>
- <div className="relative">
- <FileText className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
- <Input 
- className={cn(inputClass, "pr-9")} 
- dir="ltr" 
- placeholder="https://..." 
- value={fd.pdfUrl ?? ""} 
- onChange={(e) => setField("pdfUrl", e.target.value)} 
- />
- </div>
- </div>
+        return (
+          <div className="space-y-1.5 flex-[2] min-w-[250px]">
+            <Label className={labelClass}>{t("wizard.basic.familyName")} <span className="text-destructive">*</span></Label>
+            <Select 
+              value={currentFamilyNameBase} 
+              onValueChange={(v) => setField("familyName", v)}
+            >
+              <SelectTrigger className={inputClass}>
+                <SelectValue placeholder="اختر الاسم (تلقائي حسب الأفراد)" />
+              </SelectTrigger>
+              <SelectContent>
+                {uniqueFamilyNames.length === 0 ? (
+                  <div className="p-2 text-xs text-muted-foreground text-center">يرجى كتابة اسم الزوجة أو العائل أدناه أولاً</div>
+                ) : (
+                  uniqueFamilyNames.map((n, i) => (
+                    <SelectItem key={i} value={n.name}>
+                      {n.name} <span className="text-muted-foreground text-[10px] pr-1">({n.role})</span>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+      })()}
 
- <div className="space-y-1.5 w-full sm:w-64">
- <Label className={labelClass}>{t("wizard.basic.registrationDate")}</Label>
- <Input 
- type="date" 
- className={cn(inputClass, householdId ? "bg-muted cursor-not-allowed" : "")}
- value={fd.registrationDate ?? ""} 
- onChange={(e) => setField("registrationDate", e.target.value)} 
- readOnly={!!householdId}
- />
- </div>
- </div>
- </section>
+      <div className="space-y-1.5 flex-1 min-w-[200px]">
+        <Label className={labelClass}>{t("wizard.basic.pdfUrl")}</Label>
+        <div className="relative">
+        {fd.pdfUrl ? (
+          <a 
+            href={fd.pdfUrl.startsWith('http') ? fd.pdfUrl : `https://${fd.pdfUrl}`} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="absolute right-2.5 top-2.5 text-blue-500 hover:text-blue-600 transition-colors z-10 cursor-pointer"
+            title="فتح الرابط في نافذة جديدة"
+          >
+            <FileText className="h-4 w-4" />
+          </a>
+        ) : (
+          <FileText className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+        )}
+        <Input 
+        className={cn(inputClass, "pr-9")} 
+        dir="ltr" 
+        placeholder="https://..." 
+        value={fd.pdfUrl ?? ""} 
+        onChange={(e) => setField("pdfUrl", e.target.value)} 
+        />
+        </div>
+      </div>
+    </div>
+
+    {/* Row 2: Code & Registration Date */}
+    <div className="flex flex-wrap gap-4 items-start">
+      <div className="space-y-1.5 w-32 shrink-0">
+        <Label className={labelClass}>{t("wizard.basic.codeLabel")} <span className="text-destructive">*</span></Label>
+        <div className="flex gap-2">
+        <Input
+          className={inputClass}
+          type="text"
+          value={fd.code ?? ""}
+          onChange={(e) => {
+          setField("code", e.target.value);
+          setCodeError(null);
+          setCodeSuccess(null);
+          }}
+          onBlur={(e) => checkCodeUnique(e.target.value)}
+          placeholder={suggestedCode ? `${suggestedCode}` : ""}
+          />
+        {isCheckingCode && <Loader2 className="h-5 w-5 animate-spin mt-2 text-muted-foreground" />}
+        </div>
+        {codeError && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{codeError}</p>}
+        {codeSuccess && <p className="text-xs text-emerald-600 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" />{codeSuccess}</p>}
+      </div>
+
+      <div className="space-y-1.5 w-36 shrink-0">
+        <Label className={labelClass}>{t("wizard.basic.registrationDate")}</Label>
+        <Input 
+        type="date" 
+        className={cn(inputClass, "bg-muted cursor-not-allowed")}
+        value={fd.registrationDate ? (fd.registrationDate.includes("T") ? fd.registrationDate.split("T")[0] : fd.registrationDate) : ""} 
+        readOnly
+        />
+      </div>
+    </div>
+  </div>
+  </section>
 
  {/* SECTION 2: ربة الأسرة */}
- <section className="space-y-4">
- <h3 className="text-sm font-semibold uppercase text-muted-foreground border-b pb-1.5">{t("wizard.basic.wifeSection")}</h3>
- <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+ <section className="bg-card text-card-foreground border rounded-xl p-6 shadow-sm">
+   <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-6">
+     <Info className="h-5 w-5 text-pink-500" />
+     {t("wizard.basic.wifeSection")}
+   </h3>
+   <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
  <div className="space-y-1.5">
  <Label className={labelClass}>{t("wizard.basic.wifeName")} <span className="text-destructive">*</span></Label>
  <Input className={inputClass} value={fd.wifeName ?? ""}
  onChange={(e) => setField("wifeName", e.target.value)}
  onBlur={() => {
   if (fd.wifeName && !fd.familyName) {
-  setField("familyName", `${t("wizard.familyPrefix")} ${fd.wifeName}`);
+  setField("familyName", fd.wifeName);
   }
  }}
  />
@@ -247,21 +306,22 @@ export function BasicInfoStep() {
  <Label className={labelClass}>{t("wizard.basic.socialStatus")}</Label>
  <Select value={fd.socialStatus ?? ""} onValueChange={(v) => {
  setField("socialStatus", v);
- if (v === "DIVORCED") setField("head.residencyStatus", "ABSENT_DIVORCE");
- else if (v === "WIDOWED") setField("head.residencyStatus", "ABSENT_DEATH");
- else if (v === "MARRIED") setField("head.residencyStatus", "RESIDENT");
- else setField("head.residencyStatus", null);
- 
- if (v !== "DIVORCED" && v !== "WIDOWED") {
- setField("marriageCount", 1);
- setField("pastSpouses", []);
- }
+  if (v === "DIVORCED") setField("head.residencyStatus", "ABSENT_DIVORCE");
+  else if (v === "WIDOWED" || v === "WIDOWED_MARRIED") setField("head.residencyStatus", "ABSENT_DEATH");
+  else if (v === "MARRIED") setField("head.residencyStatus", "RESIDENT");
+  else setField("head.residencyStatus", null);
+  
+  if (v !== "DIVORCED" && v !== "WIDOWED" && v !== "WIDOWED_MARRIED") {
+  setField("marriageCount", 1);
+  setField("pastSpouses", []);
+  }
  }}>
  <SelectTrigger className={inputClass}><SelectValue placeholder={t("wizard.basic.socialOptions.select")} /></SelectTrigger>
  <SelectContent>
  <SelectItem value="MARRIED">{t("wizard.basic.socialOptions.married")}</SelectItem>
  <SelectItem value="DIVORCED">{t("wizard.basic.socialOptions.divorced")}</SelectItem>
  <SelectItem value="WIDOWED">{t("wizard.basic.socialOptions.widowed")}</SelectItem>
+ <SelectItem value="WIDOWED_MARRIED">{t("wizard.basic.socialOptions.widowed_married")}</SelectItem>
  <SelectItem value="SINGLE_OTHER">{t("wizard.basic.socialOptions.single")}</SelectItem>
  </SelectContent>
  </Select>
@@ -269,8 +329,8 @@ export function BasicInfoStep() {
  </div>
 
  {/* Wife Employment Quality */}
- <div className="bg-muted/30 border border-slate-200 rounded-lg p-4 space-y-4">
- <h4 className="text-sm font-medium text-slate-800">{t("wizard.basic.wifeEmployment")}</h4>
+ <div className="space-y-4 pt-6 mt-6 col-span-full border-t border-slate-200 dark:border-slate-800">
+  <h4 className="text-sm font-semibold text-slate-700">{t("wizard.basic.wifeEmployment")}</h4>
  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
  <div className="space-y-1.5">
  <Label className={labelClass}>{t("wizard.basic.wifeEmploymentType")}</Label>
@@ -316,9 +376,9 @@ export function BasicInfoStep() {
  </div>
  </div>
 
- {(fd.socialStatus === "MARRIED" || fd.socialStatus === "DIVORCED" || fd.socialStatus === "WIDOWED") && (
- <div className="bg-muted/30 border border-slate-200 rounded-lg p-4 space-y-4">
- <h4 className="text-sm font-medium text-slate-800">{t("wizard.basic.husband.section")} {fd.socialStatus === "DIVORCED" ? `(${t("wizard.basic.husband.last")})` : fd.socialStatus === "WIDOWED" ? `(${t("wizard.basic.husband.deceased")})` : ""}</h4>
+ {(fd.socialStatus === "MARRIED" || fd.socialStatus === "DIVORCED" || fd.socialStatus === "WIDOWED" || fd.socialStatus === "WIDOWED_MARRIED") && (
+  <div className="space-y-4 pt-6 mt-6 col-span-full border-t border-slate-200 dark:border-slate-800">
+ <h4 className="text-sm font-semibold text-slate-700">{t("wizard.basic.husband.section")} {fd.socialStatus === "DIVORCED" ? `(${t("wizard.basic.husband.last")})` : (fd.socialStatus === "WIDOWED" || fd.socialStatus === "WIDOWED_MARRIED") ? `(${t("wizard.basic.husband.deceased")})` : ""}</h4>
  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
  <div className="space-y-1.5">
  <Label className={labelClass}>{t("wizard.basic.husband.name")} <span className="text-destructive">*</span></Label>
@@ -343,7 +403,7 @@ export function BasicInfoStep() {
    setHeadNidError(validateNid(sanitizedVal));
  }}
  onBlur={() => {
- if ((fd.socialStatus === "MARRIED" || fd.socialStatus === "DIVORCED" || fd.socialStatus === "WIDOWED") && head.nationalId) {
+ if ((fd.socialStatus === "MARRIED" || fd.socialStatus === "DIVORCED" || fd.socialStatus === "WIDOWED" || fd.socialStatus === "WIDOWED_MARRIED") && head.nationalId) {
  const spouseExists = fd.members?.find(m => m.role === "SPOUSE");
  if (spouseExists) {
  const newMembers = fd.members!.map(m => m.role === "SPOUSE" ? { ...m, nationalId: head.nationalId } : m);
@@ -476,7 +536,7 @@ export function BasicInfoStep() {
  )}
 
  {/* IF أرملة */}
- {fd.socialStatus === "WIDOWED" && (
+ {(fd.socialStatus === "WIDOWED" || fd.socialStatus === "WIDOWED_MARRIED") && (
  <div className="grid gap-4 sm:grid-cols-3 pt-4 border-t mt-4">
  <div className="space-y-1.5">
  <Label className={labelClass}>{t("wizard.basic.death.certNumber")}</Label>
@@ -510,7 +570,7 @@ export function BasicInfoStep() {
 
  {/* Dynamic Past Spouses */}
  {fd.marriageCount && fd.marriageCount > 1 && Array.from({ length: fd.marriageCount - 1 }).map((_, i) => (
- <div key={i} className="border border-slate-200 p-4 rounded-lg bg-white/50 col-span-full space-y-4">
+ <div key={i} className="border border-slate-200 dark:border-slate-800 p-4 rounded-lg bg-muted/50 col-span-full space-y-4">
  <h5 className="font-semibold text-xs text-slate-500 uppercase">{t("wizard.basic.husband.pastSpouse")} {i + 1}</h5>
  <div className="grid grid-cols-2 gap-4">
  <div className="space-y-1.5">
@@ -546,9 +606,12 @@ export function BasicInfoStep() {
  </section>
 
  {/* SECTION 3: التواصل والعنوان */}
- <section className="space-y-4">
- <h3 className="text-sm font-semibold uppercase text-muted-foreground border-b pb-1.5">{t("wizard.basic.contact.section")}</h3>
- <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+ <section className="bg-card text-card-foreground border rounded-xl p-6 shadow-sm">
+   <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-6">
+     <Info className="h-5 w-5 text-emerald-500" />
+     {t("wizard.basic.contact.section")}
+   </h3>
+   <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
  <div className="space-y-1.5">
  <Label className={labelClass}>{t("wizard.basic.contact.primaryPhone")} <span className="text-destructive">*</span></Label>
  <Input 
@@ -668,9 +731,12 @@ export function BasicInfoStep() {
  </section>
 
  {/* SECTION 4: إعدادات البحث */}
- <section className="space-y-4 relative">
- <div className="flex justify-between items-center border-b pb-1.5">
- <h3 className="text-sm font-semibold uppercase text-muted-foreground">{t("wizard.basic.search.section")}</h3>
+ <section className="bg-card text-card-foreground border rounded-xl p-6 shadow-sm">
+   <div className="flex justify-between items-center mb-6">
+   <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+     <Info className="h-5 w-5 text-purple-500" />
+     {t("wizard.basic.search.section")}
+   </h3>
  <div className="flex items-center gap-4">
  <div className="flex items-center gap-1.5">
  <Label className="text-xs text-muted-foreground">{t("wizard.basic.search.modest")}</Label>
@@ -692,7 +758,7 @@ export function BasicInfoStep() {
  </div>
  
  <div className="flex gap-4">
- <div className="space-y-2 border border-slate-200 rounded-lg p-3 bg-slate-50 flex-1 flex items-center justify-between">
+ <div className="space-y-2 border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-muted/30 flex-1 flex items-center justify-between">
  <div className="flex items-center gap-3">
  <Switch 
  checked={fd.searchType?.includes("DESK") ?? false} 
@@ -715,7 +781,7 @@ export function BasicInfoStep() {
  )}
  </div>
 
- <div className={cn("space-y-2 border border-slate-200 rounded-lg p-3 bg-slate-50 flex-1 flex items-center justify-between", fd.officeDealings ? "opacity-50 pointer-events-none" : "")}>
+ <div className={cn("space-y-2 border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-muted/30 flex-1 flex items-center justify-between", fd.officeDealings ? "opacity-50 pointer-events-none" : "")}>
  <div className="flex items-center gap-3">
  <Switch 
  checked={fd.searchType?.includes("FIELD") ?? false} 
