@@ -72,6 +72,21 @@ function calculateL5(ctx) {
         }
         break;
       }
+      case 'SON_IN_PRISON': {
+        const w = weights.get('burden_son_in_prison', WEIGHTS.BURDENS.SON_IN_PRISON);
+        contributions.push(w);
+        rules.push(
+          triggeredRule(
+            'burden_son_in_prison',
+            'rules.burden_son_in_prison',
+            'Son in prison burden',
+            'WEIGHTS.BURDENS.SON_IN_PRISON',
+            w,
+            w
+          )
+        );
+        break;
+      }
       default:
         break;
     }
@@ -113,7 +128,7 @@ function calculateL5(ctx) {
     );
   }
 
-  const prisoners = input.persons.filter((p) => p.isPrisoner && p.role !== 'HEAD');
+  const prisoners = input.persons.filter((p) => p.isPrisoner && p.role !== 'HEAD' && p.maritalStatus !== 'MARRIED');
   
   for (const prisoner of prisoners) {
     const base = weights.get('burden_son_in_prison', WEIGHTS.BURDENS.SON_IN_PRISON);

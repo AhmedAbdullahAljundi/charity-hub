@@ -1,4 +1,4 @@
-import { Disease, Disability } from "@/lib/types/api";
+
 
 // Assuming standard weight values for UI display since they are not exported in frontend.
 export const WEIGHTS = {

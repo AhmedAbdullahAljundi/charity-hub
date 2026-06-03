@@ -347,7 +347,7 @@ model Person {
   brideHasSponsor   Boolean            @default(false)
   isPrisoner        Boolean            @default(false)
   prisonTerm        PrisonTerm?
-  prisonSuspicion   Decimal?           @db.Decimal(4, 2)
+  prisonSuspicion   String?
   isOrphan          Boolean            @default(false)
   isDisplaced       Boolean            @default(false)
   relationship      String?

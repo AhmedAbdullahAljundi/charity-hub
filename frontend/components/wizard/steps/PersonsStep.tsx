@@ -107,7 +107,7 @@ export function PersonsStep() {
     nationalId: fd.wifeNationalId,
     gender: "FEMALE" as const,
     role: "SPOUSE" as const,
-    employmentType: fd.wifeEmploymentType,
+    // removed wifeEmploymentType
     employmentQuality: fd.wifeEmploymentQuality,
     educationLevel: fd.wifeEducationLevel,
     _isHeadOrSpouse: true
@@ -283,6 +283,9 @@ export function PersonsStep() {
   const gender = member.gender || info?.gender || "MALE";
   const employmentType = member.employmentType || "NONE";
   const isWorkingSon = member.role === "INDEPENDENT" && gender === "MALE" && employmentType !== "NONE" && member.relationship === "SON";
+  
+  const isDisplacedReason = flags.hasDivorce || flags.hasPrison || flags.absenceReason === "other";
+
  const payload: Record<string, unknown> = {
  name: member.name,
  nationalId: member.nationalId,
@@ -301,6 +304,7 @@ export function PersonsStep() {
  isBride: member.isBride || false,
  brideHasSponsor: member.brideHasSponsor || false,
  isOrphan: member.isOrphan || false,
+ isDisplaced: member.isDisplaced || false,
  isSonContributor: isWorkingSon,
  sonMarried: member.maritalStatus === "MARRIED",
  sonSameHouse: member.sonSameHouse ?? true,
@@ -459,6 +463,9 @@ export function PersonsStep() {
     setDraft((prev: any) => {
       let updated = { ...prev, [key]: value };
       
+      if (key === "isOrphan") updated._manualOrphan = true;
+      if (key === "isDisplaced") updated._manualDisplaced = true;
+      
       // Auto compute role (only when relationship changes, as a suggestion)
       if (key === "relationship" && updated.role !== "HEAD" && updated.role !== "SPOUSE") {
         const age = updated.nationalId ? extractNationalIdInfo(updated.nationalId)?.age ?? 0 : 0;
@@ -511,8 +518,10 @@ export function PersonsStep() {
             (calcAge >= 15 && updated.gender === "MALE" && updated.isStudent)
           );
           
-        if (isOrphanCond && !prev.isOrphan) updated.isOrphan = true;
-        if (!isOrphanCond && prev.isOrphan) updated.isOrphan = false;
+        if (!updated._manualOrphan) {
+          if (isOrphanCond && !prev.isOrphan) updated.isOrphan = true;
+          if (!isOrphanCond && prev.isOrphan) updated.isOrphan = false;
+        }
 
         const absentReason = flags.absenceReason;
         const isDisplacedReason = absentReason === "divorce" || absentReason === "prison" || absentReason === "other";
@@ -525,8 +534,10 @@ export function PersonsStep() {
             (calcAge >= 15 && updated.gender === "MALE" && updated.isStudent)
           );
           
-        if (isDisplacedCond && !prev.isDisplaced) updated.isDisplaced = true;
-        if (!isDisplacedCond && prev.isDisplaced) updated.isDisplaced = false;
+        if (!updated._manualDisplaced) {
+          if (isDisplacedCond && !prev.isDisplaced) updated.isDisplaced = true;
+          if (!isDisplacedCond && prev.isDisplaced) updated.isDisplaced = false;
+        }
       }
 
       return updated;
@@ -552,7 +563,7 @@ export function PersonsStep() {
   const isDisplacedReason = flags.hasDivorce || flags.hasPrison || flags.absenceReason === "other";
   const showDisplaced = isDisplacedReason && draft.role === "CHILD";
   const showSonSection = isIndependentSon;
-  const showPrisonerToggle = flags.hasPrison || draft.role === "CHILD";
+  const showPrisonerToggle = draft.role === "INDEPENDENT" || draft.role === "DEPENDENT_ADULT";
 
  const inputClass = "h-9 text-sm focus-visible:ring-2 focus-visible:ring-green-500/20 focus-visible:border-green-400";
  const labelClass = "text-sm font-medium";
@@ -735,8 +746,8 @@ export function PersonsStep() {
               <div className="flex flex-wrap gap-1 ml-0.5 mt-1">
                 {((m as any)._isHeadOrSpouse && (!empQuality || empQuality === "NONE")) && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-300 border-0 leading-none">🚫 لا يعمل</Badge>}
                 {m.isBride && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-pink-100 text-pink-700 hover:bg-pink-100 dark:bg-pink-900/30 dark:text-pink-300 border-0 leading-none">💍 {t("personCard.bride") || "عروسة"} {m.brideHasSponsor && <span className="opacity-70 pr-1">{(t("personCard.brideSponsored") || "(مكفولة)")}</span>}</Badge>}
-                {m.isOrphan && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 border-0 leading-none">🕊 {m.gender === "FEMALE" ? (t("personCard.orphanF") || "يتيمة") : (t("personCard.orphan") || "يتيم")}</Badge>}
-                {m.isDisplaced && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-300 border-0 leading-none">⚠ {m.gender === "FEMALE" ? (t("personCard.displacedF") || "مشردة") : (t("personCard.displaced") || "مشرد")}</Badge>}
+                {m.isOrphan && mappedRole === "CHILD" && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 border-0 leading-none">🕊 {m.gender === "FEMALE" ? (t("personCard.orphanF") || "يتيمة") : (t("personCard.orphan") || "يتيم")}</Badge>}
+                {m.isDisplaced && mappedRole === "CHILD" && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-300 border-0 leading-none">⚠ {m.gender === "FEMALE" ? (t("personCard.displacedF") || "مشتتة") : (t("personCard.displaced") || "مشتت")}</Badge>}
                 {m.isPrisoner && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 border-0 leading-none">🔒 {m.prisonTerm === "SHORT" ? "سجين < 6 أشهر" : m.prisonTerm === "MEDIUM" ? "سجين 6ش–2س" : m.prisonTerm === "LONG" ? "سجين > سنتين" : (t("personCard.prisoner") || "سجين")}</Badge>}
                 {m.abroad && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-300 border-0 leading-none">✈ {t("personCard.abroad") || "مسافر"}</Badge>}
               </div>
@@ -1111,53 +1122,13 @@ export function PersonsStep() {
   </div>
   )}
 
-  {showPrisonerToggle && (
-  <div className="flex flex-col gap-3 bg-slate-100 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-  <div className="flex items-center justify-between">
-  <Label className="font-semibold text-slate-800">{t("wizard.persons.isPrisoner")}</Label>
-  <Switch checked={draft.isPrisoner ?? false} onCheckedChange={(v) => updateDraft("isPrisoner", v)} />
-  </div>
-  {draft.isPrisoner && (
-  <>
-  <div className="space-y-1.5 pl-4 border-r-2 border-slate-300 dark:border-slate-600">
-  <Label className="text-xs">{t("wizard.persons.prisonTerm")}</Label>
-  <Select value={draft.prisonTerm ?? "SHORT"} onValueChange={(v) => updateDraft("prisonTerm", v)}>
-  <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
-  <SelectContent>
-  <SelectItem value="SHORT">{t("wizard.persons.prisonTermOptions.short")}</SelectItem>
-  <SelectItem value="MEDIUM">{t("wizard.persons.prisonTermOptions.medium")}</SelectItem>
-  <SelectItem value="LONG">{t("wizard.persons.prisonTermOptions.long")}</SelectItem>
-  </SelectContent>
-  </Select>
-  </div>
-  
-  <div className="space-y-1.5 pl-4 border-r-2 border-slate-300 dark:border-slate-600">
-  <Label className="text-xs">{t("wizard.persons.prisonSuspicion")}</Label>
-  <Select 
-  value={draft.prisonSuspicion?.toString() ?? "NONE"} 
-  onValueChange={(v) => updateDraft("prisonSuspicion", v === "NONE" ? null : parseFloat(v))}
-  >
-  <SelectTrigger className={inputClass}><SelectValue placeholder="" /></SelectTrigger>
-  <SelectContent>
-  <SelectItem value="NONE">{t("wizard.persons.prisonSuspicionOptions.none")}</SelectItem>
-  <SelectItem value="-0.4">{t("wizard.persons.prisonSuspicionOptions.light")}</SelectItem>
-  <SelectItem value="-1.0">{t("wizard.persons.prisonSuspicionOptions.medium")}</SelectItem>
-  <SelectItem value="-2.0">{t("wizard.persons.prisonSuspicionOptions.high")}</SelectItem>
-  <SelectItem value="-3.0">{t("wizard.persons.prisonSuspicionOptions.extreme")}</SelectItem>
-  </SelectContent>
-  </Select>
-  <p className="text-[10px] text-muted-foreground mt-1">{t("wizard.persons.prisonSuspicionDesc")}</p>
-  </div>
-  </>
-  )}
-  </div>
-  )}
+  {/* showPrisonerToggle moved to the bottom */}
  </div>
 
  {/* Health / Disabilities */}
   {draft.role !== "INDEPENDENT" && (
   <div className="grid gap-6 sm:grid-cols-2 border-t pt-6 mt-4">
-    <div className="bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+    <div className="bg-background p-4 rounded-xl border shadow-sm">
       <div className="flex items-center justify-between">
         <Label className="flex items-center gap-2 font-semibold text-foreground"><HeartPulse className="w-4 h-4 text-rose-600" />{t("wizard.persons.hasDisease")}</Label>
         <Switch checked={draft.hasDisease ?? false} onCheckedChange={(v) => {
@@ -1231,7 +1202,7 @@ export function PersonsStep() {
       )}
     </div>
 
-    <div className="bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+    <div className="bg-background p-4 rounded-xl border shadow-sm">
       <div className="flex items-center justify-between">
         <Label className="flex items-center gap-2 font-semibold text-foreground"><Stethoscope className="w-4 h-4 text-orange-600" />{t("wizard.persons.hasDisability")}</Label>
         <Switch checked={draft.hasDisability ?? false} onCheckedChange={(v) => {
@@ -1359,6 +1330,15 @@ export function PersonsStep() {
  </div>
  </div>
  )}
+
+  {showPrisonerToggle && (
+  <div className="border-t pt-4 space-y-4 bg-background border p-4 rounded-xl mt-4 shadow-sm">
+  <div className="flex items-center justify-between">
+  <Label className="font-semibold text-slate-800">{t("wizard.persons.isPrisoner")}</Label>
+  <Switch checked={draft.isPrisoner ?? false} onCheckedChange={(v) => updateDraft("isPrisoner", v)} />
+  </div>
+  </div>
+  )}
 
  <div className="space-y-1.5 border-t pt-4">
  <Label className={labelClass}>{t("wizard.persons.notes")}</Label>

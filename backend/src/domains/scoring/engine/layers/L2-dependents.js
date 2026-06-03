@@ -1,4 +1,4 @@
-const { ZERO, sum } = require('../../../../shared/utils/decimal');
+const { ZERO, sum, toDecimal } = require('../../../../shared/utils/decimal');
 const { LAYER_CAPS } = require('../../registry/weights');
 const {
   isResident,

@@ -1,5 +1,5 @@
 const { createLayerResult, triggeredRule, skippedRule } = require('../../../../modules/scoring/engine/layer-result');
-const { toDecimal, add, mul } = require('../../../../shared/utils/decimal');
+const { ZERO, toDecimal, add, mul } = require('../../../../shared/utils/decimal');
 const { WEIGHTS } = require('../../registry/weights');
 const { ageBand } = require('./age-band');
 

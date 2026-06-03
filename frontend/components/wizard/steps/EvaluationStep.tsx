@@ -94,7 +94,7 @@ const FACTOR_LABELS: Record<string, string> = {
  no_provider: 'بلا عائل',
  orphan: 'يتيم',
  prison: 'سجين',
- displaced: 'مشرد',
+ displaced: 'مشتت',
  // Corrections
  correction_head_employment: 'تصحيح عمل العائل',
  correction_son_employment: 'تصحيح عمل الابن',
@@ -129,30 +129,55 @@ function translateWarning(w: string, t: (key: string) => string): string {
  return w.replace(/_/g, ' ');
 }
 
-function getFactorLabel(f: any, t: (key: string) => string): string {
- if (typeof f === 'string') return FACTOR_LABELS[f] || f.replace(/_/g, ' ');
- // Try all possible key fields
- const key = f.factorKey || f.ruleId || f.labelKey || f.key || f.label || f.name || '';
- // Check our map
- if (FACTOR_LABELS[key]) return FACTOR_LABELS[key];
- // Try partial matching
- for (const [mapKey, label] of Object.entries(FACTOR_LABELS)) {
- if (key.includes(mapKey) || mapKey.includes(key)) return label;
- }
- // Clean up any remaining technical key
- if (typeof key === 'string' && key.length > 0) {
- // If it looks like a UUID or technical ID, try to extract something useful
- if (/^[a-z_]+$/.test(key)) return key.replace(/_/g, ' ');
- // If it contains a meaningful prefix, extract it
- const match = key.match(/^([a-z_]+)/);
- if (match && FACTOR_LABELS[match[1]]) return FACTOR_LABELS[match[1]];
- }
- // Fallback: show the layer info if available
- if (f.layerId) {
- const layerName = getLayerLabel(f.layerId, t);
- return `${layerName}`;
- }
- return f.label || f.name || key || f.id;
+function getFactorLabel(f: any, t: (key: string) => string, tRules: any): string {
+  if (typeof f === 'string') {
+    if (tRules.has(f)) {
+      return tRules(f);
+    }
+    return FACTOR_LABELS[f] || f.replace(/_/g, ' ');
+  }
+  
+  let ruleId = f.id || f.ruleId || f.factorKey;
+  if (ruleId) {
+    if (ruleId.startsWith("burden_person_prisoner_")) {
+      const nameMatch = f.label?.match(/Prisoner\s+(.*?)\s*:/i);
+      const name = nameMatch ? nameMatch[1] : "";
+      return name ? `${tRules("burden_son_in_prison")} (${name})` : tRules("burden_son_in_prison");
+    }
+    if (ruleId.startsWith("burden_person_bride_")) {
+      const nameMatch = f.label?.match(/Bride\s+(.*?)\s*:/i);
+      const name = nameMatch ? nameMatch[1] : "";
+      return name ? `${tRules("burden_bride")} (${name})` : tRules("burden_bride");
+    }
+    if (ruleId.startsWith("disease_")) {
+      const diseaseName = f.label || ruleId.split("_").slice(2).join("_");
+      return `${tRules("disease_treatment")} (${diseaseName})`;
+    }
+    if (ruleId.startsWith("disability_")) {
+      const desc = f.label || "";
+      return desc ? `${tRules("disability_work_impact")} (${desc})` : tRules("disability_work_impact");
+    }
+    
+    if (tRules.has(ruleId)) {
+      return tRules(ruleId);
+    }
+  }
+
+  const key = f.factorKey || f.ruleId || f.labelKey || f.key || f.label || f.name || f.id || '';
+  if (FACTOR_LABELS[key]) return FACTOR_LABELS[key];
+  for (const [mapKey, label] of Object.entries(FACTOR_LABELS)) {
+    if (key.includes(mapKey) || mapKey.includes(key)) return label;
+  }
+  if (typeof key === 'string' && key.length > 0) {
+    if (/^[a-z_]+$/.test(key)) return key.replace(/_/g, ' ');
+    const match = key.match(/^([a-z_]+)/);
+    if (match && FACTOR_LABELS[match[1]]) return FACTOR_LABELS[match[1]];
+  }
+  if (f.layerId) {
+    const layerName = getLayerLabel(f.layerId, t);
+    return `${layerName}`;
+  }
+  return f.label || f.name || key || f.id;
 }
 
 function getFactorValue(f: any): number | null {
@@ -164,6 +189,7 @@ function getFactorValue(f: any): number | null {
 
 export function EvaluationStep() {
  const t = useTranslations("households");
+ const tRules = useTranslations("rules");
  const user = useAuthStore((s) => s.user);
  const householdId = useWizardStore((s) => s.householdId);
 
@@ -340,7 +366,7 @@ export function EvaluationStep() {
  const val = getFactorValue(f);
  return (
  <div key={i} className="flex justify-between items-center bg-white/70 rounded-lg px-3 py-1.5 border border-emerald-100/50">
- <span className="text-sm text-emerald-900">{getFactorLabel(f, t)}</span>
+ <span className="text-sm text-emerald-900">{getFactorLabel(f, t, tRules)}</span>
  {val !== null && (
  <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
  +{Math.abs(val).toFixed(2)}
@@ -366,7 +392,7 @@ export function EvaluationStep() {
  const val = getFactorValue(f);
  return (
  <div key={i} className="flex justify-between items-center bg-white/70 rounded-lg px-3 py-1.5 border border-rose-100/50">
- <span className="text-sm text-rose-900">{getFactorLabel(f, t)}</span>
+ <span className="text-sm text-rose-900">{getFactorLabel(f, t, tRules)}</span>
  {val !== null && (
  <span className="text-xs font-mono font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">
  {val.toFixed(2)}

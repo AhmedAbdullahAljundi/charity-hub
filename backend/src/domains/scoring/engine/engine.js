@@ -105,6 +105,7 @@ function runScoringEngine(input, options = {}) {
     };
   } catch (error) {
     if (error instanceof ScoringEngineError) throw error;
+    console.error(error);
     throw new ScoringEngineError(`Engine execution failed: ${error.message}`);
   }
 }

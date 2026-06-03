@@ -515,7 +515,7 @@ export function BasicInfoStep() {
    <SelectContent>
    <SelectItem value="NONE">لا يوجد اشتباه</SelectItem>
    <SelectItem value="LOW">اشتباه خفيف</SelectItem>
-   <SelectItem value="MEDIUM">اشتباه متوسط</SelectItem>
+   <SelectItem value="MID">اشتباه متوسط</SelectItem>
    <SelectItem value="HIGH">اشتباه شديد</SelectItem>
    <SelectItem value="MAX">اشتباه شديد جداً</SelectItem>
    </SelectContent>

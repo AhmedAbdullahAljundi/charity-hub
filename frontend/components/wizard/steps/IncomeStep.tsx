@@ -72,15 +72,7 @@ export function IncomeStep() {
  // Box 1 Calculations
  const brideCount = members.filter(m => m.isBride).length;
  const orphanCount = members.filter(m => m.isOrphan).length;
- 
- const displacedCount = members.filter(m => {
- if (!(flags.hasDivorce || flags.hasPrison)) return false;
- if (m.role !== "DEPENDENT_ADULT" && m.role !== "CHILD") return false;
- if (!m.nationalId) return false;
- const year = parseInt(m.nationalId[0]) === 2 ? 1900 + parseInt(m.nationalId.substring(1, 3)) : 2000 + parseInt(m.nationalId.substring(1, 3));
- const age = new Date().getFullYear() - year;
- return age < 15;
- }).length;
+ const displacedCount = members.filter(m => m.isDisplaced).length;
 
  const prisonerSons = members.filter(m => m.isPrisoner && (m.role === "CHILD" || m.relationship === "SON"));
 
@@ -387,30 +379,6 @@ export function IncomeStep() {
  </div>
 
  {/* BOX 2: النفقة (محذوف من هنا وتم نقله للأعلى) */}
-
- {/* BOX 3: السجن */}
- {prisonerSons.length > 0 && (
- <div className="space-y-3 bg-slate-800 border border-slate-700 rounded-lg p-4 text-white">
- <h4 className="font-semibold flex items-center gap-2 text-xs uppercase tracking-wider text-slate-300">
- <ShieldAlert className="w-4 h-4 text-rose-400" />
- {t("wizard.income.corrections.prisonerSons")}
- </h4>
- <div className="space-y-2">
- {prisonerSons.map(s => (
- <div key={s.id ?? s._localKey} className="flex justify-between items-center text-sm bg-slate-900/50 p-2.5 rounded border border-slate-700/50">
- <span className="font-medium text-slate-100">{s.name || t("wizard.persons.noName")}</span>
- <span className="text-slate-400 text-xs">
- {t("wizard.income.corrections.prisonTermLabel")} {
- s.prisonTerm === "SHORT" ? t("wizard.persons.prisonTermOptions.short") : 
- s.prisonTerm === "MEDIUM" ? t("wizard.persons.prisonTermOptions.medium") : 
- s.prisonTerm === "LONG" ? t("wizard.persons.prisonTermOptions.long") : ""
- }
- </span>
- </div>
- ))}
- </div>
- </div>
- )}
 
  {/* BOX 4: الأصول والمشاريع */}
  <div className="space-y-3 bg-slate-50 border border-slate-100 rounded-lg p-4">
