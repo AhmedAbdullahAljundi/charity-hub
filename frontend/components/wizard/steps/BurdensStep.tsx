@@ -428,21 +428,6 @@ export function BurdensStep() {
  )}
  </div>
 
- {/* ابن في السجن */}
- {hasMaleChild && (
- <div className="space-y-3 bg-slate-50 border border-slate-200 p-4 rounded-xl sm:col-span-2 md:col-span-3">
- <div className="flex items-center justify-between">
- <div>
- <Label className="font-semibold text-slate-800">{t("wizard.burdens.sonPrison.title")}</Label>
- <p className="text-[10px] text-muted-foreground mt-1">
- {t("wizard.burdens.sonPrison.desc")}
- <span className="text-rose-600 font-bold mr-2">{t("wizard.burdens.sonPrison.score")}</span>
- </p>
- </div>
- <Switch checked={burdens.hasSonInPrison ?? false} onCheckedChange={(v) => void persistBurdenToggle("SON_IN_PRISON", v)} />
- </div>
- </div>
- )}
  </div>
 
  </AccordionContent>

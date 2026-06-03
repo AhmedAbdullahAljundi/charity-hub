@@ -47,6 +47,13 @@ const WEIGHTS = Object.freeze({
       MEDIUM: '0.7',
       LONG: '1.0',
     },
+    PRISON_SUSPICION: {
+      NONE: '0.0',
+      LOW: '-0.4',
+      MEDIUM: '-1.0',
+      HIGH: '-2.0',
+      MAX: '-3.0',
+    },
     ALIMONY: {
       INFORMAL_SUFFICIENT: '-0.8',
       INFORMAL_INSUFFICIENT: '-0.4',

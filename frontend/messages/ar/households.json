@@ -345,9 +345,11 @@
       },
       "workType": "نوع العمل",
       "workTypeOptions": {
-        "weak": "عمل ضعيف / متقطع",
-        "seasonal": "عمل موسمي",
-        "regular": "عمل منتظم / مستقر"
+        "weak": "يومية ضعيفة",
+        "seasonal": "موسمي",
+        "regular": "منتظم",
+        "none": "لا يعمل",
+        "abroad": "مسافر"
       },
       "workCorrectionOptions": {
         "none": "لا يوجد"
@@ -355,23 +357,23 @@
       "brideState": "هل الفتاة مقبلة على الزواج؟ (عروسة)",
       "brideHasSponsor": "هل يوجد كافل/متبرع يتكفل بجهازها؟",
       "orphanState": "هل هذا الفرد يتيم؟",
-      "orphanDesc": "يتيم الأب أو الأم ويحتاج لرعاية.",
-      "displacedState": "حالة تشريد / بلا مأوى",
-      "displacedDesc": "الفرد يعاني من تشريد لعدم وجود مأوى ثابت.",
-      "isPrisoner": "هل الفرد مسجون؟",
-      "prisonTerm": "مدة السجن",
+      "orphanDesc": "يطبق عليه وزن أيتام الأطفال (تحت 15 سنة)",
+      "displacedState": "فرد وافد (احتساب تلقائي)",
+      "displacedDesc": "يقوم النظام باحتساب هذا الفرد كـ (وافد) تلقائياً لكونه أقل من 15 عاماً والأسرة (مطلقة أو سجين). هذا يؤثر إيجاباً على التقييم، ولا حاجة لتفعيل أي خيار.",
+      "isPrisoner": "هل هذا الفرد هو المسجون؟",
+      "prisonTerm": "مدة الحكم الساري",
       "prisonTermOptions": {
-        "short": "قصيرة (أقل من 3 سنوات)",
-        "medium": "متوسطة (3-7 سنوات)",
-        "long": "طويلة (أكثر من 7 سنوات)"
+        "short": "أقل من 6 أشهر",
+        "medium": "6 أشهر – سنتين",
+        "long": "أكثر من سنتين"
       },
-      "prisonSuspicion": "شبهة جنائية / سمعة",
+      "prisonSuspicion": "مستوى الاشتباه بثروة خفية",
       "prisonSuspicionOptions": {
-        "none": "لا يوجد",
-        "light": "شبهة خفيفة (-0.4)",
-        "medium": "شبهة متوسطة (-1.0)",
-        "high": "شبهة قوية (-2.0)",
-        "extreme": "شبهة شديدة (-3.0)"
+        "none": "لا يوجد اشتباه",
+        "light": "اشتباه خفيف",
+        "medium": "اشتباه متوسط",
+        "high": "اشتباه شديد",
+        "veryHigh": "اشتباه شديد جداً (ثروة ظاهرة)"
       },
       "prisonSuspicionDesc": "خصم نقاط من تقييم الأسرة إذا كان هناك شبهة في السجين تؤثر على استحقاق الأسرة.",
       "correction": "التصحيح المحسوب: {value} نقطة على درجة الهشاشة",
@@ -390,37 +392,12 @@
       },
       "isWorking": "يعمل؟ (لابن أو ابنة)",
       "workDetails": "تفاصيل عمل الابن (مؤثر اقتصادياً)",
-      "workType": "نوع العمل",
-      "workTypeOptions": {
-        "weak": "يومية ضعيفة",
-        "seasonal": "موسمي",
-        "regular": "منتظم",
-        "none": "لا يعمل",
-        "abroad": "مسافر"
-      },
       "sonMarried": "متزوج؟",
       "sonSameHouse": "يسكن مع الأسرة؟",
       "brideStatus": "حالة تجهيز عروسة",
       "brideSponsor": "يوجد كافل أو إرث مساعد؟",
       "orphanStatus": "حالة يتيم",
-      "orphanDesc": "يطبق عليه وزن أيتام الأطفال (تحت 15 سنة)",
       "displacedStatus": "حالة مشتت (بسبب انفصال/سجن/هجر)",
-      "displacedDesc": "يقوم النظام باحتساب هذا الفرد كـ (وافد) تلقائياً لكونه أقل من 15 عاماً والأسرة (مطلقة أو سجين). هذا يؤثر إيجاباً على التقييم، ولا حاجة لتفعيل أي خيار.",
-      "isPrisoner": "هل هذا الفرد هو المسجون؟",
-      "prisonTerm": "مدة الحكم الساري",
-      "prisonTermOptions": {
-        "short": "أقل من 6 أشهر",
-        "medium": "6 أشهر – سنتين",
-        "long": "أكثر من سنتين"
-      },
-      "prisonSuspicion": "مستوى الاشتباه بثروة خفية",
-      "prisonSuspicionOptions": {
-        "none": "لا يوجد اشتباه",
-        "light": "اشتباه خفيف",
-        "medium": "اشتباه متوسط",
-        "high": "اشتباه شديد",
-        "veryHigh": "اشتباه شديد جداً (ثروة ظاهرة)"
-      },
       "prisonSuspicionNote": "القيم السالبة تُقلل درجة الهشاشة عند الاشتباه بوجود أصول مخفية",
       "hasDisease": "مريض بأمراض مزمنة؟",
       "hasDisability": "معاق إعاقة مؤثرة؟",
@@ -471,8 +448,7 @@
       "sonWorkingDesc": "تفاصيل عمل الابن (مؤثر اقتصادياً)",
       "isMarried": "متزوج؟",
       "sameHouse": "يسكن في نفس المنزل؟",
-      "notesPlaceholder": "أدخل أي ملاحظات إضافية هنا...",
-      "displacedState": "فرد وافد (احتساب تلقائي)"
+      "notesPlaceholder": "أدخل أي ملاحظات إضافية هنا..."
     },
     "income": {
       "title": "قنوات الدخل الثمانية",
@@ -689,12 +665,12 @@
       "noScore": "لم يتم حساب التقييم بعد. اضغط \"حساب التقييم\" أعلاه.",
       "scoreLabel": "التقييم الحالي",
       "delta": "عن آخر تقييم",
-      "calculatedAt": "تاريخ الحساب:",
+      "calculatedAt": "تاريخ التقييم",
       "warnings": "تنبيهات ({count})",
-      "layerBreakdown": "تفصيل الطبقات",
+      "layerBreakdown": "تفصيل طبقات التقييم",
       "indicators": "المؤشرات والتوصيات",
-      "positiveFactors": "أسباب ارتفاع التقييم",
-      "negativeFactors": "أسباب انخفاض التقييم",
+      "positiveFactors": "عوامل إيجابية",
+      "negativeFactors": "عوامل سلبية",
       "noFactors": "لا توجد عوامل {type} مسجلة",
       "recommendations": "توصيات النظام",
       "committee": {
@@ -733,30 +709,15 @@
         "submit": "تسجيل القرار واعتماده"
       },
       "simulation": {
-        "title": "محاكاة — ماذا لو تغيرت البيانات؟",
-        "desc": "هذه المحاكاة لا تُحفظ ولا تؤثر على البيانات الفعلية.",
-        "housingType": "نوع السكن",
-        "housingOptions": {
-          "owned": "ملك",
-          "shared": "مشترك",
-          "donatedRent": "متبرع به",
-          "rented": "إيجار"
-        },
-        "totalIncome": "دخل بديل (جنيه)",
-        "incomePh": "مثال: 3000",
-        "employmentType": "نوع عمل العائل",
-        "employmentOptions": {
-          "none": "لا يعمل",
-          "weak": "يومية ضعيفة",
-          "seasonal": "موسمي",
-          "regular": "منتظم"
-        },
-        "runBtn": "شاهد التأثير",
-        "results": "نتائج المحاكاة",
-        "original": "الأصلية",
-        "simulated": "المحاكاة",
-        "delta": "الفرق",
-        "affectedLayers": "الطبقات المتأثرة:"
+        "title": "محاكاة التقييم (ماذا لو؟)",
+        "disclaimer": "يمكنك محاكاة تغيير الدخل لمشاهدة تأثيره على السكور بدون حفظ.",
+        "altIncome": "الدخل البديل للمحاكاة (ج.م)",
+        "run": "تنفيذ المحاكاة",
+        "results": "نتائج المحاكاة:",
+        "original": "السكور الأصلي",
+        "simulated": "السكور المتوقع",
+        "difference": "الفرق",
+        "affectedLayers": "الطبقات المتأثرة"
       },
       "eligibility": {
         "CRITICAL": "حرجة جداً",
@@ -787,15 +748,10 @@
       },
       "autoEvaluation": "التقييم الآلي",
       "calculateScore": "حساب التقييم",
-      "recalculate": "إعادة الحساب",
       "notCalculated": "لم يتم الحساب بعد. اضغط \"حساب التقييم\".",
       "fromLastScore": "من آخر تقييم",
-      "calculatedAt": "تاريخ التقييم",
-      "layerBreakdown": "تفصيل طبقات التقييم",
       "indicatorsAndRecommendations": "المؤشرات والتوصيات",
-      "positiveFactors": "عوامل إيجابية",
       "noPositiveFactors": "لا توجد عوامل إيجابية",
-      "negativeFactors": "عوامل سلبية",
       "noNegativeFactors": "لا توجد عوامل سلبية",
       "systemRecommendations": "توصيات النظام",
       "committeeDecision": "قرار اللجنة",
@@ -829,17 +785,6 @@
       "decisionNote": "ملاحظات القرار",
       "decisionNotePlaceholder": "اكتب أي ملاحظات حول القرار هنا...",
       "submitDecision": "حفظ القرار",
-      "simulation": {
-        "title": "محاكاة التقييم (ماذا لو؟)",
-        "disclaimer": "يمكنك محاكاة تغيير الدخل لمشاهدة تأثيره على السكور بدون حفظ.",
-        "altIncome": "الدخل البديل للمحاكاة (ج.م)",
-        "run": "تنفيذ المحاكاة",
-        "results": "نتائج المحاكاة:",
-        "original": "السكور الأصلي",
-        "simulated": "السكور المتوقع",
-        "difference": "الفرق",
-        "affectedLayers": "الطبقات المتأثرة"
-      },
       "assistanceType": "تصنيف المساعدة",
       "category": "تصنيف الفئة",
       "status": "حالة القرار",
@@ -936,5 +881,23 @@
       "classification": "التصنيف",
       "class": "الطبقة"
     }
+  },
+  "personCard": {
+    "workCorrection": "معامل العمل",
+    "educationLevel": "المستوى التعليمي",
+    "diseaseScore": "عبء المرض",
+    "disabilityScore": "عبء الإعاقة",
+    "yearsOld": "سنة",
+    "bride": "عروسة",
+    "brideSponsored": "(مكفولة)",
+    "orphan": "يتيم",
+    "orphanF": "يتيمة",
+    "displaced": "مشرد",
+    "displacedF": "مشردة",
+    "prisoner": "سجين",
+    "abroad": "مسافر",
+    "head": "العائل",
+    "spouse": "الزوج/الزوجة",
+    "workRatio": "نسبة العمل"
   }
 }

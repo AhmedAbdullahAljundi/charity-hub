@@ -4,7 +4,8 @@ import { getStudentHistory } from "@/lib/api/education-api";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Edit2, Trash2, GraduationCap, Stethoscope, HeartPulse, ShieldAlert, Heart, Home, AlertCircle, Briefcase, Save } from "lucide-react";
+import { Plus, Edit2, Trash2, GraduationCap, Stethoscope, HeartPulse, ShieldAlert, Heart, Home, AlertCircle, Briefcase, Save, Crown } from "lucide-react";
+import { getWorkCorrectionPercent, getEducationPercent, getDiseasePercent, getDisabilityPercent } from "@/lib/helpers/personCardCalculations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -166,19 +167,19 @@ export function PersonsStep() {
  const [isSaving, setIsSaving] = useState(false);
  const [educationModalOpen, setEducationModalOpen] = useState(false);
 
-  const [eduScores, setEduScores] = useState<Record<string, { totalScore: number | null; studentLevel: string | null; quranLastSurah: string | null }>>({});
+  const [eduScores, setEduScores] = useState<Record<string, { totalScore: number | null; studentLevel: string | null; quranLastSurah: string | null; gradeYear: number | null }>>({});
 
   useEffect(() => {
     let isMounted = true;
     const fetchAll = async () => {
-      const results: Record<string, { totalScore: number | null; studentLevel: string | null; quranLastSurah: string | null }> = {};
+      const results: Record<string, { totalScore: number | null; studentLevel: string | null; quranLastSurah: string | null; gradeYear: number | null }> = {};
       for (const m of members) {
         if (m.id && m.isStudent) {
           try {
             const hist = await getStudentHistory(m.id);
             if (hist && hist.length > 0) {
               const latest = hist[0];
-              results[m.id] = { totalScore: latest.totalScore ?? 0, studentLevel: latest.studentLevel, quranLastSurah: latest.quranLastSurah };
+              results[m.id] = { totalScore: latest.totalScore ?? 0, studentLevel: latest.studentLevel, quranLastSurah: latest.quranLastSurah, gradeYear: latest.gradeYear };
             }
           } catch(e) {}
         }
@@ -529,26 +530,7 @@ export function PersonsStep() {
   };
 
  
-  const getProgressInfo = (m: any) => {
-    let empValue = 0;
-    if (m.employmentType === "NONE") empValue = 0;
-    else if (m.employmentQuality === "WEAK") empValue = 30;
-    else if (m.employmentQuality === "SEASONAL" || m.employmentQuality === "UNSTABLE") empValue = 50;
-    else if (m.employmentQuality === "SUFFICIENT" || m.employmentQuality === "REGULAR") empValue = 80;
-    else empValue = 100;
 
-    let eduValue = 0;
-    if (m.isStudent && m.id && eduScores[m.id]) {
-      eduValue = eduScores[m.id].totalScore || 0;
-    } else {
-      if (m.educationLevel === "ILLITERATE") eduValue = 10;
-      else if (m.educationLevel === "MEDIUM") eduValue = 40;
-      else if (m.educationLevel === "HIGHER_LIMITED") eduValue = 70;
-      else if (m.educationLevel === "HIGHER_STABLE") eduValue = 100;
-    }
-
-    return { empValue, eduValue };
-  };
 
   
 
@@ -576,112 +558,186 @@ export function PersonsStep() {
  
  {/* Persons Grid */}
  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+<AnimatePresence>
+{displayMembers.map((m: any, idx) => {
+  const mAge = m.nationalId ? extractNationalIdInfo(m.nationalId)?.age : null;
+  const isSpouse = m.role === "SPOUSE";
+  const realIdx = members.indexOf(m as any);
 
+  // Progress Bars Logic
+  const progressBars = [];
+  
+  // 1. Work
+  if (m.employmentType && m.employmentType !== "NONE") {
+    const workPercent = getWorkCorrectionPercent(m.employmentType, m.educationLevel);
+    if (workPercent > 0) {
+      progressBars.push(
+        <div key="work" className="space-y-1.5">
+          <div className="flex justify-between items-center gap-1">
+            <span className="text-[10px] font-medium text-foreground opacity-80 truncate">{t("personCard.workRatio") || "نسبة العمل"}</span>
+            <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded-full leading-none shrink-0">{workPercent}%</span>
+          </div>
+          <Progress value={workPercent} indicatorClassName="bg-emerald-500 rounded-full" className="h-1 bg-slate-100 dark:bg-slate-800 rounded-full" dir="rtl" />
+        </div>
+      );
+    }
+  }
 
- <AnimatePresence>
- {displayMembers.map((m: any, idx) => {
- const mAge = m.nationalId ? extractNationalIdInfo(m.nationalId)?.age : null;
- const isSpouse = m.role === "SPOUSE";
- const realIdx = members.indexOf(m as any);
+  // 2. Disease
+  if (m.hasDisease && m.diseases?.length > 0) {
+    const diseasePercent = getDiseasePercent(m.diseases);
+    if (diseasePercent > 0) {
+      const names = m.diseases.map((d: any) => d.name).join("، ");
+      progressBars.push(
+        <div key="disease" className="space-y-1.5">
+          <div className="flex justify-between items-center gap-1">
+            <span className="text-[10px] font-medium text-foreground opacity-80 truncate" title={names}>{names || t("personCard.diseaseScore") || "المرض"}</span>
+            <span className="text-[9px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-900/40 px-1.5 py-0.5 rounded-full leading-none shrink-0">{diseasePercent}%</span>
+          </div>
+          <Progress value={diseasePercent} indicatorClassName="bg-rose-500 rounded-full" className="h-1 bg-slate-100 dark:bg-slate-800 rounded-full" dir="rtl" />
+        </div>
+      );
+    }
+  }
+  
+  // 3. Education
+  if (m.isStudent) {
+    const eduPercent = getEducationPercent(m.educationLevel, m.id && eduScores[m.id] ? { academicRating: eduScores[m.id]?.totalScore } : null);
+    if (eduPercent > 0) {
+      const getOrdinal = (num: number) => {
+        const ordinals = ["", "الأول", "الثاني", "الثالث", "الرابع", "الخامس", "السادس"];
+        return ordinals[num] || num.toString();
+      };
+      const levelObj = STUDENT_LEVELS.find(l => l.value === m.studentLevel || (m.id && eduScores[m.id]?.studentLevel === l.value));
+      const levelAr = levelObj ? levelObj.label : "طالب";
+      const gradeYear = m.id && eduScores[m.id]?.gradeYear;
+      const gradeStr = gradeYear ? `الصف ${getOrdinal(gradeYear)} ` : "";
+      const surah = m.id && eduScores[m.id]?.quranLastSurah ? ` (${eduScores[m.id]?.quranLastSurah})` : "";
+      const studentLabel = `${gradeStr}${levelAr}${surah}`;
+      
+      progressBars.push(
+        <div key="edu" className="space-y-1.5">
+          <div className="flex justify-between items-center gap-1">
+            <span className="text-[10px] font-medium text-foreground opacity-80 truncate" title={studentLabel}>{studentLabel}</span>
+            <span className="text-[9px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded-full leading-none shrink-0">{eduPercent}%</span>
+          </div>
+          <Progress value={eduPercent} indicatorClassName="bg-blue-500 rounded-full" className="h-1 bg-slate-100 dark:bg-slate-800 rounded-full" dir="rtl" />
+        </div>
+      );
+    }
+  }
+  
+  // 4. Disability
+  if (m.hasDisability && m.disabilities?.length > 0) {
+    const disabilityPercent = getDisabilityPercent(m.disabilities);
+    if (disabilityPercent > 0) {
+      const desc = m.disabilities[0]?.description || "";
+      progressBars.push(
+        <div key="disability" className="space-y-1.5">
+          <div className="flex justify-between items-center gap-1">
+            <span className="text-[10px] font-medium text-foreground opacity-80 truncate" title={desc}>{desc || t("personCard.disabilityScore") || "الإعاقة"}</span>
+            <span className="text-[9px] font-bold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/40 px-1.5 py-0.5 rounded-full leading-none shrink-0">{disabilityPercent}%</span>
+          </div>
+          <Progress value={disabilityPercent} indicatorClassName="bg-orange-500 rounded-full" className="h-1 bg-slate-100 dark:bg-slate-800 rounded-full" dir="rtl" />
+        </div>
+      );
+    }
+  }
 
- return (
- <motion.div
- key={m.id ?? m._localKey ?? idx}
- layout
- initial={{ opacity: 0, scale: 0.95 }}
- animate={{ opacity: 1, scale: 1 }}
- exit={{ opacity: 0, scale: 0.95 }}
- className={cn(
- "border rounded-xl p-5 shadow-sm relative group overflow-hidden transition-colors",
- isSpouse 
- ? "bg-green-50/30 border-green-200 hover:border-green-400" 
- : "bg-card border-border/80 hover:border-primary/40",
- (m as any)._isHeadOrSpouse && "opacity-80 grayscale-[20%]"
- )}
- >
- {/* Health Indicators (Colored Dots) */}
- <div className="absolute top-4 left-4 flex gap-1.5">
- {m.hasDisease && <div title={t("wizard.persons.disease")} className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></div>}
- {m.hasDisability && <div title={t("wizard.persons.disability")} className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]"></div>}
- </div>
-
- <div className="pe-8 space-y-3">
- <div>
- <h4 className="font-bold text-base text-slate-900 line-clamp-1" title={m.name}>{m.name || t("wizard.persons.noName")}</h4>
- <div className="flex items-center gap-2 mt-1">
- <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0 text-white border-transparent", m.gender === "FEMALE" ? "bg-pink-500 hover:bg-pink-600" : "bg-blue-500 hover:bg-blue-600")}>
- {m.gender === "FEMALE" ? t("wizard.persons.female") : t("wizard.persons.male")}
- </Badge>
- {mAge != null && <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-slate-600 bg-slate-50">{mAge} {t("wizard.persons.years")}</Badge>}
- </div>
- </div>
-
- <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground bg-slate-50 p-2.5 rounded-lg border border-slate-100">
- <div className="flex items-center gap-1.5 line-clamp-1"><Home className="w-3.5 h-3.5 text-slate-400 shrink-0"/> {(m.role === "HEAD" || m.role === "SPOUSE") ? (m.gender === "FEMALE" ? "الزوجة" + (m.role === "HEAD" ? " (عائل)" : "") : "الزوج" + (m.role === "HEAD" ? " (عائل)" : "")) : (m.relationship && m.relationship !== "OTHER") ? t("wizard.persons.relationshipOptions." + m.relationship.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase())) : m.role === "DEPENDENT_ADULT" ? t("wizard.persons.dependent") : m.role === "CHILD" ? t("wizard.persons.child") : t("wizard.persons.independent")}</div>
- <div className="flex items-center gap-1.5 line-clamp-1"><GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0"/> {m.isStudent ? t("wizard.persons.student") : (m.educationLevel === "ILLITERATE" ? t("wizard.persons.educationOptions.illiterate").split(" ")[0] : t("wizard.persons.literate"))}</div>
- <div className="flex items-center gap-1.5 line-clamp-1 col-span-2"><Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0"/> {m.employmentType !== "NONE" ? t("wizard.persons.working") : t("wizard.persons.notWorking")}</div>
- </div>
- 
- {/* Status Badges Row */}
- <div className="flex flex-wrap gap-1.5 pt-1">
- {m.isPrisoner && <Badge variant="secondary" className="bg-slate-800 text-slate-100 hover:bg-slate-700 text-[10px] px-1.5 py-0 h-4 rounded">{t("tags.prisoner")}</Badge>}
- {m.isBride && <Badge variant="secondary" className="bg-pink-100 text-pink-700 hover:bg-pink-200 text-[10px] px-1.5 py-0 h-4 rounded border border-pink-200">{t("tags.bride")}</Badge>}
- {m.isOrphan && <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200 text-[10px] px-1.5 py-0 h-4 rounded border border-purple-200">{t("tags.orphan")}</Badge>}
- {m.isDisplaced && <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-200 text-[10px] px-1.5 py-0 h-4 rounded border border-orange-200">{t("tags.displaced")}</Badge>}
- {m.maritalStatus && m.role !== "HEAD" && m.role !== "SPOUSE" && (
-   <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 rounded text-slate-600 bg-white">{t("wizard.persons.maritalOptions." + m.maritalStatus.toLowerCase())}</Badge>
- )}
- {m.isSpecialEducation && (
-   <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] px-1.5 py-0 h-4 rounded border border-emerald-200">تعليم خاص</Badge>
- )}
- {m.id && eduScores[m.id]?.quranLastSurah && (
-   <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 rounded text-teal-700 bg-teal-50 border-teal-200">{eduScores[m.id].quranLastSurah}</Badge>
- )}
- </div>
-
- {/* Progress Bars */}
- {!(m as any)._isHeadOrSpouse && m.role !== "CHILD" && (
-   <div className="space-y-2 mt-3 pt-3 border-t border-slate-100">
-     <div className="space-y-1">
-       <div className="flex justify-between text-[10px] text-muted-foreground">
-         <span>{t("wizard.persons.employmentQuality")}</span>
-         <span className="font-medium text-blue-600">{getProgressInfo(m).empValue}%</span>
-       </div>
-       <Progress value={getProgressInfo(m).empValue} className="h-1.5 bg-blue-100" indicatorColor="#3b82f6" dir="rtl" />
-     </div>
-     <div className="space-y-1">
-       <div className="flex justify-between text-[10px] text-muted-foreground">
-         <span>{t("wizard.persons.education")}</span>
-         <span className="font-medium text-emerald-600">{getProgressInfo(m).eduValue}%</span>
-       </div>
-       <Progress value={getProgressInfo(m).eduValue} className="h-1.5 bg-emerald-100" indicatorColor="#10b981" dir="rtl" />
-     </div>
-   </div>
- )}
- </div>
-
- <div className="absolute bottom-4 left-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur rounded-lg p-1 shadow-sm border border-slate-200">
-  {!(m as any)._isHeadOrSpouse ? (
-    <>
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => openEdit(realIdx)}>
-      <Edit2 className="h-3.5 w-3.5" />
-      </Button>
-      {!isSpouse && (
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600 hover:text-rose-700 hover:bg-rose-50" onClick={() => removeMember(realIdx)}>
-      <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+  return (
+    <motion.div
+      key={m.id ?? m._localKey ?? idx}
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className={cn(
+        "rounded-xl p-3 shadow-sm border transition-all duration-200 focus-within:ring-2 focus-within:ring-primary relative group flex flex-col bg-card hover:border-primary/40",
+        m.role === "HEAD" && "border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-900/10",
+        m.role === "SPOUSE" && "border-blue-200 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-900/10"
       )}
-    </>
-  ) : (
-    <Badge variant="outline" className="text-[10px] text-emerald-600 bg-emerald-50 border-emerald-200 pointer-events-none">
-      البيانات الأساسية
-    </Badge>
-  )}
- </div>
- </motion.div>
- );
- })}
- </AnimatePresence>
+    >
+      {/* ROW 1: Header */}
+      <div className="flex justify-between items-start mb-2">
+        <div className="min-w-0 pr-2">
+          <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5" title={m.name}>
+            <span className="truncate">{m.name || t("wizard.persons.noName")}</span>
+            {m.role === "HEAD" && <Crown className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />}
+          </h4>
+          
+          {/* ROW 2: Relationship + Role + Marital Status + Vulnerabilities */}
+          <div className="flex flex-wrap items-center gap-1 mt-1.5 text-[10px]">
+            {/* Relationship */}
+            {m.relationship && m.relationship !== "OTHER" && m.role !== "HEAD" && m.role !== "SPOUSE" && (
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium leading-none">
+                {t("wizard.persons.relationshipOptions." + m.relationship.toLowerCase().replace(/_([a-z])/g, (g: string) => g[1].toUpperCase()))}
+              </span>
+            )}
+            
+            {/* Role */}
+            <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium leading-none">
+              {m.role === "HEAD" ? (t("personCard.head") || "العائل") : 
+               m.role === "SPOUSE" ? (t("personCard.spouse") || "الزوج/الزوجة") : 
+               m.role === "CHILD" ? t("wizard.persons.child") : 
+               t("wizard.persons.dependent")}
+            </span>
+            
+            {/* Marital Status */}
+            {m.maritalStatus && m.role !== "HEAD" && m.role !== "SPOUSE" && (
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium leading-none">
+                {t("wizard.persons.maritalOptions." + m.maritalStatus.toLowerCase())}
+              </span>
+            )}
+            
+            {/* Vulnerability Badges */}
+            {(m.isBride || m.isOrphan || m.isDisplaced || m.isPrisoner || m.abroad) && (
+              <div className="flex flex-wrap gap-1 ml-0.5">
+                {m.isBride && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-pink-100 text-pink-700 hover:bg-pink-100 dark:bg-pink-900/30 dark:text-pink-300 border-0 leading-none">💍 {t("personCard.bride") || "عروسة"} {m.brideHasSponsor && <span className="opacity-70 pr-1">{(t("personCard.brideSponsored") || "(مكفولة)")}</span>}</Badge>}
+                {m.isOrphan && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 border-0 leading-none">🕊 {m.gender === "FEMALE" ? (t("personCard.orphanF") || "يتيمة") : (t("personCard.orphan") || "يتيم")}</Badge>}
+                {m.isDisplaced && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-300 border-0 leading-none">⚠ {m.gender === "FEMALE" ? (t("personCard.displacedF") || "مشردة") : (t("personCard.displaced") || "مشرد")}</Badge>}
+                {m.isPrisoner && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 border-0 leading-none">🔒 {m.prisonTerm === "SHORT" ? "سجين < 6 أشهر" : m.prisonTerm === "MEDIUM" ? "سجين 6ش–2س" : m.prisonTerm === "LONG" ? "سجين > سنتين" : (t("personCard.prisoner") || "سجين")}</Badge>}
+                {m.abroad && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-300 border-0 leading-none">✈ {t("personCard.abroad") || "مسافر"}</Badge>}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Age indicator opposite to name */}
+        {mAge != null && (
+          <div className={cn("rounded-md px-1.5 py-1 flex flex-col items-center justify-center shrink-0 border", 
+            m.gender === "FEMALE" ? "bg-pink-50 border-pink-100 text-pink-600 dark:bg-pink-500/10 dark:border-pink-900/30 dark:text-pink-400" : "bg-blue-50 border-blue-100 text-blue-600 dark:bg-blue-500/10 dark:border-blue-900/30 dark:text-blue-400"
+          )}>
+            <span className="text-[11px] font-bold leading-none mb-0.5">{mAge}</span>
+            <span className="text-[8px] font-medium opacity-80 leading-none">{t("personCard.yearsOld") || "سنة"}</span>
+          </div>
+        )}
+      </div>
+
+      {/* spacer to push actions to bottom */}
+      <div className="flex-1"></div>
+
+      {/* ROW 4: Progress Bars Minimal Grid */}
+      {progressBars.length > 0 && (
+        <div className="mt-2 grid gap-x-2 gap-y-1.5 grid-cols-2">
+          {progressBars}
+        </div>
+      )}
+
+      {/* ROW 5: Actions Minimal */}
+      <div className="flex justify-end gap-1 mt-2 pt-2 border-t border-border/40 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30" onClick={() => openEdit(realIdx)}>
+          <Edit2 className="h-3 w-3" />
+        </Button>
+        {!((m as any)._isHeadOrSpouse && m.role === "HEAD") && (
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/30" onClick={() => removeMember(realIdx)}>
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+    </motion.div>
+  );
+})}
+</AnimatePresence>
 
  <button
  onClick={openNew}

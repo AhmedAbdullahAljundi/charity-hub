@@ -174,7 +174,8 @@
         "divorced": "Divorced",
         "widowed": "Widowed",
         "single": "Single / Other",
-        "select": "Select status"
+        "select": "Select status",
+        "widowed_married": "Widowed & Married"
       },
       "wifeEmployment": "Wife Employment Indicators",
       "wifeEmploymentType": "Wife Employment Type",
@@ -281,7 +282,8 @@
       },
       "errors": {
         "invalidNid": "Invalid National ID (must be 14 digits starting with 2 or 3)"
-      }
+      },
+      "familyName": "Family Name"
     },
     "persons": {
       "addNew": "Add New Member",
@@ -862,5 +864,22 @@
       "classification": "Classification",
       "class": "Class"
     }
+  },
+  "personCard": {
+    "workCorrection": "Work Correction",
+    "educationLevel": "Education Level",
+    "diseaseScore": "Disease Burden",
+    "disabilityScore": "Disability Burden",
+    "yearsOld": "years",
+    "bride": "Bride",
+    "brideSponsored": "(Sponsored)",
+    "orphan": "Orphan",
+    "orphanF": "Orphan",
+    "displaced": "Displaced",
+    "displacedF": "Displaced",
+    "prisoner": "Prisoner",
+    "abroad": "Abroad",
+    "head": "Head",
+    "spouse": "Spouse"
   }
 }

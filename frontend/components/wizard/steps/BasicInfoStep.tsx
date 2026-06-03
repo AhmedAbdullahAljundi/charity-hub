@@ -402,15 +402,6 @@ export function BasicInfoStep() {
    setField("head.nationalId", sanitizedVal);
    setHeadNidError(validateNid(sanitizedVal));
  }}
- onBlur={() => {
- if ((fd.socialStatus === "MARRIED" || fd.socialStatus === "DIVORCED" || fd.socialStatus === "WIDOWED" || fd.socialStatus === "WIDOWED_MARRIED") && head.nationalId) {
- const spouseExists = fd.members?.find(m => m.role === "SPOUSE");
- if (spouseExists) {
- const newMembers = fd.members!.map(m => m.role === "SPOUSE" ? { ...m, nationalId: head.nationalId } : m);
- setField("members", newMembers);
- }
- }
- }}
  maxLength={14}
  />
  {headNidError ? (
@@ -444,6 +435,8 @@ export function BasicInfoStep() {
 
  {fd.socialStatus === "MARRIED" && (
  <>
+ {head.residencyStatus !== "ABSENT_PRISON" && (
+ <>
  <div className="space-y-1.5">
  <Label className={labelClass}>{t("wizard.basic.husband.employmentType")} <span className="text-destructive">*</span></Label>
  <Select 
@@ -469,7 +462,7 @@ export function BasicInfoStep() {
  </SelectContent>
  </Select>
  </div>
-
+ 
  <div className="space-y-1.5">
  <Label className={labelClass}>{t("wizard.basic.husband.education")} <span className="text-destructive">*</span></Label>
  <Select 
@@ -494,6 +487,44 @@ export function BasicInfoStep() {
  </div>
  </>
  )}
+
+  {head.residencyStatus === "ABSENT_PRISON" && (
+   <>
+   <div className="space-y-1.5">
+   <Label className={labelClass}>مدة الحكم <span className="text-destructive">*</span></Label>
+   <Select 
+   value={(head.prisonTerm as string) ?? ""} 
+   onValueChange={(v) => setField("head.prisonTerm", v)}
+   >
+   <SelectTrigger className={inputClass}><SelectValue placeholder="اختر مدة الحكم" /></SelectTrigger>
+   <SelectContent>
+   <SelectItem value="SHORT">أقل من 6 أشهر</SelectItem>
+   <SelectItem value="MEDIUM">6 أشهر – سنتان</SelectItem>
+   <SelectItem value="LONG">أكثر من سنتين</SelectItem>
+   </SelectContent>
+   </Select>
+   </div>
+
+   <div className="space-y-1.5">
+   <Label className={labelClass}>مستوى الاشتباه (بالسرقة أو وجود ثروة)</Label>
+   <Select 
+   value={(head.prisonSuspicion as string) ?? "NONE"} 
+   onValueChange={(v) => setField("head.prisonSuspicion", v)}
+   >
+   <SelectTrigger className={inputClass}><SelectValue placeholder="اختر مستوى الاشتباه" /></SelectTrigger>
+   <SelectContent>
+   <SelectItem value="NONE">لا يوجد اشتباه</SelectItem>
+   <SelectItem value="LOW">اشتباه خفيف</SelectItem>
+   <SelectItem value="MEDIUM">اشتباه متوسط</SelectItem>
+   <SelectItem value="HIGH">اشتباه شديد</SelectItem>
+   <SelectItem value="MAX">اشتباه شديد جداً</SelectItem>
+   </SelectContent>
+   </Select>
+   </div>
+   </>
+   )}
+  </>
+  )}
  </div>
 
  {/* IF مطلقة */}
@@ -777,7 +808,9 @@ export function BasicInfoStep() {
  <Label className="text-sm font-semibold text-slate-700">{t("wizard.basic.search.desk")}</Label>
  </div>
  {fd.searchType?.includes("DESK") && (
- <span className="text-xs text-slate-500 font-mono" dir="ltr">{fd.registrationDate}</span>
+ <span className="text-xs text-slate-500 font-mono" dir="ltr">
+   {fd.registrationDate ? (fd.registrationDate.includes("T") ? fd.registrationDate.split("T")[0] : fd.registrationDate) : ""}
+ </span>
  )}
  </div>
 
@@ -802,7 +835,9 @@ export function BasicInfoStep() {
  </div>
  {fd.searchType?.includes("FIELD") && (
  <div className="flex flex-col items-end">
- <span className="text-xs text-slate-500 font-mono" dir="ltr">{fd.registrationDate}</span>
+ <span className="text-xs text-slate-500 font-mono" dir="ltr">
+   {fd.registrationDate ? (fd.registrationDate.includes("T") ? fd.registrationDate.split("T")[0] : fd.registrationDate) : ""}
+ </span>
  {fd.registrationDate && (new Date().getTime() - new Date(fd.registrationDate).getTime()) > 31536000000 && (
  <span className="text-[10px] text-destructive flex items-center gap-1 mt-1">
  <AlertCircle className="w-3 h-3" /> {t("wizard.basic.search.expired")}

@@ -20,21 +20,7 @@ function calculateL5(ctx) {
         rules.push(triggeredRule('burden_bride', 'rules.burden_bride', 'Bride burden', 'WEIGHTS.BURDENS.BRIDE', w, w));
         break;
       }
-      case 'SON_IN_PRISON': {
-        const w = weights.get('burden_son_in_prison', WEIGHTS.BURDENS.SON_IN_PRISON);
-        contributions.push(w);
-        rules.push(
-          triggeredRule(
-            'burden_son_in_prison',
-            'rules.burden_son_in_prison',
-            'Son in prison',
-            'WEIGHTS.BURDENS.SON_IN_PRISON',
-            w,
-            w
-          )
-        );
-        break;
-      }
+
       case 'DEBT': {
         const w = gradeWeight(WEIGHTS.BURDENS.DEBT, burden.grade);
         if (!w.isZero()) {
@@ -123,6 +109,23 @@ function calculateL5(ctx) {
         'WEIGHTS.BURDENS.BRIDE',
         brideScore,
         brideScore
+      )
+    );
+  }
+
+  const prisoners = input.persons.filter((p) => p.isPrisoner && p.role !== 'HEAD');
+  
+  for (const prisoner of prisoners) {
+    const base = weights.get('burden_son_in_prison', WEIGHTS.BURDENS.SON_IN_PRISON);
+    contributions.push(base);
+    rules.push(
+      triggeredRule(
+        `burden_person_prisoner_${prisoner.id}`,
+        'rules.burden_prisoner',
+        `Prisoner ${prisoner.name || prisoner.id}: base score 0.5`,
+        'WEIGHTS.BURDENS.SON_IN_PRISON',
+        base,
+        base
       )
     );
   }

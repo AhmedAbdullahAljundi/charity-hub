@@ -3,6 +3,7 @@ const { WEIGHTS, LAYER_CAPS } = require('../../registry/weights');
 const { ageBand } = require('../utils/age-band');
 const {
   findHead,
+  isResident,
   createLayerResult,
   triggeredRule,
   skippedRule,
@@ -28,7 +29,7 @@ function calculateL1(ctx) {
     return createLayerResult('L1', ZERO, LAYER_CAPS.L1_HEAD, rules, skipped, warnings);
   }
 
-  if (!head.isResident) {
+  if (!isResident(head)) {
     skipped.push(skippedRule('head_non_resident', 'rules.head_non_resident', 'head not resident'));
     return createLayerResult('L1', ZERO, LAYER_CAPS.L1_HEAD, rules, skipped, warnings);
   }

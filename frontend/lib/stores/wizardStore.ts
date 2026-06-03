@@ -34,6 +34,7 @@ export interface WizardPersonForm extends Partial<PersonDto> {
   diseasesDraft?: Array<Partial<{ id?: string; name?: string; treatmentCost: string; followup: string; workImpact: string }>>;
   disabilitiesDraft?: Array<Partial<{ id?: string; description?: string; workImpact: string; companion: string; treatmentCost: string }>>;
   workCorrection?: { type: string; multiplier: number; educationMultiplier?: number };
+  quranAttendancePercent?: number | null;
 }
 
 export interface WizardFormData {
@@ -224,6 +225,9 @@ function buildHeadPayload(formData: WizardFormData) {
     employmentType: head.employmentType || "NONE",
     educationLevel: head.educationLevel || "ILLITERATE",
     maritalStatus,
+    isPrisoner: head.residencyStatus === "ABSENT_PRISON",
+    prisonTerm: head.residencyStatus === "ABSENT_PRISON" ? (head.prisonTerm || null) : null,
+    prisonSuspicion: head.residencyStatus === "ABSENT_PRISON" ? (head.prisonSuspicion || null) : null,
   };
   return payload;
 }
@@ -396,27 +400,22 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       }
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || String(e);
-      if (msg.includes('nationalId') || msg.includes('National ID') || msg.includes('الرقم القومي')) {
-        toast.error("الرقم القومي المدخل مسجل مسبقاً في النظام. يرجى المراجعة.");
-        let errorFieldId = "";
-        if (currentlySaving === "head") {
-          errorFieldId = formData.socialStatus === "SINGLE_OTHER" ? "wifeNationalId" : "headNationalId";
-        } else if (currentlySaving === "spouse") {
-          errorFieldId = "wifeNationalId";
-        }
-        if (errorFieldId) {
-          setTimeout(() => {
-            const el = document.getElementById(errorFieldId);
-            if (el) {
-              el.focus();
-              el.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-          }, 100);
-        }
-      } else if (msg.includes('Household code already exists') || msg.includes('Unique constraint')) {
-        toast.error("رقم القيد أو الرقم القومي المدخل مسجل مسبقاً لأسرة أخرى. يرجى المراجعة.");
-      } else {
-        toast.error(`تعذر الحفظ: ${msg}`);
+      toast.error(msg);
+      
+      let errorFieldId = "";
+      if (currentlySaving === "head") {
+        errorFieldId = formData.socialStatus === "SINGLE_OTHER" ? "wifeNationalId" : "headNationalId";
+      } else if (currentlySaving === "spouse") {
+        errorFieldId = "wifeNationalId";
+      }
+      if (errorFieldId && (msg.includes('nationalId') || msg.includes('National ID') || msg.includes('الرقم القومي'))) {
+        setTimeout(() => {
+          const el = document.getElementById(errorFieldId);
+          if (el) {
+            el.focus();
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
       }
       set({ autosaveStatus: "error" });
     }
@@ -505,7 +504,14 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       fieldNotes: h.fieldNotes ?? undefined,
       pdfUrl: h.pdfUrl ?? undefined,
       pastSpouses: (h as any).pastSpouses ? (h as any).pastSpouses : undefined,
-      head: uiHead ? { ...uiHead, personId: uiHead.id, hasDisease: (uiHead.diseases?.length ?? 0) > 0, hasDisability: (uiHead.disabilities?.length ?? 0) > 0 } : initialForm.head,
+      head: uiHead ? { 
+        ...uiHead, 
+        personId: uiHead.id, 
+        hasDisease: (uiHead.diseases?.length ?? 0) > 0, 
+        hasDisability: (uiHead.disabilities?.length ?? 0) > 0,
+        prisonTerm: uiHead.prisonTerm ? String(uiHead.prisonTerm) : undefined,
+        prisonSuspicion: uiHead.prisonSuspicion,
+      } : initialForm.head,
       members: otherMembers.map((m) => ({
         ...m,
         hasDisease: (m.diseases?.length ?? 0) > 0,
