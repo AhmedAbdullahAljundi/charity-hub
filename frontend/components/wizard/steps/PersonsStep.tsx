@@ -211,6 +211,9 @@ export function PersonsStep() {
     }
     const member = members[idx];
     const draftMember: any = { ...member };
+    if (draftMember.role === "OTHER") {
+      draftMember.role = "INDEPENDENT";
+    }
     if (draftMember.relationship?.startsWith("OTHER:")) {
       draftMember.otherRelationshipName = draftMember.relationship.substring(6);
       draftMember.relationship = "OTHER";
@@ -299,7 +302,7 @@ export function PersonsStep() {
  brideHasSponsor: member.brideHasSponsor || false,
  isOrphan: member.isOrphan || false,
  isSonContributor: isWorkingSon,
- sonMarried: member.sonMarried || false,
+ sonMarried: member.maritalStatus === "MARRIED",
  sonSameHouse: member.sonSameHouse ?? true,
  isPrisoner: member.isPrisoner || false,
  prisonTerm: member.prisonTerm || null,
@@ -562,7 +565,8 @@ export function PersonsStep() {
 <AnimatePresence>
 {displayMembers.map((m: any, idx) => {
   const mAge = m.nationalId ? extractNationalIdInfo(m.nationalId)?.age : null;
-  const isSpouse = m.role === "SPOUSE";
+  const mappedRole = m.role === "OTHER" ? "INDEPENDENT" : m.role;
+  const isSpouse = mappedRole === "SPOUSE";
   const realIdx = members.indexOf(m as any);
   
   // Handling requested logic for Married Spouse
@@ -575,8 +579,11 @@ export function PersonsStep() {
   // 1. Work
   const empQuality = m.employmentQuality || m.employmentType;
   if (empQuality && empQuality !== "NONE") {
-    const isDependent = !(m.role === "HEAD" && m.gender === "MALE");
-    const workPercent = getWorkCorrectionPercent(empQuality, m.educationLevel, isDependent);
+    const isDependent = !(mappedRole === "HEAD" && m.gender === "MALE");
+    const isIndependentSon = mappedRole === "INDEPENDENT" && m.gender === "MALE" && m.relationship === "SON";
+    const sonSameHouse = m.sonSameHouse ?? true;
+    const sonMarried = m.maritalStatus === "MARRIED";
+    const workPercent = getWorkCorrectionPercent(empQuality, m.educationLevel, isDependent, isIndependentSon, sonMarried, sonSameHouse);
     if (workPercent > 0) {
       progressBarsData.push({
         key: "work",
@@ -675,8 +682,8 @@ export function PersonsStep() {
       exit={{ opacity: 0, scale: 0.95 }}
       className={cn(
         "rounded-xl p-3 shadow-sm border transition-all duration-200 focus-within:ring-2 focus-within:ring-primary relative group flex flex-col bg-card hover:border-primary/40",
-        m.role === "HEAD" && "border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-900/10",
-        m.role === "SPOUSE" && "border-blue-200 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-900/10"
+        mappedRole === "HEAD" && "border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-900/10",
+        mappedRole === "SPOUSE" && "border-blue-200 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-900/10"
       )}
     >
       {/* ROW 1: Header */}
@@ -684,7 +691,7 @@ export function PersonsStep() {
         <div className="min-w-0 pr-2">
           <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5" title={m.name}>
             <span className="truncate">{m.name || t("wizard.persons.noName")}</span>
-            {m.role === "HEAD" && <Crown className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />}
+            {mappedRole === "HEAD" && <Crown className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />}
           </h4>
           
           {/* ROW 2: Relationship + Role + Marital Status + Vulnerabilities */}
@@ -692,9 +699,9 @@ export function PersonsStep() {
             {/* Relationship */}
             {(() => {
               let relLabel = null;
-              if (m.role === "HEAD" || m.role === "SPOUSE") {
+              if (mappedRole === "HEAD" || mappedRole === "SPOUSE") {
                 if (m.maritalStatus === "MARRIED") relLabel = m.gender === "FEMALE" ? "الزوجة" : "الزوج";
-              } else if (m.role === "CHILD") {
+              } else if (mappedRole === "CHILD") {
                 relLabel = m.gender === "FEMALE" ? "ابنة" : "ابن";
               } else if (m.relationship && m.relationship !== "OTHER") {
                 relLabel = t("wizard.persons.relationshipOptions." + m.relationship.toLowerCase().replace(/_([a-z])/g, (g: string) => g[1].toUpperCase()));
@@ -709,22 +716,24 @@ export function PersonsStep() {
             
             {/* Role */}
             <span className="px-1.5 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 font-medium leading-none">
-              {m.role === "HEAD" ? "عائل" : 
-               m.role === "SPOUSE" ? "بالغ معال" : 
-               m.role === "CHILD" ? (m.gender === "FEMALE" ? "ابنة معالة" : "ابن معال") : 
+              {mappedRole === "HEAD" ? "عائل" : 
+               mappedRole === "SPOUSE" ? "بالغ معال" : 
+               mappedRole === "CHILD" ? (m.gender === "FEMALE" ? "ابنة معالة" : "ابن معال") : 
+               mappedRole === "INDEPENDENT" ? (m.gender === "FEMALE" ? "مستقلة" : "مستقل") :
                (m.gender === "FEMALE" ? "بالغة معالة" : "بالغ معال")}
             </span>
             
             {/* Marital Status */}
-            {m.maritalStatus && !(m.maritalStatus === "MARRIED" && (m.role === "HEAD" || m.role === "SPOUSE")) && (
+            {m.maritalStatus && !(m.maritalStatus === "MARRIED" && (mappedRole === "HEAD" || mappedRole === "SPOUSE")) && (
               <span className="px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium leading-none">
                 {t("wizard.persons.maritalOptions." + m.maritalStatus.toLowerCase())}
               </span>
             )}
             
-            {/* Vulnerability Badges */}
-            {(m.isBride || m.isOrphan || m.isDisplaced || m.isPrisoner || m.abroad) && (
-              <div className="flex flex-wrap gap-1 ml-0.5">
+            {/* Vulnerability & Employment Badges */}
+            {(m.isBride || m.isOrphan || m.isDisplaced || m.isPrisoner || m.abroad || ((m as any)._isHeadOrSpouse && (!empQuality || empQuality === "NONE"))) && (
+              <div className="flex flex-wrap gap-1 ml-0.5 mt-1">
+                {((m as any)._isHeadOrSpouse && (!empQuality || empQuality === "NONE")) && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-300 border-0 leading-none">🚫 لا يعمل</Badge>}
                 {m.isBride && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-pink-100 text-pink-700 hover:bg-pink-100 dark:bg-pink-900/30 dark:text-pink-300 border-0 leading-none">💍 {t("personCard.bride") || "عروسة"} {m.brideHasSponsor && <span className="opacity-70 pr-1">{(t("personCard.brideSponsored") || "(مكفولة)")}</span>}</Badge>}
                 {m.isOrphan && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 border-0 leading-none">🕊 {m.gender === "FEMALE" ? (t("personCard.orphanF") || "يتيمة") : (t("personCard.orphan") || "يتيم")}</Badge>}
                 {m.isDisplaced && <Badge className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-300 border-0 leading-none">⚠ {m.gender === "FEMALE" ? (t("personCard.displacedF") || "مشردة") : (t("personCard.displaced") || "مشرد")}</Badge>}
@@ -1017,51 +1026,52 @@ export function PersonsStep() {
  )}
  </div>
 
- {/* Sons working Section */}
- {showSonSection && (
- <div className="border-t pt-4 space-y-4">
- <div className="space-y-4 pl-4 border-r-2 border-green-500/20 bg-green-50/50 p-4 rounded-xl">
- <div className="grid gap-4 sm:grid-cols-2">
-  <div className="space-y-3">
-    <div className="space-y-1.5">
-      <Label className={labelClass}>{t("wizard.persons.education")}</Label>
-      <Select value={draft.educationLevel ?? "ILLITERATE"} onValueChange={(v) => updateDraft("educationLevel", v)}>
-      <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
-      <SelectContent>
-      <SelectItem value="ILLITERATE">{t("wizard.persons.educationOptions.illiterate")}</SelectItem>
-      <SelectItem value="MEDIUM">{t("wizard.persons.educationOptions.medium")}</SelectItem>
-      <SelectItem value="HIGHER_LIMITED">{t("wizard.persons.educationOptions.higherLimited")}</SelectItem>
-      <SelectItem value="HIGHER_STABLE">{t("wizard.persons.educationOptions.higherStable")}</SelectItem>
-      </SelectContent>
-      </Select>
+   {/* Independent Work Correction Section */}
+  {draft.role === "INDEPENDENT" && (
+  <div className="border border-border/60 shadow-sm pt-4 space-y-4 bg-card p-4 rounded-xl mt-6">
+    <div className="flex items-center gap-2 mb-2">
+      <Briefcase className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+      <h3 className="font-semibold text-emerald-900 dark:text-emerald-100 text-sm">{t("wizard.persons.workCorrection")}</h3>
     </div>
-    <div className="space-y-1.5">
-      <Label className={labelClass}>{t("wizard.persons.workType")}</Label>
-      <Select value={draft.employmentType ?? "NONE"} onValueChange={(v) => updateDraft("employmentType", v)}>
-      <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
-      <SelectContent>
-      <SelectItem value="NONE">{t("wizard.persons.workTypeOptions.none")}</SelectItem>
-      <SelectItem value="SEASONAL">{t("wizard.persons.workTypeOptions.seasonal")}</SelectItem>
-      <SelectItem value="REGULAR">{t("wizard.persons.workTypeOptions.regular")}</SelectItem>
-      <SelectItem value="ABROAD_MEDIUM">{t("wizard.persons.workTypeOptions.abroad")}</SelectItem>
-      </SelectContent>
-      </Select>
+    
+    <div className={cn("grid gap-4", isIndependentSon ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+      <div className="flex flex-col justify-center space-y-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+        <Label className={labelClass}>{t("wizard.persons.education")}</Label>
+        <Select value={draft.educationLevel ?? "ILLITERATE"} onValueChange={(v) => updateDraft("educationLevel", v)}>
+        <SelectTrigger className="h-9 text-sm bg-background border-input"><SelectValue /></SelectTrigger>
+        <SelectContent>
+        <SelectItem value="ILLITERATE">{t("wizard.persons.educationOptions.illiterate")}</SelectItem>
+        <SelectItem value="MEDIUM">{t("wizard.persons.educationOptions.medium")}</SelectItem>
+        <SelectItem value="HIGHER_LIMITED">{t("wizard.persons.educationOptions.higherLimited")}</SelectItem>
+        <SelectItem value="HIGHER_STABLE">{t("wizard.persons.educationOptions.higherStable")}</SelectItem>
+        </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-col justify-center space-y-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+        <Label className={labelClass}>{t("wizard.persons.workType")}</Label>
+        <Select value={draft.employmentType ?? "NONE"} onValueChange={(v) => updateDraft("employmentType", v)}>
+        <SelectTrigger className="h-9 text-sm bg-background border-input"><SelectValue /></SelectTrigger>
+        <SelectContent>
+        <SelectItem value="NONE">{t("wizard.persons.workTypeOptions.none")}</SelectItem>
+        <SelectItem value="SEASONAL">{t("wizard.persons.workTypeOptions.seasonal")}</SelectItem>
+        <SelectItem value="REGULAR">{t("wizard.persons.workTypeOptions.regular")}</SelectItem>
+        <SelectItem value="ABROAD_MEDIUM">{t("wizard.persons.workTypeOptions.abroad")}</SelectItem>
+        </SelectContent>
+        </Select>
+      </div>
+
+      {isIndependentSon && (
+        <div className="flex flex-col justify-center space-y-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between h-full pt-1">
+            <Label className={labelClass}>{t("wizard.persons.sameHouse")}</Label>
+            <Switch checked={draft.sonSameHouse ?? true} onCheckedChange={(v) => updateDraft("sonSameHouse", v)} />
+          </div>
+        </div>
+      )}
     </div>
   </div>
- <div className="space-y-3 pt-2">
- <div className="flex items-center justify-between">
- <Label className="text-xs">{t("wizard.persons.isMarried")}</Label>
- <Switch checked={draft.sonMarried ?? false} onCheckedChange={(v) => updateDraft("sonMarried", v)} />
- </div>
- <div className="flex items-center justify-between">
- <Label className="text-xs">{t("wizard.persons.sameHouse")}</Label>
- <Switch checked={draft.sonSameHouse ?? false} onCheckedChange={(v) => updateDraft("sonSameHouse", v)} />
- </div>
- </div>
- </div>
- </div>
- </div>
- )}
+  )}
 
  {/* Vulnerability Conditionals */}
  <div className="border-t pt-4 space-y-4">
@@ -1146,10 +1156,10 @@ export function PersonsStep() {
 
  {/* Health / Disabilities */}
   {draft.role !== "INDEPENDENT" && (
-  <div className="grid gap-4 sm:grid-cols-2 border-t pt-4 bg-rose-50/30 rounded-lg p-3 mt-2">
-    <div>
+  <div className="grid gap-6 sm:grid-cols-2 border-t pt-6 mt-4">
+    <div className="bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
       <div className="flex items-center justify-between">
-        <Label className="flex items-center gap-2 font-semibold text-rose-800"><HeartPulse className="w-4 h-4" />{t("wizard.persons.hasDisease")}</Label>
+        <Label className="flex items-center gap-2 font-semibold text-foreground"><HeartPulse className="w-4 h-4 text-rose-600" />{t("wizard.persons.hasDisease")}</Label>
         <Switch checked={draft.hasDisease ?? false} onCheckedChange={(v) => {
           updateDraft("hasDisease", v);
           if (v) {
@@ -1160,11 +1170,11 @@ export function PersonsStep() {
         }} />
       </div>
       {draft.hasDisease && (
-        <div className="pt-3 mt-2 border-t border-rose-200/50 space-y-3">
+        <div className="pt-4 mt-4 border-t border-border/50 space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs text-rose-800 mb-1.5 block">{t("wizard.burdens.disease.name")} <span className="text-red-500">*</span></Label>
+            <Label className="text-xs text-foreground mb-1.5 block">{t("wizard.burdens.disease.name")} <span className="text-red-500">*</span></Label>
             <Input 
-              className="h-8 text-xs border-rose-200 focus-visible:ring-rose-500/20 bg-white" 
+              className="h-9 text-xs bg-background border-input" 
               placeholder="مثال: سكري، ضغط..." 
               value={draft.diseasesDraft?.[0]?.name ?? ""}
               onChange={(e) => {
@@ -1174,12 +1184,12 @@ export function PersonsStep() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-rose-800">{t("wizard.burdens.disease.treatmentCost")}</Label>
+            <Label className="text-xs text-foreground">{t("wizard.burdens.disease.treatmentCost")}</Label>
             <Select value={draft.diseasesDraft?.[0]?.treatmentCost ?? "NONE"} onValueChange={(v) => {
               const current = draft.diseasesDraft?.[0] || { name: "", followup: "NONE_OR_RARE", workImpact: "NONE" };
               updateDraft("diseasesDraft", [{ ...current, treatmentCost: v }]);
             }}>
-              <SelectTrigger className="h-8 text-xs bg-white border-rose-200"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 text-xs bg-background border-input"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="NONE">{t("wizard.burdens.disease.treatmentOptions.none")}</SelectItem>
                 <SelectItem value="PERIODIC_CHEAP">{t("wizard.burdens.disease.treatmentOptions.cheap")}</SelectItem>
@@ -1189,12 +1199,12 @@ export function PersonsStep() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-rose-800">{t("wizard.burdens.disease.followup")}</Label>
+            <Label className="text-xs text-foreground">{t("wizard.burdens.disease.followup")}</Label>
             <Select value={draft.diseasesDraft?.[0]?.followup ?? "NONE_OR_RARE"} onValueChange={(v) => {
               const current = draft.diseasesDraft?.[0] || { name: "", treatmentCost: "NONE", workImpact: "NONE" };
               updateDraft("diseasesDraft", [{ ...current, followup: v }]);
             }}>
-              <SelectTrigger className="h-8 text-xs bg-white border-rose-200"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 text-xs bg-background border-input"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="NONE_OR_RARE">{t("wizard.burdens.disease.followupOptions.none")}</SelectItem>
                 <SelectItem value="REGULAR">{t("wizard.burdens.disease.followupOptions.regular")}</SelectItem>
@@ -1203,12 +1213,12 @@ export function PersonsStep() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-rose-800">{t("wizard.burdens.disease.workImpact")}</Label>
+            <Label className="text-xs text-foreground">{t("wizard.burdens.disease.workImpact")}</Label>
             <Select value={draft.diseasesDraft?.[0]?.workImpact ?? "NONE"} onValueChange={(v) => {
               const current = draft.diseasesDraft?.[0] || { name: "", treatmentCost: "NONE", followup: "NONE_OR_RARE" };
               updateDraft("diseasesDraft", [{ ...current, workImpact: v }]);
             }}>
-              <SelectTrigger className="h-8 text-xs bg-white border-rose-200"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 text-xs bg-background border-input"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="NONE">{t("wizard.burdens.disease.workImpactOptions.none")}</SelectItem>
                 <SelectItem value="MINOR">{t("wizard.burdens.disease.workImpactOptions.slight")}</SelectItem>
@@ -1221,9 +1231,9 @@ export function PersonsStep() {
       )}
     </div>
 
-    <div>
+    <div className="bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
       <div className="flex items-center justify-between">
-        <Label className="flex items-center gap-2 font-semibold text-orange-800"><Stethoscope className="w-4 h-4" />{t("wizard.persons.hasDisability")}</Label>
+        <Label className="flex items-center gap-2 font-semibold text-foreground"><Stethoscope className="w-4 h-4 text-orange-600" />{t("wizard.persons.hasDisability")}</Label>
         <Switch checked={draft.hasDisability ?? false} onCheckedChange={(v) => {
           updateDraft("hasDisability", v);
           if (v) {
@@ -1234,11 +1244,11 @@ export function PersonsStep() {
         }} />
       </div>
       {draft.hasDisability && (
-        <div className="pt-3 mt-2 border-t border-orange-200/50 space-y-3">
+        <div className="pt-4 mt-4 border-t border-border/50 space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs text-orange-800 mb-1.5 block">{t("wizard.burdens.disability.desc")} <span className="text-red-500">*</span></Label>
+            <Label className="text-xs text-foreground mb-1.5 block">{t("wizard.burdens.disability.desc")} <span className="text-red-500">*</span></Label>
             <Input 
-              className="h-8 text-xs border-orange-200 focus-visible:ring-orange-500/20 bg-white" 
+              className="h-9 text-xs bg-background border-input" 
               placeholder="مثال: إعاقة حركية، بصرية..." 
               value={draft.disabilitiesDraft?.[0]?.description ?? ""}
               onChange={(e) => {
@@ -1248,12 +1258,12 @@ export function PersonsStep() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-orange-800">{t("wizard.burdens.disability.workImpact")}</Label>
+            <Label className="text-xs text-foreground">{t("wizard.burdens.disability.workImpact")}</Label>
             <Select value={draft.disabilitiesDraft?.[0]?.workImpact ?? "NONE"} onValueChange={(v) => {
               const current = draft.disabilitiesDraft?.[0] || { description: "", companion: "NONE", treatmentCost: "NONE" };
               updateDraft("disabilitiesDraft", [{ ...current, workImpact: v }]);
             }}>
-              <SelectTrigger className="h-8 text-xs bg-white border-orange-200"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 text-xs bg-background border-input"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="NONE">{t("wizard.burdens.disability.workImpactOptions.none")}</SelectItem>
                 <SelectItem value="LIMITED">{t("wizard.burdens.disability.workImpactOptions.slight")}</SelectItem>
@@ -1263,12 +1273,12 @@ export function PersonsStep() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-orange-800">{t("wizard.burdens.disability.companion")}</Label>
+            <Label className="text-xs text-foreground">{t("wizard.burdens.disability.companion")}</Label>
             <Select value={draft.disabilitiesDraft?.[0]?.companion ?? "NONE"} onValueChange={(v) => {
               const current = draft.disabilitiesDraft?.[0] || { description: "", workImpact: "NONE", treatmentCost: "NONE" };
               updateDraft("disabilitiesDraft", [{ ...current, companion: v }]);
             }}>
-              <SelectTrigger className="h-8 text-xs bg-white border-orange-200"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 text-xs bg-background border-input"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="NONE">{t("wizard.burdens.disability.companionOptions.none")}</SelectItem>
                 <SelectItem value="OUTSIDE_ONLY">{t("wizard.burdens.disability.companionOptions.outside")}</SelectItem>
@@ -1277,12 +1287,12 @@ export function PersonsStep() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-orange-800">{t("wizard.burdens.disability.treatmentCost")}</Label>
+            <Label className="text-xs text-foreground">{t("wizard.burdens.disability.treatmentCost")}</Label>
             <Select value={draft.disabilitiesDraft?.[0]?.treatmentCost ?? "NONE"} onValueChange={(v) => {
               const current = draft.disabilitiesDraft?.[0] || { description: "", workImpact: "NONE", companion: "NONE" };
               updateDraft("disabilitiesDraft", [{ ...current, treatmentCost: v }]);
             }}>
-              <SelectTrigger className="h-8 text-xs bg-white border-orange-200"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 text-xs bg-background border-input"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="NONE">{t("wizard.burdens.disease.treatmentOptions.none")}</SelectItem>
                 <SelectItem value="PERIODIC_CHEAP">{t("wizard.burdens.disease.treatmentOptions.cheap")}</SelectItem>

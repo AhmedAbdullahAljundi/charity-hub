@@ -42,7 +42,7 @@ function normalizeHousehold(raw) {
       studentLevel: p.studentLevel ?? null,
       alimonyStatus: p.alimonyStatus ?? null,
       isSonContributor: Boolean(p.isSonContributor),
-      sonMarried: Boolean(p.sonMarried),
+      sonMarried: p.maritalStatus === 'MARRIED',
       sonSameHouse: p.sonSameHouse !== false,
       isBride: Boolean(p.isBride),
       brideHasSponsor: Boolean(p.brideHasSponsor),

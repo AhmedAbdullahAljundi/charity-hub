@@ -360,6 +360,12 @@
         "none": "Not Working",
         "abroad": "Traveler"
       },
+      "workCorrectionOptions": {
+        "weak": "Weak work",
+        "seasonal": "Seasonal work",
+        "regular": "Regular work",
+        "none": "None"
+      },
       "sonMarried": "Married?",
       "sonSameHouse": "Lives with family?",
       "brideStatus": "Bride Preparation Status",
@@ -381,7 +387,8 @@
         "light": "Light suspicion",
         "medium": "Medium suspicion",
         "high": "High suspicion",
-        "veryHigh": "Very high suspicion (visible wealth)"
+        "veryHigh": "Very high suspicion",
+        "extreme": "Extreme suspicion (visible wealth)"
       },
       "prisonSuspicionNote": "Negative values reduce vulnerability score when suspecting hidden assets",
       "hasDisease": "Has chronic diseases?",

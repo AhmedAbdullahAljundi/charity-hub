@@ -17,6 +17,21 @@ export const WEIGHTS = {
     UNSTABLE: -0.4,
     SUFFICIENT: -0.6,
   } as Record<string, number>,
+  SON_SINGLE_SAME_HOUSE: {
+    SEASONAL: -0.5,
+    REGULAR: -1.0,
+    ABROAD_MEDIUM: -2.0, // treating ABROAD_MEDIUM as ABROAD
+  } as Record<string, number>,
+  SON_MARRIED_SAME_HOUSE: {
+    SEASONAL: -0.4,
+    REGULAR: -0.7,
+    ABROAD_MEDIUM: -1.5,
+  } as Record<string, number>,
+  SON_MARRIED_OUTSIDE_HOUSE: {
+    SEASONAL: -0.2,
+    REGULAR: -0.5,
+    ABROAD_MEDIUM: -1.0,
+  } as Record<string, number>,
 };
 
 export const EDUCATION_MULTIPLIER = {
@@ -29,12 +44,29 @@ export const EDUCATION_MULTIPLIER = {
 export function getWorkCorrectionPercent(
   employmentType: string,
   educationLevel: string,
-  isDependent: boolean = false
+  isDependent: boolean = false,
+  isIndependentSon: boolean = false,
+  sonMarried: boolean = false,
+  sonSameHouse: boolean = true
 ): number {
   if (!employmentType || employmentType === "NONE") return 0;
   
-  const correctionMap = isDependent ? WEIGHTS.DEPENDENT_CORRECTIONS : WEIGHTS.CORRECTIONS;
-  const rawCorrection = correctionMap[employmentType] || (isDependent ? -0.2 : -0.5);
+  let rawCorrection = 0;
+  
+  if (isIndependentSon) {
+    let table;
+    if (!sonMarried && sonSameHouse) table = WEIGHTS.SON_SINGLE_SAME_HOUSE;
+    else if (sonMarried && sonSameHouse) table = WEIGHTS.SON_MARRIED_SAME_HOUSE;
+    else table = WEIGHTS.SON_MARRIED_OUTSIDE_HOUSE;
+    
+    // Map ABROAD variants to ABROAD_MEDIUM for the table if needed
+    const empKey = employmentType.includes('ABROAD') ? 'ABROAD_MEDIUM' : employmentType;
+    rawCorrection = table[empKey] || -0.2;
+  } else {
+    const correctionMap = isDependent ? WEIGHTS.DEPENDENT_CORRECTIONS : WEIGHTS.CORRECTIONS;
+    rawCorrection = correctionMap[employmentType] || (isDependent ? -0.2 : -0.5);
+  }
+  
   const multiplier = EDUCATION_MULTIPLIER[educationLevel] || 1.0;
   
   const absValue = Math.abs(rawCorrection * multiplier);

@@ -188,18 +188,18 @@ export default function StudentRecordModal({
         <form onSubmit={handleSubmit} className="space-y-8 mt-4">
           
           {/* القسم الأول: إثبات القيد التعليمي */}
-          <div className="space-y-4">
+          <div className="border border-border rounded-xl shadow-sm bg-card">
             <button 
               type="button" 
               onClick={() => setOpenSection1(!openSection1)}
-              className="w-full flex items-center justify-between border-b pb-2 text-lg font-bold text-slate-800"
+              className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors text-base font-semibold text-foreground rounded-t-xl border-b border-border"
             >
               <span>1. إثبات القيد التعليمي</span>
               <ChevronDown className={`w-5 h-5 transition-transform ${openSection1 ? "rotate-180" : ""}`} />
             </button>
             
             {openSection1 && (
-              <div className="space-y-4 pt-2">
+              <div className="space-y-4 p-4">
             {!prefillHouseholdId && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -230,7 +230,7 @@ export default function StudentRecordModal({
                                 <Check className={`mr-2 h-4 w-4 ${selectedHousehold?.id === hh.id ? "opacity-100" : "opacity-0"}`} />
                                 <div className="flex flex-col">
                                   <span>{hh.code}</span>
-                                  <span className="text-xs text-slate-500">{hh.headName} {hh.spouseName ? ` - ${hh.spouseName}` : ""}</span>
+                                  <span className="text-xs text-muted-foreground">{hh.headName} {hh.spouseName ? ` - ${hh.spouseName}` : ""}</span>
                                 </div>
                               </CommandItem>
                             ))}
@@ -272,8 +272,8 @@ export default function StudentRecordModal({
                   </SelectContent>
                 </Select>
                 
-                <div className="flex items-center justify-between pt-2 border-t mt-2 border-slate-100">
-                  <Label className="text-xs text-blue-800">تعليم خاص</Label>
+                <div className="flex items-center justify-between pt-2 border-t mt-2 border-border/50">
+                  <Label className="text-xs text-blue-700 dark:text-blue-400">تعليم خاص</Label>
                   <Switch checked={formData.isSpecialEducation} onCheckedChange={(v) => setFormData({...formData, isSpecialEducation: v})} />
                 </div>
               </div>
@@ -302,7 +302,7 @@ export default function StudentRecordModal({
           </div>
 
           {/* القسم الثاني: النتائج التعليمية */}
-          <div className="space-y-4">
+          <div className="border border-border rounded-xl shadow-sm bg-card mt-6">
             <button 
               type="button" 
               onClick={() => {
@@ -312,17 +312,17 @@ export default function StudentRecordModal({
                 }
                 setOpenSection2(!openSection2);
               }}
-              className={`w-full flex items-center justify-between border-b pb-2 text-lg font-bold ${!isSection1Complete ? "text-slate-400" : "text-slate-800"}`}
+              className={`w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors text-base font-semibold rounded-t-xl border-b border-border ${!isSection1Complete ? "text-muted-foreground opacity-70" : "text-foreground"}`}
             >
               <div className="flex items-center gap-2">
                 <span>2. النتائج التعليمية</span>
-                {!isSection1Complete && <span className="text-xs font-normal text-red-500 bg-red-50 px-2 py-0.5 rounded">مغلق</span>}
+                {!isSection1Complete && <span className="text-xs font-normal text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 px-2 py-0.5 rounded">مغلق</span>}
               </div>
               <ChevronDown className={`w-5 h-5 transition-transform ${openSection2 ? "rotate-180" : ""}`} />
             </button>
 
             {openSection2 && isSection1Complete && (
-              <div className="space-y-4 pt-2">
+              <div className="space-y-4 p-4">
                 <div className="flex items-center justify-between pb-2">
                   <span className="text-sm">طريقة التقييم:</span>
                 <Select value={formData.gradeInputType} onValueChange={(v) => { setFormData({...formData, gradeInputType: v}); setSubjects([]); }}>
@@ -334,23 +334,23 @@ export default function StudentRecordModal({
                 </Select>
               </div>
 
-            <div className="space-y-3 bg-slate-50 p-4 rounded-lg">
+            <div className="space-y-4 mt-4">
               {subjects.map((sub, i) => (
-                <div key={i} className="flex gap-2 items-end">
-                  <div className="flex-1 space-y-1">
-                    <Label className="text-xs">المادة</Label>
-                    <Input value={sub.name} onChange={e => {
+                <div key={i} className="flex gap-3 items-end bg-slate-50 dark:bg-slate-900/50 border border-border/60 p-3 rounded-lg">
+                  <div className="flex-1 space-y-1.5">
+                    <Label className="text-xs text-foreground/80">المادة</Label>
+                    <Input className="h-9 text-sm" value={sub.name} onChange={e => {
                       const newS = [...subjects]; newS[i].name = e.target.value; setSubjects(newS);
                     }} placeholder="اسم المادة" />
                   </div>
                   
                   {formData.gradeInputType === "LETTER" ? (
-                    <div className="w-40 space-y-1">
-                      <Label className="text-xs">التقدير</Label>
+                    <div className="w-40 space-y-1.5">
+                      <Label className="text-xs text-foreground/80">التقدير</Label>
                       <Select value={sub.letterGrade} onValueChange={v => {
                         const newS = [...subjects]; newS[i].letterGrade = v; setSubjects(newS);
                       }}>
-                        <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="اختر" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="EXCELLENT">ممتاز</SelectItem>
                           <SelectItem value="VERY_GOOD">جيد جداً</SelectItem>
@@ -362,22 +362,22 @@ export default function StudentRecordModal({
                     </div>
                   ) : (
                     <>
-                      <div className="w-24 space-y-1">
-                        <Label className="text-xs">الدرجة</Label>
-                        <Input type="number" value={sub.score ?? ""} onChange={e => {
+                      <div className="w-24 space-y-1.5">
+                        <Label className="text-xs text-foreground/80">الدرجة</Label>
+                        <Input className="h-9 text-sm" type="number" value={sub.score ?? ""} onChange={e => {
                           const newS = [...subjects]; newS[i].score = parseFloat(e.target.value); setSubjects(newS);
                         }} />
                       </div>
-                      <div className="w-24 space-y-1">
-                        <Label className="text-xs">من (النهاية)</Label>
-                        <Input type="number" placeholder="100" value={sub.maxScore ?? ""} onChange={e => {
+                      <div className="w-24 space-y-1.5">
+                        <Label className="text-xs text-foreground/80">من (النهاية)</Label>
+                        <Input className="h-9 text-sm" type="number" placeholder="100" value={sub.maxScore ?? ""} onChange={e => {
                           const newS = [...subjects]; newS[i].maxScore = parseFloat(e.target.value); setSubjects(newS);
                         }} />
                       </div>
                     </>
                   )}
                   
-                  <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => {
+                  <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30" onClick={() => {
                     setSubjects(subjects.filter((_, idx) => idx !== i));
                   }}>
                     <Trash2 className="h-4 w-4" />
@@ -394,18 +394,18 @@ export default function StudentRecordModal({
           </div>
 
           {/* القسم الثالث: بيانات القرآن الكريم */}
-          <div className="space-y-4">
+          <div className="border border-border rounded-xl shadow-sm bg-card mt-6">
             <button 
               type="button" 
               onClick={() => setOpenSection3(!openSection3)}
-              className="w-full flex items-center justify-between border-b pb-2 text-lg font-bold text-slate-800"
+              className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors text-base font-semibold text-foreground rounded-t-xl border-b border-border"
             >
               <span>3. بيانات حفظ القرآن الكريم</span>
               <ChevronDown className={`w-5 h-5 transition-transform ${openSection3 ? "rotate-180" : ""}`} />
             </button>
             
             {openSection3 && (
-              <div className="space-y-4 pt-2">
+              <div className="space-y-4 p-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>عدد الأجزاء المحفوظة (من 30)</Label>
@@ -419,11 +419,11 @@ export default function StudentRecordModal({
                   }} 
                   placeholder="مثال: 7.5"
                 />
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="h-2 flex-1 bg-slate-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-green-500" style={{ width: `${quranProgress}%` }} />
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="h-2.5 flex-1 bg-muted rounded-full overflow-hidden border border-border/40">
+                    <div className="h-full bg-emerald-500 dark:bg-emerald-400" style={{ width: `${quranProgress}%` }} />
                   </div>
-                  <span className="text-xs font-bold text-green-700">{quranProgress}%</span>
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{quranProgress}%</span>
                 </div>
               </div>
 
@@ -553,9 +553,9 @@ export default function StudentRecordModal({
             <Input value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
-            <Button type="submit" disabled={loading || !formData.personId} className="bg-green-600 hover:bg-green-700 text-white">
+            <Button type="submit" disabled={loading || !formData.personId} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm px-6">
               {loading ? "جاري الحفظ..." : "حفظ السجل الشامل"}
             </Button>
           </div>
