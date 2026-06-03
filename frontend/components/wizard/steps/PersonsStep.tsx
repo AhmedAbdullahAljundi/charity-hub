@@ -107,7 +107,8 @@ export function PersonsStep() {
     nationalId: fd.wifeNationalId,
     gender: "FEMALE" as const,
     role: "SPOUSE" as const,
-    employmentType: fd.wifeEmploymentQuality,
+    employmentType: fd.wifeEmploymentType,
+    employmentQuality: fd.wifeEmploymentQuality,
     educationLevel: fd.wifeEducationLevel,
     _isHeadOrSpouse: true
   }] : []),
@@ -563,23 +564,26 @@ export function PersonsStep() {
   const mAge = m.nationalId ? extractNationalIdInfo(m.nationalId)?.age : null;
   const isSpouse = m.role === "SPOUSE";
   const realIdx = members.indexOf(m as any);
+  
+  // Handling requested logic for Married Spouse
+  const isMarriedSpouse = isSpouse && m.maritalStatus === "MARRIED";
+  const spouseRelationship = m.gender === "MALE" ? "الزوج" : "الزوجة";
 
   // Progress Bars Logic
-  const progressBars = [];
+  const progressBarsData = [];
   
   // 1. Work
-  if (m.employmentType && m.employmentType !== "NONE") {
-    const workPercent = getWorkCorrectionPercent(m.employmentType, m.educationLevel);
+  const empQuality = m.employmentQuality || m.employmentType;
+  if (empQuality && empQuality !== "NONE") {
+    const isDependent = !(m.role === "HEAD" && m.gender === "MALE");
+    const workPercent = getWorkCorrectionPercent(empQuality, m.educationLevel, isDependent);
     if (workPercent > 0) {
-      progressBars.push(
-        <div key="work" className="space-y-1.5">
-          <div className="flex justify-between items-center gap-1">
-            <span className="text-[10px] font-medium text-foreground opacity-80 truncate">{t("personCard.workRatio") || "نسبة العمل"}</span>
-            <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded-full leading-none shrink-0">{workPercent}%</span>
-          </div>
-          <Progress value={workPercent} indicatorClassName="bg-emerald-500 rounded-full" className="h-1 bg-slate-100 dark:bg-slate-800 rounded-full" dir="rtl" />
-        </div>
-      );
+      progressBarsData.push({
+        key: "work",
+        label: t("personCard.workRatio") || "نسبة العمل",
+        value: workPercent,
+        color: "emerald"
+      });
     }
   }
 
@@ -588,15 +592,12 @@ export function PersonsStep() {
     const diseasePercent = getDiseasePercent(m.diseases);
     if (diseasePercent > 0) {
       const names = m.diseases.map((d: any) => d.name).join("، ");
-      progressBars.push(
-        <div key="disease" className="space-y-1.5">
-          <div className="flex justify-between items-center gap-1">
-            <span className="text-[10px] font-medium text-foreground opacity-80 truncate" title={names}>{names || t("personCard.diseaseScore") || "المرض"}</span>
-            <span className="text-[9px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-900/40 px-1.5 py-0.5 rounded-full leading-none shrink-0">{diseasePercent}%</span>
-          </div>
-          <Progress value={diseasePercent} indicatorClassName="bg-rose-500 rounded-full" className="h-1 bg-slate-100 dark:bg-slate-800 rounded-full" dir="rtl" />
-        </div>
-      );
+      progressBarsData.push({
+        key: "disease",
+        label: names || t("personCard.diseaseScore") || "المرض",
+        value: diseasePercent,
+        color: "rose"
+      });
     }
   }
   
@@ -615,15 +616,12 @@ export function PersonsStep() {
       const surah = m.id && eduScores[m.id]?.quranLastSurah ? ` (${eduScores[m.id]?.quranLastSurah})` : "";
       const studentLabel = `${gradeStr}${levelAr}${surah}`;
       
-      progressBars.push(
-        <div key="edu" className="space-y-1.5">
-          <div className="flex justify-between items-center gap-1">
-            <span className="text-[10px] font-medium text-foreground opacity-80 truncate" title={studentLabel}>{studentLabel}</span>
-            <span className="text-[9px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded-full leading-none shrink-0">{eduPercent}%</span>
-          </div>
-          <Progress value={eduPercent} indicatorClassName="bg-blue-500 rounded-full" className="h-1 bg-slate-100 dark:bg-slate-800 rounded-full" dir="rtl" />
-        </div>
-      );
+      progressBarsData.push({
+        key: "edu",
+        label: studentLabel,
+        value: eduPercent,
+        color: "blue"
+      });
     }
   }
   
@@ -632,17 +630,41 @@ export function PersonsStep() {
     const disabilityPercent = getDisabilityPercent(m.disabilities);
     if (disabilityPercent > 0) {
       const desc = m.disabilities[0]?.description || "";
-      progressBars.push(
-        <div key="disability" className="space-y-1.5">
-          <div className="flex justify-between items-center gap-1">
-            <span className="text-[10px] font-medium text-foreground opacity-80 truncate" title={desc}>{desc || t("personCard.disabilityScore") || "الإعاقة"}</span>
-            <span className="text-[9px] font-bold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/40 px-1.5 py-0.5 rounded-full leading-none shrink-0">{disabilityPercent}%</span>
-          </div>
-          <Progress value={disabilityPercent} indicatorClassName="bg-orange-500 rounded-full" className="h-1 bg-slate-100 dark:bg-slate-800 rounded-full" dir="rtl" />
-        </div>
-      );
+      progressBarsData.push({
+        key: "disability",
+        label: desc || t("personCard.disabilityScore") || "الإعاقة",
+        value: disabilityPercent,
+        color: "orange"
+      });
     }
   }
+
+  const progressBars = progressBarsData.map((pb, i) => {
+    const isOddLast = progressBarsData.length % 2 !== 0 && i === progressBarsData.length - 1;
+    let textCls = "", bgCls = "", indCls = "", trackCls = "";
+    
+    if (pb.color === "emerald") {
+      textCls = "text-emerald-700 dark:text-emerald-300"; bgCls = "bg-emerald-100 dark:bg-emerald-900/40"; indCls = "bg-emerald-500 dark:bg-emerald-400"; trackCls = "bg-emerald-100 dark:bg-emerald-950/50";
+    } else if (pb.color === "rose") {
+      textCls = "text-rose-700 dark:text-rose-300"; bgCls = "bg-rose-100 dark:bg-rose-900/40"; indCls = "bg-rose-500 dark:bg-rose-400"; trackCls = "bg-rose-100 dark:bg-rose-950/50";
+    } else if (pb.color === "blue") {
+      textCls = "text-blue-700 dark:text-blue-300"; bgCls = "bg-blue-100 dark:bg-blue-900/40"; indCls = "bg-blue-500 dark:bg-blue-400"; trackCls = "bg-blue-100 dark:bg-blue-950/50";
+    } else if (pb.color === "orange") {
+      textCls = "text-orange-700 dark:text-orange-300"; bgCls = "bg-orange-100 dark:bg-orange-900/40"; indCls = "bg-orange-500 dark:bg-orange-400"; trackCls = "bg-orange-100 dark:bg-orange-950/50";
+    }
+
+    return (
+      <div key={pb.key} className={cn("space-y-1.5", isOddLast ? "col-span-2" : "")}>
+        <div className="flex justify-between items-center gap-1">
+          <span className="text-[10px] font-medium text-foreground opacity-80 truncate" title={pb.label}>{pb.label}</span>
+          <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0", textCls, bgCls)}>
+            {pb.value}%
+          </span>
+        </div>
+        <Progress value={pb.value} indicatorClassName={cn("rounded-full", indCls)} className={cn("h-1.5 rounded-full", trackCls)} dir="rtl" />
+      </div>
+    );
+  });
 
   return (
     <motion.div
@@ -668,23 +690,34 @@ export function PersonsStep() {
           {/* ROW 2: Relationship + Role + Marital Status + Vulnerabilities */}
           <div className="flex flex-wrap items-center gap-1 mt-1.5 text-[10px]">
             {/* Relationship */}
-            {m.relationship && m.relationship !== "OTHER" && m.role !== "HEAD" && m.role !== "SPOUSE" && (
-              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium leading-none">
-                {t("wizard.persons.relationshipOptions." + m.relationship.toLowerCase().replace(/_([a-z])/g, (g: string) => g[1].toUpperCase()))}
-              </span>
-            )}
+            {(() => {
+              let relLabel = null;
+              if (m.role === "HEAD" || m.role === "SPOUSE") {
+                if (m.maritalStatus === "MARRIED") relLabel = m.gender === "FEMALE" ? "الزوجة" : "الزوج";
+              } else if (m.role === "CHILD") {
+                relLabel = m.gender === "FEMALE" ? "ابنة" : "ابن";
+              } else if (m.relationship && m.relationship !== "OTHER") {
+                relLabel = t("wizard.persons.relationshipOptions." + m.relationship.toLowerCase().replace(/_([a-z])/g, (g: string) => g[1].toUpperCase()));
+              }
+              if (!relLabel) return null;
+              return (
+                <span className="px-1.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-medium leading-none">
+                  {relLabel}
+                </span>
+              );
+            })()}
             
             {/* Role */}
-            <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium leading-none">
-              {m.role === "HEAD" ? (t("personCard.head") || "العائل") : 
-               m.role === "SPOUSE" ? (t("personCard.spouse") || "الزوج/الزوجة") : 
-               m.role === "CHILD" ? t("wizard.persons.child") : 
-               t("wizard.persons.dependent")}
+            <span className="px-1.5 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 font-medium leading-none">
+              {m.role === "HEAD" ? "عائل" : 
+               m.role === "SPOUSE" ? "بالغ معال" : 
+               m.role === "CHILD" ? (m.gender === "FEMALE" ? "ابنة معالة" : "ابن معال") : 
+               (m.gender === "FEMALE" ? "بالغة معالة" : "بالغ معال")}
             </span>
             
             {/* Marital Status */}
-            {m.maritalStatus && m.role !== "HEAD" && m.role !== "SPOUSE" && (
-              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium leading-none">
+            {m.maritalStatus && !(m.maritalStatus === "MARRIED" && (m.role === "HEAD" || m.role === "SPOUSE")) && (
+              <span className="px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium leading-none">
                 {t("wizard.persons.maritalOptions." + m.maritalStatus.toLowerCase())}
               </span>
             )}
@@ -725,10 +758,16 @@ export function PersonsStep() {
 
       {/* ROW 5: Actions Minimal */}
       <div className="flex justify-end gap-1 mt-2 pt-2 border-t border-border/40 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30" onClick={() => openEdit(realIdx)}>
+        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30" onClick={() => {
+          if ((m as any)._isHeadOrSpouse) {
+            useWizardStore.getState().setActiveTab(1);
+          } else {
+            openEdit(realIdx);
+          }
+        }}>
           <Edit2 className="h-3 w-3" />
         </Button>
-        {!((m as any)._isHeadOrSpouse && m.role === "HEAD") && (
+        {!(m as any)._isHeadOrSpouse && (
           <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/30" onClick={() => removeMember(realIdx)}>
             <Trash2 className="h-3 w-3" />
           </Button>

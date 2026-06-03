@@ -16,15 +16,20 @@ const personsService = {
   async create(user, householdId, body) {
     await assertHouseholdAccessById(user, householdId);
     
-    if (body.nationalId) {
+    const sanitizedBody = { ...body };
+    if (sanitizedBody.employmentQuality === 'NONE') {
+      sanitizedBody.employmentQuality = null;
+    }
+
+    if (sanitizedBody.nationalId) {
       const existingPerson = await prisma.person.findFirst({
-        where: { nationalId: body.nationalId },
+        where: { nationalId: sanitizedBody.nationalId },
       });
       if (existingPerson) {
         if (existingPerson.householdId === householdId) {
           const row = await prisma.person.update({
             where: { id: existingPerson.id },
-            data: { ...body, birthDate: body.birthDate ? new Date(body.birthDate) : undefined },
+            data: { ...sanitizedBody, birthDate: sanitizedBody.birthDate ? new Date(sanitizedBody.birthDate) : undefined },
             include: { diseases: true, disabilities: true },
           });
           return serializePerson(row);
@@ -36,7 +41,7 @@ const personsService = {
     }
 
     const row = await prisma.person.create({
-      data: { ...body, nationalId: body.nationalId, householdId, birthDate: body.birthDate ? new Date(body.birthDate) : undefined },
+      data: { ...sanitizedBody, nationalId: sanitizedBody.nationalId, householdId, birthDate: sanitizedBody.birthDate ? new Date(sanitizedBody.birthDate) : undefined },
       include: { diseases: true, disabilities: true },
     });
     return serializePerson(row);
@@ -46,9 +51,14 @@ const personsService = {
     await assertHouseholdAccessById(user, householdId);
     await assertPersonInHousehold(householdId, personId);
 
-    if (body.nationalId) {
+    const sanitizedBody = { ...body };
+    if (sanitizedBody.employmentQuality === 'NONE') {
+      sanitizedBody.employmentQuality = null;
+    }
+
+    if (sanitizedBody.nationalId) {
       const existingPerson = await prisma.person.findFirst({
-        where: { nationalId: body.nationalId },
+        where: { nationalId: sanitizedBody.nationalId },
       });
       if (existingPerson && existingPerson.id !== personId) {
         const { AppError } = require('../../utils/errors');
@@ -63,9 +73,9 @@ const personsService = {
     const row = await prisma.person.update({
       where: { id: personId },
       data: {
-        ...body,
-        nationalId: body.nationalId,
-        birthDate: body.birthDate ? new Date(body.birthDate) : undefined,
+        ...sanitizedBody,
+        nationalId: sanitizedBody.nationalId,
+        birthDate: sanitizedBody.birthDate ? new Date(sanitizedBody.birthDate) : undefined,
       },
       include: { diseases: true, disabilities: true },
     });

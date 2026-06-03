@@ -6,12 +6,16 @@ export const WEIGHTS = {
     NONE: 0,
     WEAK: -0.5,
     SEASONAL: -1.0,
-    UNSTABLE: -1.0,
     REGULAR: -1.5,
-    SUFFICIENT: -1.5,
     ABROAD_WEAK: -2.5,
     ABROAD_MEDIUM: -3.0,
     ABROAD_REGULAR: -3.5,
+  } as Record<string, number>,
+  DEPENDENT_CORRECTIONS: {
+    NONE: 0,
+    WEAK: -0.2,
+    UNSTABLE: -0.4,
+    SUFFICIENT: -0.6,
   } as Record<string, number>,
 };
 
@@ -24,11 +28,13 @@ export const EDUCATION_MULTIPLIER = {
 
 export function getWorkCorrectionPercent(
   employmentType: string,
-  educationLevel: string
+  educationLevel: string,
+  isDependent: boolean = false
 ): number {
   if (!employmentType || employmentType === "NONE") return 0;
   
-  const rawCorrection = WEIGHTS.CORRECTIONS[employmentType] || WEIGHTS.CORRECTIONS.REGULAR;
+  const correctionMap = isDependent ? WEIGHTS.DEPENDENT_CORRECTIONS : WEIGHTS.CORRECTIONS;
+  const rawCorrection = correctionMap[employmentType] || (isDependent ? -0.2 : -0.5);
   const multiplier = EDUCATION_MULTIPLIER[educationLevel] || 1.0;
   
   const absValue = Math.abs(rawCorrection * multiplier);
