@@ -53,6 +53,8 @@ enum MaritalStatus {
   DIVORCED
   WIDOWED
   SINGLE
+  WIDOWED_MARRIED
+  SINGLE_OTHER
 }
 
 enum ResidencyStatus {

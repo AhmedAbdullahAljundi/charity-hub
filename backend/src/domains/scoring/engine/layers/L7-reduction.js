@@ -46,7 +46,7 @@ function calculateL7(ctx) {
   }
 
   for (const person of input.persons) {
-    if (person.isSonContributor) {
+    if (person.isSonContributor && !person.isPrisoner) {
       const empKey = sonEmploymentKey(person.employmentType);
       if (!empKey) continue;
   
@@ -76,7 +76,7 @@ function calculateL7(ctx) {
           final
         )
       );
-    } else if (!person.markedAsL4Processed && (person.role === 'SPOUSE' || person.role === 'INDEPENDENT')) {
+    } else if (!person.markedAsL4Processed && (person.role === 'SPOUSE' || person.role === 'INDEPENDENT') && !person.isPrisoner) {
       // Standard employment correction for Wife or Independent members who aren't son contributors
       if (person.employmentQuality && person.employmentQuality !== 'NONE') {
         const corrRaw = WEIGHTS.DEPENDENT_ADULT.EMPLOYMENT_CORRECTION[person.employmentQuality];

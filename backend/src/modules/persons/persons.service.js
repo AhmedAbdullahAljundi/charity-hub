@@ -40,6 +40,14 @@ const personsService = {
       }
     }
 
+    if (sanitizedBody.isPrisoner === false) {
+      sanitizedBody.prisonTerm = null;
+      sanitizedBody.prisonSuspicion = null;
+    }
+    if (sanitizedBody.isStudent === false) {
+      sanitizedBody.studentLevel = null;
+    }
+
     const row = await prisma.person.create({
       data: { ...sanitizedBody, nationalId: sanitizedBody.nationalId, householdId, birthDate: sanitizedBody.birthDate ? new Date(sanitizedBody.birthDate) : undefined },
       include: { diseases: true, disabilities: true },
@@ -68,6 +76,14 @@ const personsService = {
           throw new AppError('الرقم القومي مسجل بالفعل لفرد في أسرة أخرى', 409, 'CONFLICT_ERROR');
         }
       }
+    }
+
+    if (sanitizedBody.isPrisoner === false) {
+      sanitizedBody.prisonTerm = null;
+      sanitizedBody.prisonSuspicion = null;
+    }
+    if (sanitizedBody.isStudent === false) {
+      sanitizedBody.studentLevel = null;
     }
 
     const row = await prisma.person.update({

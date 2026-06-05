@@ -95,6 +95,30 @@ const householdsService = {
 
   async update(user, id, body) {
     await assertHouseholdAccessById(user, id);
+
+    if (body.socialStatus) {
+      if (body.socialStatus !== 'DIVORCED') {
+        await prisma.person.updateMany({
+          where: { householdId: id, isDisplaced: true },
+          data: { isDisplaced: false },
+        });
+        await prisma.person.updateMany({
+          where: { householdId: id, alimonyStatus: { not: null } },
+          data: { alimonyStatus: null },
+        });
+        body.divorceDocNumber = null;
+        body.divorceYear = undefined;
+      }
+      if (body.socialStatus !== 'WIDOWED' && body.socialStatus !== 'WIDOWED_MARRIED') {
+        await prisma.person.updateMany({
+          where: { householdId: id, isOrphan: true },
+          data: { isOrphan: false },
+        });
+        body.deathCertNumber = null;
+        body.deathDate = undefined;
+      }
+    }
+
     const row = await householdsRepository.update(id, {
       code: body.code,
       familyName: body.familyName,

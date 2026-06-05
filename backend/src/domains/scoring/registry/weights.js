@@ -174,7 +174,7 @@ const LAYER_CAPS = Object.freeze({
   L6_HEALTH: '4.0',
   L7_CORRECTIONS: '-10.0',
   L8_INCOME: '3.0',
-  THEORETICAL_MAX: '25.0',
+  THEORETICAL_MAX: '15.0',
 });
 
 module.exports = { WEIGHTS, LAYER_CAPS };

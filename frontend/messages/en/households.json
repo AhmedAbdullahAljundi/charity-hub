@@ -306,6 +306,7 @@
         "other": "Other Relative",
         "select": "Select relationship"
       },
+      "otherRelationshipName": "Relationship Name (e.g., Nephew, Neighbor)",
       "role": "Member Status",
       "roleOptions": {
         "head": "Head",

@@ -49,7 +49,7 @@ function dependentAdultContribution(person, weights, prefix = 'dependent', skipA
     );
   }
 
-  if (person.employmentQuality) {
+  if (person.employmentQuality && !person.isPrisoner) {
     const corrRaw = WEIGHTS.DEPENDENT_ADULT.EMPLOYMENT_CORRECTION[person.employmentQuality];
     if (corrRaw) {
       const corr = mul(corrRaw, person.educationMultiplier);

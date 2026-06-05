@@ -298,8 +298,8 @@ export function PersonsStep() {
  employmentType,
  employmentQuality: normalizeEmploymentQuality(member.employmentQuality),
  educationLevel: member.educationLevel || "ILLITERATE",
- isStudent: member.isStudent || false,
- studentLevel: member.studentLevel || null,
+ isStudent: member.isPrisoner ? false : (member.isStudent || false),
+ studentLevel: member.isPrisoner ? null : (member.studentLevel || null),
  isSpecialEducation: member.isSpecialEducation || false,
  isBride: member.isBride || false,
  brideHasSponsor: member.brideHasSponsor || false,
@@ -563,7 +563,8 @@ export function PersonsStep() {
   const isDisplacedReason = flags.hasDivorce || flags.hasPrison || flags.absenceReason === "other";
   const showDisplaced = isDisplacedReason && draft.role === "CHILD";
   const showSonSection = isIndependentSon;
-  const showPrisonerToggle = draft.role === "INDEPENDENT" || draft.role === "DEPENDENT_ADULT";
+  const genderForPrison = draft.gender || (draft.nationalId ? extractNationalIdInfo(draft.nationalId)?.gender : "MALE");
+  const showPrisonerToggle = genderForPrison !== "FEMALE" && (draft.role === "INDEPENDENT" || draft.role === "DEPENDENT_ADULT");
 
  const inputClass = "h-9 text-sm focus-visible:ring-2 focus-visible:ring-green-500/20 focus-visible:border-green-400";
  const labelClass = "text-sm font-medium";
@@ -594,7 +595,7 @@ export function PersonsStep() {
     const isIndependentSon = mappedRole === "INDEPENDENT" && m.gender === "MALE" && m.relationship === "SON";
     const sonSameHouse = m.sonSameHouse ?? true;
     const sonMarried = m.maritalStatus === "MARRIED";
-    const workPercent = getWorkCorrectionPercent(empQuality, m.educationLevel, isDependent, isIndependentSon, sonMarried, sonSameHouse);
+    const workPercent = getWorkCorrectionPercent(empQuality, m.educationLevel, isDependent, isIndependentSon, sonMarried, sonSameHouse, m.isPrisoner);
     if (workPercent > 0) {
       progressBarsData.push({
         key: "work",

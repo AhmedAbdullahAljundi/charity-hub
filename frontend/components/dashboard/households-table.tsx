@@ -41,20 +41,20 @@ interface HouseholdsTableProps {
   pagination: { page: number; pages: number } | null;
 }
 
-function SortableHeader({ 
-  title, 
-  column, 
-  currentSort, 
-  onToggle 
-}: { 
-  title: string; 
-  column: string; 
-  currentSort: string | null; 
+function SortableHeader({
+  title,
+  column,
+  currentSort,
+  onToggle
+}: {
+  title: string;
+  column: string;
+  currentSort: string | null;
   onToggle: (col: string) => void;
 }) {
   const isActive = currentSort === column;
   return (
-    <TableHead 
+    <TableHead
       className="cursor-pointer hover:bg-muted/50 transition-colors group select-none"
       onClick={() => onToggle(column)}
     >
@@ -178,7 +178,7 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
             {list.map((h) => {
               const head = h.persons?.find((p) => p.role === "HEAD" || p.isHead);
               const spouse = h.persons?.find((p) => p.role === "SPOUSE");
-              
+
               // Safe access for custom properties
               const anyHead = head as any;
               const anySpouse = spouse as any;
@@ -193,7 +193,7 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
               ).length;
 
               const totalIncome = (h.incomeSources || []).reduce((sum, s) => sum + Number(s.monthlyAmount || 0), 0);
-              
+
               const score = h.scoreResults?.[0];
               const percent = score ? Number(score.normalizedPercent) : 0;
               const rec = score?.systemRecommendation as keyof typeof ELIGIBILITY_TAILWIND | undefined;
@@ -230,7 +230,7 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
                         phones.slice(0, 2).map((phone: string, idx: number) => (
                           <a
                             key={idx}
-                            href={`https://api.whatsapp.com/send?phone=+2${phone}`}
+                            href={`https://web.whatsapp.com/send/?phone=+2${phone}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-green-600 transition-colors"
@@ -254,8 +254,8 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
                   <TableCell>
                     {score ? (
                       <div className="flex items-center gap-2 w-full max-w-[120px]">
-                        <Progress 
-                          value={percent} 
+                        <Progress
+                          value={percent}
                           className="h-1.5 flex-1"
                           indicatorColor={rec ? ELIGIBILITY_COLORS[rec] : undefined}
                         />
@@ -304,16 +304,16 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
         <Pagination className="justify-center pt-2">
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious 
+              <PaginationPrevious
                 onClick={() => updatePage(Math.max(1, currentPage - 1))}
-                className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} 
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
               />
             </PaginationItem>
             <div className="text-sm text-muted-foreground px-4">
               صفحة {currentPage} من {totalPages}
             </div>
             <PaginationItem>
-              <PaginationNext 
+              <PaginationNext
                 onClick={() => updatePage(Math.min(totalPages, currentPage + 1))}
                 className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
               />

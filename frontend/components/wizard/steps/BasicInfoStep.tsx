@@ -315,6 +315,26 @@ export function BasicInfoStep() {
   setField("marriageCount", 1);
   setField("pastSpouses", []);
   }
+
+  if (v !== "DIVORCED") {
+    setField("divorceDocNumber", undefined);
+    setField("divorceYear", undefined);
+    const fdState = useWizardStore.getState().formData;
+    if (fdState.members) {
+      const cleanedMembers = fdState.members.map((m: any) => ({ ...m, isDisplaced: false, alimonyStatus: undefined }));
+      setField("members", cleanedMembers);
+    }
+  }
+
+  if (v !== "WIDOWED" && v !== "WIDOWED_MARRIED") {
+    setField("deathCertNumber", undefined);
+    setField("deathDate", undefined);
+    const fdState = useWizardStore.getState().formData;
+    if (fdState.members) {
+      const cleanedMembers = fdState.members.map((m: any) => ({ ...m, isOrphan: false }));
+      setField("members", cleanedMembers);
+    }
+  }
  }}>
  <SelectTrigger className={inputClass}><SelectValue placeholder={t("wizard.basic.socialOptions.select")} /></SelectTrigger>
  <SelectContent>

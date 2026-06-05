@@ -47,9 +47,10 @@ export function getWorkCorrectionPercent(
   isDependent: boolean = false,
   isIndependentSon: boolean = false,
   sonMarried: boolean = false,
-  sonSameHouse: boolean = true
+  sonSameHouse: boolean = true,
+  isPrisoner: boolean = false
 ): number {
-  if (!employmentType || employmentType === "NONE") return 0;
+  if (isPrisoner || !employmentType || employmentType === "NONE") return 0;
   
   let rawCorrection = 0;
   

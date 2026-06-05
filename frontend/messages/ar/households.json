@@ -313,6 +313,7 @@
         "other": "قريب آخر",
         "select": "اختر الصلة"
       },
+      "otherRelationshipName": "اسم الصلة (مثال: ابن أخت، جارة)",
       "role": "حالة الفرد",
       "roleOptions": {
         "head": "عائل",

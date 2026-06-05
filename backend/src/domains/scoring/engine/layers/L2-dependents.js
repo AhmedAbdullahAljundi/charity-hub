@@ -63,7 +63,7 @@ function calculateL2(ctx) {
       }
       
       // 3. Employment Correction (if >= 15 and has employment)
-      if (person.age >= 15 && person.employmentQuality && person.employmentQuality !== 'NONE') {
+      if (person.age >= 15 && person.employmentQuality && person.employmentQuality !== 'NONE' && !person.isPrisoner) {
         const corrRaw = require('../../registry/weights').WEIGHTS.DEPENDENT_ADULT.EMPLOYMENT_CORRECTION[person.employmentQuality];
         if (corrRaw) {
           const corr = require('../utils/layer-helpers').mul(corrRaw, person.educationMultiplier);
