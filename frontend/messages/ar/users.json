@@ -1,7 +1,8 @@
 {
   "title": "المستخدمين والصلاحيات",
   "subtitle": "إدارة حسابات المستخدمين وصلاحياتهم",
-  "registerUser": "تسجيل مستخدم",
+  "registerUser": "إضافة مستخدم",
+  "addBtn": "إضافة مستخدم",
   "toastComingSoon": "ميزة تسجيل مستخدم قيد التطوير",
   "stats": {
     "total": "إجمالي المستخدمين",
@@ -11,28 +12,66 @@
   "searchPlaceholder": "بحث بالاسم أو البريد أو الصلاحية…",
   "table": {
     "user": "المستخدم",
-    "role": "الصلاحية",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "role": "الدور",
     "status": "الحالة",
     "lastLogin": "آخر دخول",
+    "created": "تاريخ الإنشاء",
     "actions": "إجراءات"
   },
   "menu": {
     "open": "خيارات",
     "edit": "تعديل البيانات",
-    "changeRole": "تغيير الصلاحيات",
-    "disable": "تعطيل الحساب"
+    "changeRole": "تغيير الدور",
+    "disable": "تعطيل الحساب",
+    "enable": "تفعيل الحساب"
   },
   "roles": {
-    "super_admin": "مدير عام",
-    "volunteer_field": "متطوع - أبحاث ميدانية",
-    "volunteer_data": "متطوع - إدخال بيانات",
-    "volunteer_medical": "متطوع - صرف علاج",
-    "volunteer_edu": "متطوع - متابعة تعليمية",
-    "viewer": "مشاهد فقط"
+    "ADMIN": "مدير النظام",
+    "SUPERVISOR": "مشرف",
+    "WORKER": "موظف إدخال",
+    "VIEWER": "مستعرض"
   },
   "status": {
     "active": "نشط",
-    "inactive": "غير نشط"
+    "inactive": "معطل"
+  },
+  "modal": {
+    "addTitle": "إضافة مستخدم جديد",
+    "editTitle": "تعديل بيانات المستخدم",
+    "name": "الاسم الكامل",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "role": "الدور",
+    "passwordHint": "8 أحرف على الأقل",
+    "customPermissions": "الصلاحيات المخصصة",
+    "permissionsNote": "الصلاحيات الإضافية تُمنح فوق صلاحيات الدور",
+    "grantedByRole": "ممنوح بالفعل من خلال الدور"
+  },
+  "confirmRoleChange": "هل تريد تغيير دور {name} إلى {role}؟",
+  "resetPassword": "إعادة تعيين كلمة المرور",
+  "deactivate": "تعطيل الحساب",
+  "activate": "تفعيل الحساب",
+  "effectivePermissions": "الصلاحيات الفعلية",
+  "resetRequests": {
+    "banner": "{count} مستخدم طلب استعادة كلمة المرور",
+    "viewBtn": "عرض الطلبات",
+    "tabAll": "الكل",
+    "tabPending": "طلبات الاستعادة",
+    "badge": "طلب استعادة",
+    "setTempBtn": "تعيين كلمة مؤقتة",
+    "modal": {
+      "title": "تعيين كلمة مرور مؤقتة",
+      "for": "للمستخدم",
+      "generate": "توليد تلقائي",
+      "copy": "نسخ",
+      "copied": "تم النسخ ✓",
+      "warning": "أخبر المستخدم بكلمة المرور هذه مباشرة",
+      "warningNote": "سيُطلب منه تغييرها فور تسجيل الدخول",
+      "confirm": "تأكيد التعيين",
+      "successToast": "تم تعيين كلمة المرور المؤقتة لـ {name}"
+    }
   },
   "demo": {
     "u1_name": "مدير النظام",

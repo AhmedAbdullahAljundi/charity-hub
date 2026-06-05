@@ -168,6 +168,7 @@
       "wifeSection": "Wife Information",
       "wifeName": "Wife's Full Name (Triple)",
       "wifeNid": "National ID",
+      "nidInvalid": "National ID is invalid",
       "socialStatus": "Marital Status",
       "socialOptions": {
         "married": "Married",

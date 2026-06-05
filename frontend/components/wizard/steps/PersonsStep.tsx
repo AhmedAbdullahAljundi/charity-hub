@@ -70,9 +70,9 @@ function extractNationalIdInfo(nid: string) {
 }
 
 function normalizeRole(role?: string) {
- if (role === "HEAD" || role === "SPOUSE" || role === "DEPENDENT_ADULT" || role === "CHILD") return role;
+ if (role === "HEAD" || role === "SPOUSE" || role === "DEPENDENT_ADULT" || role === "CHILD" || role === "INDEPENDENT") return role;
  if (role === "زوج" || role === "زوجة") return "SPOUSE";
- if (role === "مستقل" || role === "INDEPENDENT") return "OTHER";
+ if (role === "مستقل") return "INDEPENDENT";
  return "OTHER";
 }
 
@@ -101,7 +101,7 @@ export function PersonsStep() {
  const members = fd.members ?? [];
  const displayMembers = [
   ...(fd.head?.name ? [{ ...fd.head, id: fd.head.personId, _isHeadOrSpouse: true, role: "HEAD" as const }] : []),
-  ...(fd.wifeName ? [{
+  ...(fd.wifeName && fd.socialStatus !== "SINGLE_OTHER" ? [{
     id: fd.wifePersonId,
     name: fd.wifeName,
     nationalId: fd.wifeNationalId,
@@ -577,7 +577,7 @@ export function PersonsStep() {
 <AnimatePresence>
 {displayMembers.map((m: any, idx) => {
   const mAge = m.nationalId ? extractNationalIdInfo(m.nationalId)?.age : null;
-  const mappedRole = m.role === "OTHER" ? "INDEPENDENT" : m.role;
+  const mappedRole = m.role;
   const isSpouse = mappedRole === "SPOUSE";
   const realIdx = members.indexOf(m as any);
   

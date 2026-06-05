@@ -1,5 +1,6 @@
 /**
- * Authentication — JWT access + refresh with rotation (Phase 3).
+ * Authentication — JWT access + refresh with rotation.
+ * Supports: login, refresh, logout, forgot-password, change-password, custom permissions.
  */
 
 const crypto = require('crypto');
@@ -8,7 +9,7 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../../config/prisma');
 const config = require('../../config/env');
 const { AuthError } = require('../../utils/errors');
-const { permissionsForRole } = require('../../shared/permissions');
+const { permissionsForUser } = require('../../shared/permissions');
 
 const REFRESH_DAYS = 7;
 
@@ -22,6 +23,8 @@ function signAccessToken(user) {
       userId: user.id,
       email: user.email,
       role: user.role,
+      customPermissions: user.customPermissions || [],
+      mustChangePassword: user.mustChangePassword || false,
       type: 'access',
     },
     config.jwt.accessSecret,
@@ -106,7 +109,15 @@ function sanitizeUser(user) {
     preferredLocale: user.preferredLocale,
     assignedGovernorate: user.assignedGovernorate,
     assignedDistrict: user.assignedDistrict,
-    permissions: permissionsForRole(user.role),
+    customPermissions: user.customPermissions || [],
+    mustChangePassword: user.mustChangePassword || false,
+    passwordResetRequest: user.passwordResetRequest || false,
+    lastLoginAt: user.lastLoginAt,
+    active: user.active,
+    permissions: permissionsForUser({
+      role: user.role,
+      customPermissions: user.customPermissions || [],
+    }),
   };
 }
 
@@ -135,6 +146,12 @@ async function login(email, password) {
   if (!valid) {
     throw new AuthError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
   }
+
+  // Update lastLoginAt
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+  });
 
   return issueTokenPair(user);
 }
@@ -175,11 +192,97 @@ async function getUserById(userId) {
   return sanitizeUser(user);
 }
 
+/**
+ * Record a password reset request from the user.
+ * Always returns successfully (prevents email enumeration).
+ */
+async function forgotPassword(email) {
+  const user = await prisma.user.findUnique({
+    where: { email: email.toLowerCase().trim() },
+    select: { id: true, active: true },
+  });
+
+  if (!user || !user.active) {
+    // Return silently — no enumeration
+    return;
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordResetRequest: true,
+      passwordResetAt: new Date(),
+    },
+  });
+
+  // Audit log
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'PASSWORD_RESET_REQUEST',
+        entity: 'User',
+        entityId: user.id,
+      },
+    });
+  } catch {
+    // Non-blocking
+  }
+}
+
+/**
+ * Change password for authenticated user.
+ * Invalidates all refresh tokens on success.
+ */
+async function changePassword(userId, currentPassword, newPassword) {
+  if (newPassword.length < 8) {
+    throw new AuthError('كلمة المرور يجب أن تكون 8 أحرف على الأقل', 400, 'WEAK_PASSWORD');
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new AuthError('User not found', 404, 'USER_NOT_FOUND');
+
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) {
+    throw new AuthError('كلمة المرور الحالية غير صحيحة', 400, 'WRONG_PASSWORD');
+  }
+
+  const same = await bcrypt.compare(newPassword, user.passwordHash);
+  if (same) {
+    throw new AuthError('كلمة المرور الجديدة يجب أن تختلف', 400, 'SAME_PASSWORD');
+  }
+
+  const hash = await bcrypt.hash(newPassword, 12);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: hash, mustChangePassword: false },
+  });
+
+  // Invalidate all refresh tokens
+  await prisma.refreshToken.deleteMany({ where: { userId } });
+
+  // Audit log
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: 'PASSWORD_CHANGED',
+        entity: 'User',
+        entityId: userId,
+      },
+    });
+  } catch {
+    // Non-blocking
+  }
+}
+
 module.exports = {
   login,
   refresh,
   logout,
   getUserById,
+  forgotPassword,
+  changePassword,
   verifyAccessToken,
   verifyToken: verifyAccessToken,
   hashToken,

@@ -86,7 +86,7 @@ export function BurdensStep() {
  const disabilities = fd.disabilities ?? [];
  const members = [
   ...(fd.head?.name ? [{ id: fd.head.personId || fd.head.id, _localKey: "head", name: fd.head.name, role: "HEAD", gender: fd.head.gender }] : []),
-  ...(fd.wifeName ? [{ id: fd.wifePersonId, _localKey: "wife", name: fd.wifeName, role: "SPOUSE", gender: "FEMALE" }] : []),
+  ...(fd.wifeName && fd.socialStatus !== "SINGLE_OTHER" ? [{ id: fd.wifePersonId, _localKey: "wife", name: fd.wifeName, role: "SPOUSE", gender: "FEMALE" }] : []),
   ...(fd.members || [])
  ];
  

@@ -19,6 +19,11 @@ export interface ApiUser {
   assignedGovernorate?: string | null;
   assignedDistrict?: string | null;
   permissions?: string[];
+  customPermissions?: string[];
+  mustChangePassword?: boolean;
+  passwordResetRequest?: boolean;
+  lastLoginAt?: string | null;
+  active?: boolean;
 }
 
 export interface AuthTokens {
@@ -27,7 +32,6 @@ export interface AuthTokens {
   expiresIn: string;
   user: ApiUser;
 }
-
 
 export interface PersonDto {
   id: string;

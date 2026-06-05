@@ -1,6 +1,6 @@
 const { verifyAccessToken } = require('../modules/auth/auth.service');
 const { AuthError } = require('../utils/errors');
-const { permissionsForRole } = require('../shared/permissions');
+const { permissionsForUser } = require('../shared/permissions');
 const config = require('../config/env');
 
 async function requireAuth(req, res, next) {
@@ -15,7 +15,8 @@ async function requireAuth(req, res, next) {
           userId: 'dev-admin',
           email: 'admin@system.local',
           role: 'ADMIN',
-          permissions: permissionsForRole('ADMIN'),
+          customPermissions: [],
+          permissions: permissionsForUser({ role: 'ADMIN', customPermissions: [] }),
         };
         return next();
       }
@@ -24,12 +25,15 @@ async function requireAuth(req, res, next) {
 
     const token = authHeader.slice(7);
     const decoded = verifyAccessToken(token);
-    req.user = {
+    const user = {
       userId: decoded.userId,
       email: decoded.email,
       role: decoded.role,
-      permissions: permissionsForRole(decoded.role),
+      customPermissions: decoded.customPermissions || [],
+      mustChangePassword: decoded.mustChangePassword || false,
     };
+    user.permissions = permissionsForUser(user);
+    req.user = user;
     next();
   } catch (error) {
     next(error.isOperational ? error : new AuthError('Invalid token', 401));
@@ -45,12 +49,15 @@ function optionalAttachUser(req, res, next) {
   try {
     const token = authHeader.slice(7);
     const decoded = verifyAccessToken(token);
-    req.user = {
+    const user = {
       userId: decoded.userId,
       email: decoded.email,
       role: decoded.role,
-      permissions: permissionsForRole(decoded.role),
+      customPermissions: decoded.customPermissions || [],
+      mustChangePassword: decoded.mustChangePassword || false,
     };
+    user.permissions = permissionsForUser(user);
+    req.user = user;
   } catch {
     // Unauthenticated for optional attach — route guards still enforce auth
   }

@@ -11,13 +11,16 @@ const router = express.Router();
 router.use(optionalAttachUser);
 router.use(getApiLimiter);
 
-router.use('/auth', require('./../modules/auth/auth.routes'));
-router.use('/households', require('../modules/households/households.routes'));
-router.use('/simulate', require('../modules/simulate/simulate.routes'));
-router.use('/admin', require('../modules/admin/admin.routes'));
-router.use('/analytics', require('../modules/analytics/analytics.routes'));
-router.use('/audit-logs', require('../modules/audit/audit.routes'));
+router.use('/auth',         require('../modules/auth/auth.routes'));
+router.use('/households',   require('../modules/households/households.routes'));
+router.use('/simulate',     require('../modules/simulate/simulate.routes'));
+router.use('/admin',        require('../modules/admin/admin.routes'));
+router.use('/analytics',    require('../modules/analytics/analytics.routes'));
+router.use('/audit-logs',   require('../modules/audit/audit.routes'));
 router.use('/verification', require('../modules/verification/verification.routes'));
-router.use('/education', require('../modules/education/education.routes'));
+router.use('/education',    require('../modules/education/education.routes'));
+router.use('/users',        require('../modules/users/users.routes'));
+router.use('/notifications', require('../modules/notifications/notifications.routes'));
+router.use('/public',       require('../modules/public/public.routes'));
 
 module.exports = router;

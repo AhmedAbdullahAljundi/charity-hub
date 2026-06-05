@@ -29,27 +29,27 @@ const menuGroups = [
   {
     labelKey: "groups.main",
     items: [
-      { key: "dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { key: "households", href: "/dashboard/households", icon: Users },
-      { key: "medical", href: "/dashboard/medical", icon: HeartPulse },
-      { key: "education", href: "/dashboard/education", icon: GraduationCap },
-      { key: "volunteers", href: "/dashboard/volunteers", icon: Heart },
+      { key: "dashboard",   href: "/dashboard",              icon: LayoutDashboard },
+      { key: "households",  href: "/dashboard/households",   icon: Users },
+      { key: "medical",     href: "/dashboard/medical",      icon: HeartPulse },
+      { key: "education",   href: "/dashboard/education",    icon: GraduationCap },
+      { key: "volunteers",  href: "/dashboard/volunteers",   icon: Heart },
     ]
   },
   {
     labelKey: "groups.management",
     items: [
-      { key: "analytics", href: "/dashboard/analytics", icon: BarChart3 },
-      { key: "verification", href: "/dashboard/verification", icon: ShieldCheck, roles: ["ADMIN", "RESEARCHER"] },
-      { key: "reports", href: "/dashboard/reports", icon: FileText },
+      { key: "analytics",     href: "/dashboard/analytics",     icon: BarChart3 },
+      { key: "verification",  href: "/dashboard/verification",  icon: ShieldCheck, roles: ["ADMIN", "SUPERVISOR", "WORKER"] },
+      { key: "reports",       href: "/dashboard/reports",       icon: FileText },
     ]
   },
   {
     labelKey: "groups.system",
     items: [
-      { key: "auditLog", href: "/dashboard/audit", icon: History, roles: ["ADMIN"] },
-      { key: "users", href: "/dashboard/users", icon: Shield, roles: ["ADMIN"] },
-      { key: "ruleEditor", href: "/dashboard/admin/rules", icon: Settings, roles: ["ADMIN"] },
+      { key: "auditLog",    href: "/dashboard/audit",        icon: History,  roles: ["ADMIN", "SUPERVISOR"] },
+      { key: "users",       href: "/dashboard/users",        icon: Shield,   roles: ["ADMIN"] },
+      { key: "ruleEditor",  href: "/dashboard/admin/rules",  icon: Settings, roles: ["ADMIN"] },
     ]
   }
 ];

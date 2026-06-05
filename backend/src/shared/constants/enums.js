@@ -63,6 +63,7 @@ const PersonRole = Object.freeze({
   SPOUSE: 'SPOUSE',
   CHILD: 'CHILD',
   DEPENDENT_ADULT: 'DEPENDENT_ADULT',
+  INDEPENDENT: 'INDEPENDENT',
   OTHER: 'OTHER',
 });
 

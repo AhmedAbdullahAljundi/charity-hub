@@ -1,0 +1,32 @@
+// Mirror of backend/src/shared/permissions.js — keep in sync!
+export const PERMISSIONS = {
+  HOUSEHOLD_READ:     "household:read",
+  HOUSEHOLD_WRITE:    "household:write",
+  HOUSEHOLD_DELETE:   "household:delete",
+  HOUSEHOLD_PUBLISH:  "household:publish",
+  PERSON_WRITE:       "person:write",
+  PERSON_DELETE:      "person:delete",
+  INCOME_WRITE:       "income:write",
+  INCOME_VERIFY:      "income:verify",
+  INCOME_DELETE:      "income:delete",
+  BURDEN_WRITE:       "burden:write",
+  SCORE_CALCULATE:    "score:calculate",
+  SCORE_READ:         "score:read",
+  SCORE_DECIDE:       "score:decide",
+  SCORE_SIMULATE:     "score:simulate",
+  RULES_READ:         "rules:read",
+  RULES_WRITE:        "rules:write",
+  ANALYTICS_READ:     "analytics:read",
+  AUDIT_READ:         "audit:read",
+  VERIFICATION_READ:  "verification:read",
+  VERIFICATION_WRITE: "verification:write",
+  VERIFICATION_BULK:  "verification:bulk",
+  EDUCATION_READ:     "education:read",
+  EDUCATION_WRITE:    "education:write",
+  EDUCATION_DELETE:   "education:delete",
+  USER_READ:          "user:read",
+  USER_WRITE:         "user:write",
+  USER_DELETE:        "user:delete",
+} as const;
+
+export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];

@@ -10,7 +10,6 @@
 export * from "./stores/constants";
 export { useAuthStore } from "./stores/authStore";
 export * from "./stores/dashboard";
-export * from "./stores/families";
 export * from "./stores/householdStore";
 export * from "./stores/wizardStore";
 export * from "./stores/scoringStore";

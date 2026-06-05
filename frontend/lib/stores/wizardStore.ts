@@ -129,7 +129,7 @@ function deriveFlags(form: WizardFormData): ConditionalFlags {
   else if (absent) mappedReason = "other";
 
   const members = form.members ?? [];
-  const socialStatusDivorce = form.socialStatus === "DIVORCED" || form.socialStatus === ("مطلقة" as any) || form.socialStatus === "DIVORCE" as any;
+  const socialStatusDivorce = form.socialStatus === "DIVORCED";
 
   return {
     headIsAbsent: absent,
@@ -352,17 +352,50 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         await updateHousehold(id, payload);
       }
 
+      const isSingleNow = formData.socialStatus === "SINGLE_OTHER";
+      
+      let headId = formData.head?.personId || formData.head?.id;
+      let spouseId = formData.wifePersonId;
+
+      if (isSingleNow) {
+        // If transitioning to SINGLE_OTHER, the wife becomes the HEAD.
+        const oldHusbandId = headId;
+        headId = spouseId || oldHusbandId;
+        
+        // If there was an old husband distinct from the wife, delete him.
+        if (id && oldHusbandId && oldHusbandId !== spouseId) {
+          try {
+            const { deletePerson } = await import("@/lib/api/households-api");
+            await deletePerson(id, oldHusbandId);
+          } catch (e) {
+            console.error("Failed to delete old husband", e);
+          }
+        }
+      } else {
+        // If not SINGLE_OTHER, the wife is the SPOUSE, husband is HEAD.
+        // If they were SINGLE_OTHER before, headId and spouseId point to the same Wife person.
+        // We must split them: Wife keeps her ID as SPOUSE, Husband gets a new ID (created).
+        if (headId === spouseId) {
+          headId = undefined; // Force create new husband
+        }
+      }
+
       const headPayload = buildHeadPayload(formData);
       if (id && headPayload?.birthDate) {
         currentlySaving = "head";
-        const headId = formData.head?.personId || formData.head?.id;
         const savedHead = headId
           ? await updatePerson(id, headId, headPayload)
           : await createPerson(id, headPayload);
+          
         const nextFormData = {
           ...get().formData,
           head: { ...get().formData.head, ...savedHead, personId: savedHead.id },
         };
+        
+        if (isSingleNow) {
+          nextFormData.wifePersonId = savedHead.id;
+        }
+        
         set({
           formData: nextFormData,
           conditionalFlags: deriveFlags(nextFormData),
@@ -372,7 +405,6 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       const spousePayload = buildSpousePayload(formData);
       if (id && spousePayload && spousePayload.birthDate) {
         currentlySaving = "spouse";
-        const spouseId = formData.wifePersonId;
         const savedSpouse = spouseId 
           ? await updatePerson(id, spouseId, spousePayload)
           : await createPerson(id, spousePayload);

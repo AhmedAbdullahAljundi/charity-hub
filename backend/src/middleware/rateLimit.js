@@ -9,6 +9,15 @@ const loginLimiter = rateLimit({
   keyGenerator: (req) => req.ip || req.socket.remoteAddress || 'unknown',
 });
 
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, code: 'RATE_LIMIT', message: 'Too many reset requests' },
+  keyGenerator: (req) => req.ip || req.socket.remoteAddress || 'unknown',
+});
+
 function userKeyGenerator(req) {
   if (req.user?.userId) return req.user.userId;
   return req.ip || 'anonymous';
@@ -35,6 +44,8 @@ const getApiLimiter = rateLimit({
 
 module.exports = {
   loginLimiter,
+  forgotPasswordLimiter,
   calculateLimiter,
   getApiLimiter,
 };
+

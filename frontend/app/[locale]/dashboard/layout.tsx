@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useLocale } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
+import { useAuthStore } from "@/lib/stores/authStore";
 import { AppSidebar } from "@/components/app-sidebar";
+import { ForcePasswordChange } from "@/components/ForcePasswordChange";
 import { cn } from "@/lib/utils";
 
 const Topbar = dynamic(() => import("@/components/topbar").then((m) => m.Topbar), {
@@ -15,6 +17,24 @@ const Topbar = dynamic(() => import("@/components/topbar").then((m) => m.Topbar)
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/");
+    }
+  }, [isAuthenticated, router]);
+
+  // Block dashboard entirely if user must change password
+  if (user?.mustChangePassword) {
+    return <ForcePasswordChange />;
+  }
+
+  // Prevent rendering dashboard content until redirect happens
+  if (!isAuthenticated) {
+    return null; 
+  }
 
   return (
     <div className="flex min-h-screen flex-row">

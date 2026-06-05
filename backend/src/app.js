@@ -66,10 +66,7 @@ app.get('/api/health', async (req, res) => {
 // Phase 3 API (primary)
 app.use('/api', require('./routes/api'))
 
-// Legacy v1 (pre-Phase-1 schema) — opt-in; disabled by default
-if (config.api.enableLegacyV1) {
-  app.use('/api/v1', require('./routes/api.v1'))
-}
+// Legacy v1 removed
 
 // 404 handler
 app.use(notFoundHandler)

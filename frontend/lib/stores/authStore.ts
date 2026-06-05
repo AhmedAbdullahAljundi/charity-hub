@@ -42,13 +42,14 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         const rt = get().refreshToken || localStorage.getItem(REFRESH_KEY);
-        try {
-          if (rt) await logoutApi(rt);
-        } catch {
-          /* ignore */
-        }
+        // Clear local state IMMEDIATELY for instant UI response
         clearAuthTokens();
         set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
+        
+        // Fire and forget the backend logout
+        if (rt) {
+          logoutApi(rt).catch(() => { /* ignore */ });
+        }
       },
 
       refreshTokenAction: async () => {

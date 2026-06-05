@@ -1,45 +1,84 @@
 {
-  "title": "Users & permissions",
-  "subtitle": "Manage user accounts and roles",
-  "registerUser": "Register user",
-  "toastComingSoon": "User registration is not available yet.",
+  "title": "Users & Permissions",
+  "subtitle": "Manage user accounts and their permissions",
+  "registerUser": "Add User",
+  "addBtn": "Add User",
+  "toastComingSoon": "User registration feature is under development",
   "stats": {
-    "total": "Total users",
+    "total": "Total Users",
     "active": "Active",
     "inactive": "Inactive"
   },
   "searchPlaceholder": "Search by name, email, or role…",
   "table": {
     "user": "User",
+    "name": "Name",
+    "email": "Email",
     "role": "Role",
     "status": "Status",
-    "lastLogin": "Last login",
+    "lastLogin": "Last Login",
+    "created": "Created",
     "actions": "Actions"
   },
   "menu": {
     "open": "Options",
-    "edit": "Edit profile",
-    "changeRole": "Change permissions",
-    "disable": "Deactivate account"
+    "edit": "Edit Info",
+    "changeRole": "Change Role",
+    "disable": "Disable Account",
+    "enable": "Enable Account"
   },
   "roles": {
-    "super_admin": "Super admin",
-    "volunteer_field": "Volunteer — field research",
-    "volunteer_data": "Volunteer — data entry",
-    "volunteer_medical": "Volunteer — medical disbursement",
-    "volunteer_edu": "Volunteer — education follow-up",
-    "viewer": "Read-only"
+    "ADMIN": "System Admin",
+    "SUPERVISOR": "Supervisor",
+    "WORKER": "Data Entry",
+    "VIEWER": "Viewer"
   },
   "status": {
     "active": "Active",
     "inactive": "Inactive"
   },
+  "modal": {
+    "addTitle": "Add New User",
+    "editTitle": "Edit User",
+    "name": "Full Name",
+    "email": "Email Address",
+    "password": "Password",
+    "role": "Role",
+    "passwordHint": "At least 8 characters",
+    "customPermissions": "Custom Permissions",
+    "permissionsNote": "Extra permissions granted on top of role permissions",
+    "grantedByRole": "Already granted by role"
+  },
+  "confirmRoleChange": "Change {name}'s role to {role}?",
+  "resetPassword": "Reset Password",
+  "deactivate": "Deactivate Account",
+  "activate": "Activate Account",
+  "effectivePermissions": "Effective Permissions",
+  "resetRequests": {
+    "banner": "{count} user(s) requested a password reset",
+    "viewBtn": "View Requests",
+    "tabAll": "All",
+    "tabPending": "Reset Requests",
+    "badge": "Reset Requested",
+    "setTempBtn": "Set Temp Password",
+    "modal": {
+      "title": "Set Temporary Password",
+      "for": "For",
+      "generate": "Auto Generate",
+      "copy": "Copy",
+      "copied": "Copied ✓",
+      "warning": "Share this password directly with the user",
+      "warningNote": "They will be required to change it on next login",
+      "confirm": "Confirm & Set",
+      "successToast": "Temporary password set for {name}"
+    }
+  },
   "demo": {
-    "u1_name": "System administrator",
-    "u2_name": "Amr Hossam",
-    "u3_name": "Noura Mohamed",
-    "u4_name": "Khaled Abdel Aziz",
-    "u5_name": "Hind Ahmed",
-    "u6_name": "Somaya Adel"
+    "u1_name": "System Admin",
+    "u2_name": "Amr Husam El-Din",
+    "u3_name": "Nora Mohamed Said",
+    "u4_name": "Khaled Abdulaziz",
+    "u5_name": "Hend Ahmed Fathy",
+    "u6_name": "Somaya Adel Hassan"
   }
 }

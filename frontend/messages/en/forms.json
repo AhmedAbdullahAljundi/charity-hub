@@ -43,8 +43,55 @@
     "toggleHidePassword": "Hide password",
     "toggleShowPassword": "Show password",
     "demoHintTitle": "Demo credentials:",
-    "errorInvalid": "Invalid credentials. Try: admin@charityhub.org / 123456",
+    "errorInvalid": "Invalid email or password",
     "errorNetwork": "Could not reach the server",
-    "demoAdminName": "System administrator"
+    "demoAdminName": "System administrator",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Reset Password",
+    "forgotSubtitle": "Enter your email and the admin will contact you",
+    "forgotSubmit": "Send Request",
+    "forgotLoading": "Sending...",
+    "forgotSuccessTitle": "Request Sent",
+    "forgotSuccessMsg1": "Your password reset request has been recorded.",
+    "forgotSuccessMsg2": "The admin will review and set a temporary password for you.",
+    "forgotSuccessMsg3": "Contact the admin if you don't receive a response within 24 hours.",
+    "backToLogin": "Back to Sign In"
+  },
+  "forceChange": {
+    "title": "Password Change Required",
+    "subtitle": "A temporary password was set for you. You must change it before continuing.",
+    "currentLabel": "Current Password (Temporary)",
+    "newLabel": "New Password",
+    "confirmLabel": "Confirm New Password",
+    "mismatch": "Passwords do not match",
+    "submit": "Change Password & Continue",
+    "loading": "Saving...",
+    "cannotSkip": "This step cannot be skipped",
+    "success": "Password changed successfully",
+    "rules": {
+      "length": "At least 8 characters",
+      "number": "Contains numbers",
+      "upper": "Contains uppercase letters",
+      "symbol": "Contains symbols (!@#$)"
+    }
+  },
+  "zakat": {
+    "btnLabel": "Zakat Calculator",
+    "title": "Zakat Calculator",
+    "nisabLabel": "Approx. Nisab",
+    "cash": "Cash & Bank Balance",
+    "gold": "Gold (grams)",
+    "goldPrice": "Approx. price per gram",
+    "silver": "Silver (grams)",
+    "stocks": "Stocks & Securities",
+    "business": "Business Assets",
+    "receivables": "Receivables",
+    "debts": "Your Debts (deducted)",
+    "resultDue": "Zakat Due",
+    "resultBelow": "Below Nisab threshold",
+    "resultRate": "2.5% of",
+    "resultRemaining": "remaining to reach Nisab",
+    "reset": "Reset",
+    "disclaimer": "This calculator is approximate — consult a scholar for verification"
   }
 }
