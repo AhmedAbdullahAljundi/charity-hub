@@ -233,6 +233,23 @@ enum Locale {
   EN
 }
 
+enum MedicalAidType {
+  TREATMENT     // علاج — cooldown عام 30/40 يوم، سقف 800/400
+  LAB_TEST      // تحاليل — قيمة فعلية
+  IMAGING       // أشعة — قيمة فعلية
+  CONSULTATION  // كشف طبي — افتراضي 200 ج.م.، قابل للتعديل
+  SURGERY       // عملية — % من التكلفة، موافقة مشرف دائماً
+  FINANCIAL_AID // إعانة مادية
+  MARRIAGE_AID  // إعانة زواج — مرة واحدة / شخص، سقف 70000
+}
+
+enum MedicalDisbursementStatus {
+  PENDING   // انتظار توثيق المشرف
+  APPROVED  // موافقة المشرف
+  PAID      // تم الصرف
+  REJECTED  // مرفوض
+}
+
 // ════ MODELS ═════════════════════════════════════════════════════
 
 model User {
@@ -260,6 +277,9 @@ model User {
   refreshTokens        RefreshToken[]
   notifications        Notification[] @relation("UserNotifications")
   householdNotes       HouseholdNote[]
+  medicalCasesCreated        MedicalCase[]
+  medicalDisbursementsApproved MedicalDisbursement[] @relation("MedicalApprover")
+  medicalDisbursementsCreated  MedicalDisbursement[] @relation("MedicalCreator")
 
   @@index([email])
   @@index([role])
@@ -349,6 +369,8 @@ model Household {
   auditLogs        AuditLog[]
   academicRecords  StudentAcademicRecord[]
   notesArray       HouseholdNote[]
+  medicalCases        MedicalCase[]
+  medicalDisbursements MedicalDisbursement[]
 
   @@index([governorate, district])
   @@index([isDraft])
@@ -404,6 +426,8 @@ model Person {
   diseases          Disease[]
   disabilities      Disability[]
   academicRecords   StudentAcademicRecord[]
+  medicalCases        MedicalCase[]
+  medicalDisbursements MedicalDisbursement[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -468,6 +492,62 @@ model IncomeSource {
   @@index([householdId])
   @@index([verified])
   @@index([channel, verified])
+}
+
+model MedicalCase {
+  id                   String    @id @default(cuid())
+  householdId          String
+  personId             String
+  conditionName        String
+  isCritical           Boolean   @default(false)
+  isActive             Boolean   @default(true)
+  estimatedMonthlyCost Decimal?  @db.Decimal(10,2)
+  doctorName           String?
+  hospitalName         String?
+  startDate            DateTime?
+  notes                String?
+  createdById          String
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  household     Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  person        Person                @relation(fields: [personId], references: [id], onDelete: Cascade)
+  createdBy     User                  @relation(fields: [createdById], references: [id])
+  disbursements MedicalDisbursement[]
+
+  @@index([householdId])
+  @@index([personId])
+}
+
+model MedicalDisbursement {
+  id                String                  @id @default(cuid())
+  householdId       String
+  personId          String
+  medicalCaseId     String?
+  aidType           MedicalAidType
+  amount            Decimal                 @db.Decimal(10,2)
+  totalCost         Decimal?                @db.Decimal(10,2)
+  coveragePercent   Decimal?                @db.Decimal(5,2)
+  isCriticalOverride Boolean               @default(false)
+  isRetroactive     Boolean                @default(false)
+  disbursementDate  DateTime               @default(now())
+  status            MedicalDisbursementStatus @default(PENDING)
+  approvedById      String?
+  approvedAt        DateTime?
+  notes             String?
+  createdById       String
+  createdAt         DateTime               @default(now())
+
+  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  person      Person       @relation(fields: [personId], references: [id])
+  medicalCase MedicalCase? @relation(fields: [medicalCaseId], references: [id])
+  approvedBy  User?        @relation("MedicalApprover", fields: [approvedById], references: [id])
+  createdBy   User         @relation("MedicalCreator", fields: [createdById], references: [id])
+
+  @@index([householdId])
+  @@index([personId])
+  @@index([disbursementDate])
+  @@index([status])
 }
 
 model ScoreResult {

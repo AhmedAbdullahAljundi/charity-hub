@@ -189,15 +189,23 @@ export default function HomePage() {
   const locale = useLocale();
   const isRtl = locale === "ar";
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    if (isAuthenticated) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && isAuthenticated) {
       router.replace("/dashboard");
     }
-  }, [isAuthenticated, router]);
+  }, [mounted, isAuthenticated, router]);
 
   const scrollToFeatures = () => {
     document.querySelector('#features')?.scrollIntoView({ behavior: 'smooth' });
   };
+
+
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">

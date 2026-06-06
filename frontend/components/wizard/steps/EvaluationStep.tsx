@@ -27,6 +27,7 @@ import {
 import { CheckCircle2, AlertTriangle, Play, RefreshCw, Calculator, ShieldAlert, Activity, TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { MedicalSummaryWidget } from "../../medical/MedicalSummaryWidget";
 
 /* ─────────── Arabic Labels ─────────── */
 
@@ -350,35 +351,41 @@ export function EvaluationStep() {
  )}
  </div>
 
- {/* Layer Breakdown Table */}
- <div className="space-y-2">
- <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("wizard.evaluation.layerBreakdown")}</h4>
- <div className="bg-slate-50/50 border rounded-lg divide-y divide-border/50 max-h-60 overflow-y-auto">
- {liveScore.layerBreakdown?.map((layer: any) => {
- const score = Number(layer.score);
- const capVal = Number(layer.cap);
- const cap = isNaN(capVal) || capVal === 0 ? 1 : capVal; // Safe cap
- const isNeg = score < 0 || cap < 0;
- const pct = Math.min(100, (Math.abs(score) / Math.abs(cap)) * 100);
- const barColor = isNeg ? 'bg-red-400' : pct > 60 ? 'bg-rose-500' : pct > 30 ? 'bg-amber-400' : 'bg-emerald-500';
- return (
- <div key={layer.layerId} className="flex items-center gap-3 px-3 py-2 text-sm">
- <span className="w-36 font-medium text-slate-700 truncate">{getLayerLabel(layer.layerId, t)}</span>
- <span className={cn("w-14 font-mono text-left text-xs tabular-nums", isNeg ? "text-red-500 font-semibold" : "text-slate-800")}>
- {score > 0 ? `+${score.toFixed(2)}` : score.toFixed(2)}
- </span>
- <span className="text-[10px] text-muted-foreground w-10">/ {capVal > 0 ? `+${capVal}` : capVal}</span>
- <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden flex flex-row-reverse">
- <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${pct}%` }} />
- </div>
- </div>
- );
- })}
- </div>
- </div>
- </div>
- )}
- </section>
+  {/* Layer Breakdown Table */}
+  <div className="space-y-3">
+  <div className="flex items-center justify-between">
+    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("wizard.evaluation.layerBreakdown")}</h4>
+  </div>
+  <div className="bg-slate-50/30 border rounded-2xl p-3 max-h-72 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 shadow-inner">
+  {liveScore.layerBreakdown?.map((layer: any, index: number) => {
+  const score = Number(layer.score);
+  const capVal = Number(layer.cap);
+  const cap = isNaN(capVal) || capVal === 0 ? 1 : capVal; // Safe cap
+  const isNeg = score < 0 || cap < 0;
+  const pct = Math.min(100, (Math.abs(score) / Math.abs(cap)) * 100);
+  const barColor = isNeg ? 'bg-rose-500' : pct > 60 ? 'bg-orange-500' : pct > 30 ? 'bg-amber-400' : 'bg-emerald-500';
+  
+  const isLastOdd = index === liveScore.layerBreakdown.length - 1 && liveScore.layerBreakdown.length % 2 !== 0;
+
+  return (
+  <div key={layer.layerId} className={cn("group flex flex-col gap-2.5 p-3.5 bg-white hover:bg-slate-50/80 transition-all duration-200 rounded-xl border border-slate-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]", isLastOdd ? "md:col-span-2" : "")}>
+  <div className="flex justify-between items-center">
+  <span className="font-bold text-slate-700 text-sm truncate" title={getLayerLabel(layer.layerId, t)}>{getLayerLabel(layer.layerId, t)}</span>
+  <span className={cn("text-xs font-bold px-2.5 py-1 rounded-md tracking-wide", isNeg ? "bg-rose-50 text-rose-600" : "bg-slate-100 text-slate-700")}>
+  {Math.round(pct)}%
+  </span>
+  </div>
+  <div className="w-full bg-slate-100/80 rounded-full h-2 overflow-hidden flex shadow-inner">
+  <div className={cn("h-full rounded-full transition-all duration-1000 ease-out", barColor)} style={{ width: `${pct}%` }} />
+  </div>
+  </div>
+  );
+  })}
+  </div>
+  </div>
+  </div>
+  )}
+  </section>
 
  {/* ══════════════════════════════════════════════════
  القسم 2: المؤشرات والتوصيات
@@ -464,6 +471,13 @@ export function EvaluationStep() {
  </div>
  </section>
  )}
+
+  {/* Medical Summary Widget */}
+  {householdId && (
+    <div className="mt-4">
+      <MedicalSummaryWidget householdId={householdId} />
+    </div>
+  )}
 
  {/* ══════════════════════════════════════════════════
  القسم 3: قرار اللجنة

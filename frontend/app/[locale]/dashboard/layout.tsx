@@ -17,14 +17,21 @@ const Topbar = dynamic(() => import("@/components/topbar").then((m) => m.Topbar)
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !isAuthenticated) {
       router.push("/");
     }
-  }, [isAuthenticated, router]);
+  }, [mounted, isAuthenticated, router]);
+
+
 
   // Block dashboard entirely if user must change password
   if (user?.mustChangePassword) {

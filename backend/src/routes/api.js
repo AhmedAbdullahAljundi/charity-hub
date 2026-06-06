@@ -5,6 +5,9 @@
 const express = require('express');
 const { optionalAttachUser } = require('../middleware/auth');
 const { getApiLimiter } = require('../middleware/rateLimit');
+const medicalCasesRouter = require('../modules/medical/medical.routes')
+const medicalDisbursementsRouter = require('../modules/medical/medical-disbursements.routes')
+const medicalSummaryRouter = require('../modules/medical/medical-summary.routes')
 
 const router = express.Router();
 
@@ -22,5 +25,8 @@ router.use('/education',    require('../modules/education/education.routes'));
 router.use('/users',        require('../modules/users/users.routes'));
 router.use('/notifications', require('../modules/notifications/notifications.routes'));
 router.use('/public',       require('../modules/public/public.routes'));
+router.use('/medical-cases', medicalCasesRouter)
+router.use('/medical-disbursements', medicalDisbursementsRouter)
+router.use('/households', medicalSummaryRouter)
 
 module.exports = router;
