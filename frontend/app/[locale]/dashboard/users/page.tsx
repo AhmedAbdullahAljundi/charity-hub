@@ -5,7 +5,7 @@ import { useLocale } from "next-intl";
 import {
   Shield, Plus, Search, MoreHorizontal, UserCheck, UserX,
   RefreshCw, Key, Loader2, Copy, Check, AlertTriangle,
-  ChevronDown, X, Zap,
+  ChevronDown, X, Zap, Send
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ import {
   createUserApi, setPermissionsApi, type UserDto,
 } from "@/lib/api/users-api";
 import { useAuthStore } from "@/lib/stores/authStore";
+import { SendMessageModal } from "./SendMessageModal";
 import { cn } from "@/lib/utils";
 
 
@@ -366,6 +367,7 @@ export default function UsersPage() {
   const [tempModal, setTempModal] = useState<UserDto | null>(null);
   const [addModal, setAddModal] = useState(false);
   const [permsModal, setPermsModal] = useState<UserDto | null>(null);
+  const [messageModal, setMessageModal] = useState<UserDto | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -516,7 +518,7 @@ export default function UsersPage() {
                 <TableHead className="text-start">{isRtl ? "الدور" : "Role"}</TableHead>
                 <TableHead className="text-start">{isRtl ? "الحالة" : "Status"}</TableHead>
                 <TableHead className="text-start">{isRtl ? "آخر دخول" : "Last Login"}</TableHead>
-                {isAdmin && <TableHead className="text-start w-12">{isRtl ? "إجراءات" : "Actions"}</TableHead>}
+                <TableHead className="text-start w-12">{isRtl ? "إجراءات" : "Actions"}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -576,57 +578,65 @@ export default function UsersPage() {
                       <TableCell className="text-muted-foreground text-sm">
                         {formatDate(u.lastLoginAt, locale)}
                       </TableCell>
-                      {isAdmin && (
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-52">
-                              {/* Role submenu */}
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="gap-2 cursor-pointer">
-                                    <Shield className="w-4 h-4" />
-                                    {isRtl ? "تغيير الدور" : "Change Role"}
-                                    <ChevronDown className="w-3 h-3 ms-auto" />
-                                  </DropdownMenuItem>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent side="left">
-                                  {ROLES.filter((r) => r !== u.role).map((r) => (
-                                    <DropdownMenuItem key={r} onClick={() => handleRoleChange(u, r)}>
-                                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${getRoleBadgeClass(r)}`}>
-                                        {isRtl ? ROLE_LABELS[r]?.ar : ROLE_LABELS[r]?.en}
-                                      </span>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-52">
+                            <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => setMessageModal(u)}>
+                              <Send className="w-4 h-4" />
+                              {isRtl ? "إرسال رسالة" : "Send Message"}
+                            </DropdownMenuItem>
+                            
+                            {isAdmin && (
+                              <>
+                                <DropdownMenuSeparator />
+                                {/* Role submenu */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="gap-2 cursor-pointer">
+                                      <Shield className="w-4 h-4" />
+                                      {isRtl ? "تغيير الدور" : "Change Role"}
+                                      <ChevronDown className="w-3 h-3 ms-auto" />
                                     </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent side="left">
+                                    {ROLES.filter((r) => r !== u.role).map((r) => (
+                                      <DropdownMenuItem key={r} onClick={() => handleRoleChange(u, r)}>
+                                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${getRoleBadgeClass(r)}`}>
+                                          {isRtl ? ROLE_LABELS[r]?.ar : ROLE_LABELS[r]?.en}
+                                        </span>
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
 
-                              <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => setPermsModal(u)}>
-                                <Zap className="w-4 h-4" />
-                                {isRtl ? "الصلاحيات المخصصة" : "Custom Permissions"}
-                              </DropdownMenuItem>
+                                <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => setPermsModal(u)}>
+                                  <Zap className="w-4 h-4" />
+                                  {isRtl ? "الصلاحيات المخصصة" : "Custom Permissions"}
+                                </DropdownMenuItem>
 
-                              <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => setTempModal(u)}>
-                                <Key className="w-4 h-4" />
-                                {isRtl ? "تعيين كلمة مرور مؤقتة" : "Set Temp Password"}
-                              </DropdownMenuItem>
+                                <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => setTempModal(u)}>
+                                  <Key className="w-4 h-4" />
+                                  {isRtl ? "تعيين كلمة مرور مؤقتة" : "Set Temp Password"}
+                                </DropdownMenuItem>
 
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="gap-2 cursor-pointer text-destructive"
-                                onClick={() => handleDeactivate(u)}
-                              >
-                                <UserX className="w-4 h-4" />
-                                {isRtl ? "تعطيل الحساب" : "Deactivate"}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="gap-2 cursor-pointer text-destructive"
+                                  onClick={() => handleDeactivate(u)}
+                                >
+                                  <UserX className="w-4 h-4" />
+                                  {isRtl ? "تعطيل الحساب" : "Deactivate"}
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   );
                 })

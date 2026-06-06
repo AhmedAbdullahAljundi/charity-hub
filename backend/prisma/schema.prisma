@@ -258,6 +258,7 @@ model User {
   decisions            ScoreResult[]  @relation("DecidedBy")
   refreshTokens        RefreshToken[]
   notifications        Notification[] @relation("UserNotifications")
+  householdNotes       HouseholdNote[]
 
   @@index([email])
   @@index([role])
@@ -339,11 +340,26 @@ model Household {
   scoreResults     ScoreResult[]
   auditLogs        AuditLog[]
   academicRecords  StudentAcademicRecord[]
+  notesArray       HouseholdNote[]
 
   @@index([governorate, district])
   @@index([isDraft])
   @@index([createdById])
   @@index([code])
+}
+
+model HouseholdNote {
+  id          String    @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  content     String
+  createdAt   DateTime  @default(now())
+
+  @@index([householdId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model Person {

@@ -22,12 +22,21 @@ const markAllAsRead = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
+const sendDirectMessage = async (req, res, next) => {
+  try {
+    const { targetUserId, message } = req.body;
+    if (!targetUserId || !message) {
+      return res.status(400).json({ success: false, error: 'targetUserId and message are required' });
+    }
+
+    await notificationsService.sendDirectMessage(req.user.userId, targetUserId, message);
+    res.json({ success: true, message: 'Message sent successfully' });
+  } catch (e) { next(e); }
+};
+
 module.exports = {
   getNotifications,
   markAsRead,
   markAllAsRead,
-};
-  getNotifications,
-  markAsRead,
-  markAllAsRead,
+  sendDirectMessage,
 };

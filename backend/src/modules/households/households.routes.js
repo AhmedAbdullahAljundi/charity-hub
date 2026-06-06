@@ -26,4 +26,8 @@ router.put('/:id', requirePermission(PERMISSIONS.HOUSEHOLD_WRITE), controller.up
 router.delete('/:id', requireRoles(UserRole.ADMIN), controller.remove);
 router.patch('/:id/publish', requirePermission(PERMISSIONS.HOUSEHOLD_PUBLISH), controller.publish);
 
+router.get('/:id/notes', controller.getNotes);
+router.post('/:id/notes', controller.addNote);
+router.post('/:id/request-review', controller.requestReview);
+
 module.exports = router;

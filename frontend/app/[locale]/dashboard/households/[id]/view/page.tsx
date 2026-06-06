@@ -7,11 +7,14 @@ import { HouseholdDto } from "@/lib/types/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Activity, Users, MapPin, Briefcase, FileText, Download, CheckCircle2, AlertCircle, GraduationCap } from "lucide-react";
+import { ArrowRight, Activity, Users, MapPin, Briefcase, FileText, Download, CheckCircle2, AlertCircle, GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
+import { useLocale } from "next-intl";
+import { HouseholdNotes } from "./HouseholdNotes";
+import { api } from "@/lib/api/client";
 
 const StudentRecordModal = dynamic(
   () => import("@/components/education/StudentRecordModal"),
@@ -40,8 +43,11 @@ const ELIGIBILITY_LABELS: Record<string, string> = {
  const id = params.id as string;
  const [household, setHousehold] = useState<HouseholdDto | null>(null);
  const [loading, setLoading] = useState(true);
+ const [reviewing, setReviewing] = useState(false);
  const [modalOpen, setModalOpen] = useState(false);
  const [selectedPersonId, setSelectedPersonId] = useState<string>("");
+ const locale = useLocale();
+ const isRtl = locale === "ar";
 
  useEffect(() => {
  async function loadData() {
@@ -128,7 +134,26 @@ const ELIGIBILITY_LABELS: Record<string, string> = {
  عرض الملف الورقي
  </Button>
  )}
- <Button onClick={() => router.push(`/${params.locale}/dashboard/households/${id}/wizard`)} className="bg-slate-900 hover:bg-slate-800 text-white">
+ <Button
+   variant="outline"
+   disabled={reviewing}
+   onClick={async () => {
+     setReviewing(true);
+     try {
+       await api.post(`/households/${id}/request-review`);
+       toast.success(isRtl ? "تم إرسال طلب المراجعة للإدارة" : "Review request sent to admins");
+     } catch (e) {
+       toast.error(isRtl ? "حدث خطأ" : "Error requesting review");
+     } finally {
+       setReviewing(false);
+     }
+   }}
+   className="border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100"
+ >
+   {reviewing ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <AlertCircle className="w-4 h-4 ml-2" />}
+   {isRtl ? "طلب مراجعة للإدارة" : "Request Admin Review"}
+ </Button>
+ <Button onClick={() => router.push(`/${locale}/dashboard/households/${id}/wizard`)} className="bg-slate-900 hover:bg-slate-800 text-white">
  تعديل الاستمارة
  </Button>
  </div>
@@ -382,6 +407,8 @@ const ELIGIBILITY_LABELS: Record<string, string> = {
  {household.notes || "لا توجد ملاحظات عامة مسجلة لهذه الأسرة."}
  </CardContent>
  </Card>
+ 
+ <HouseholdNotes householdId={household.id} />
 
  <Card className="bg-slate-50 border border-slate-200 shadow-sm mt-6">
  <CardHeader className="pb-2 flex flex-row items-center justify-between">

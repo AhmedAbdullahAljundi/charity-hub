@@ -168,6 +168,64 @@ const householdsService = {
     const row = await householdsRepository.publish(id);
     return serializeHousehold(row);
   },
+
+  async addNote(user, householdId, data) {
+    const { content, notifyUserIds = [] } = data;
+    if (!content) throw new Error("Content is required");
+
+    await this.getById(user, householdId, { user: {} });
+    
+    const note = await prisma.householdNote.create({
+      data: { householdId, userId: user.userId, content },
+      include: { user: { select: { name: true, email: true } } },
+    });
+
+    if (notifyUserIds.length > 0) {
+      const sender = await prisma.user.findUnique({ where: { id: user.userId } });
+      const notifications = notifyUserIds.map((targetId) => ({
+        userId: targetId,
+        title: `إشارة من ${sender.name}`,
+        message: content.substring(0, 100) + (content.length > 100 ? "..." : ""),
+        type: 'info',
+        link: `/dashboard/households/${householdId}/view`,
+      }));
+      await prisma.notification.createMany({ data: notifications });
+    }
+
+    return note;
+  },
+
+  async getNotes(user, householdId) {
+    await this.getById(user, householdId, { user: {} });
+    return await prisma.householdNote.findMany({
+      where: { householdId },
+      include: { user: { select: { id: true, name: true, email: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  },
+
+  async requestReview(user, householdId) {
+    const household = await this.getById(user, householdId, { user: {} });
+    const sender = await prisma.user.findUnique({ where: { id: user.userId } });
+
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN', active: true },
+      select: { id: true },
+    });
+
+    if (admins.length > 0) {
+      const notifications = admins.map((admin) => ({
+        userId: admin.id,
+        title: `طلب مراجعة من ${sender.name}`,
+        message: `تم طلب مراجعة الأسرة رقم ${household.code}.`,
+        type: 'warning',
+        link: `/dashboard/households/${householdId}/view`,
+      }));
+      await prisma.notification.createMany({ data: notifications });
+    }
+
+    return { success: true };
+  },
 };
 
 function enrichListRow(row) {

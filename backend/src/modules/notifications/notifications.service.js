@@ -1,4 +1,4 @@
-const prisma = require('../../shared/prisma');
+const prisma = require('../../config/prisma');
 
 async function getNotifications(userId) {
   return await prisma.notification.findMany({
@@ -63,10 +63,32 @@ async function notifyAdmins({ title, message, type = 'info', link = null }) {
   });
 }
 
+async function sendDirectMessage(senderId, targetUserId, message) {
+  const sender = await prisma.user.findUnique({ where: { id: senderId } });
+  if (!sender) throw new Error("Sender not found");
+
+  const target = await prisma.user.findUnique({ where: { id: targetUserId } });
+  if (!target) {
+    const err = new Error("Target user not found");
+    err.status = 404;
+    throw err;
+  }
+
+  return await prisma.notification.create({
+    data: {
+      userId: targetUserId,
+      title: `رسالة من ${sender.name}`,
+      message,
+      type: 'info',
+    },
+  });
+}
+
 module.exports = {
   getNotifications,
   markAsRead,
   markAllAsRead,
   createNotification,
   notifyAdmins,
+  sendDirectMessage,
 };

@@ -62,6 +62,33 @@ const householdsController = {
       next(e);
     }
   },
+
+  addNote: async (req, res, next) => {
+    try {
+      const data = await householdsService.addNote(req.user, req.params.id, req.body);
+      res.status(201).json({ success: true, data });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  getNotes: async (req, res, next) => {
+    try {
+      const data = await householdsService.getNotes(req.user, req.params.id);
+      res.json({ success: true, data });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  requestReview: async (req, res, next) => {
+    try {
+      const data = await householdsService.requestReview(req.user, req.params.id);
+      res.json({ success: true, ...data });
+    } catch (e) {
+      next(e);
+    }
+  },
 };
 
 module.exports = householdsController;
