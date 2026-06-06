@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { useDashboardStore } from "@/lib/store";
+import { useDashboardStore } from "@/lib/stores/dashboard";
 import { OperationalStrip } from "@/components/dashboard/operational-strip";
 import { FinancialIntelligenceRow } from "@/components/dashboard/financial-intelligence-row";
 import { FamilyStatsStrip } from "@/components/dashboard/family-stats-strip";

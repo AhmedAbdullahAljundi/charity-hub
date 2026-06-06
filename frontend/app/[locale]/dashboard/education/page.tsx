@@ -199,7 +199,9 @@ function EducationContent() {
     XLSX.writeFile(wb, `Education-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const dummyCounts = new Map<string, number>();
+  const levelCounts = new Map(Object.entries(kpis?.levelBreakdown ?? {}));
+  const classificationCounts = new Map(Object.entries(kpis?.classificationBreakdown ?? {}));
+  const emptyCounts = new Map<string, number>();
 
   return (
     <div className="grid h-[calc(100vh-6rem)] min-h-0 grid-rows-[auto_auto_1fr_auto] gap-3 overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)] [--border-subtle:#F1F5F9] [--border:#E2E8F0] [--brand-dark:#16A34A] [--brand:#22C55E] [--page-bg:#F8FAFC] [--surface-raised:#F1F5F9] [--surface:#FFFFFF] [--text-muted:#94A3B8] [--text-primary:#0F172A] [--text-secondary:#475569] dark:[--border-subtle:#1E293B] dark:[--border:#334155] dark:[--brand-dark:#4ADE80] dark:[--brand:#22C55E] dark:[--page-bg:#0F172A] dark:[--surface-raised:#334155] dark:[--surface:#1E293B] dark:[--text-muted:#475569] dark:[--text-primary:#F1F5F9] dark:[--text-secondary:#94A3B8] lg:h-[calc(100vh-7rem)]">
@@ -223,28 +225,28 @@ function EducationContent() {
           name={t("filters.level")}
           selected={currentLevel}
           options={levelOptions.map(l => ({ value: l, label: t(`levels.${l}`), dot: "bg-blue-400" }))}
-          counts={kpis?.levelBreakdown ? new Map(Object.entries(kpis.levelBreakdown)) : new Map()}
+          counts={levelCounts}
           onChange={(value) => updateFilters("studentLevel", value)}
         />
         <FilterPopover
           name={t("filters.grade")}
           selected={currentGrade}
           options={gradeOptions.map(g => ({ value: g, label: t(`grades.${g}`), dot: "bg-green-400" }))}
-          counts={dummyCounts}
+          counts={emptyCounts}
           onChange={(value) => updateFilters("overallGrade", value)}
         />
         <FilterPopover
           name={t("filters.classification")}
           selected={currentClassification}
           options={classificationOptions.map((label) => ({ value: label, label: t(`classifications.${label}`), dot: "bg-slate-400" }))}
-          counts={kpis?.classificationBreakdown ? new Map(Object.entries(kpis.classificationBreakdown)) : new Map()}
+          counts={classificationCounts}
           onChange={(value) => updateFilters("classification", value)}
         />
         <FilterPopover
           name={t("filters.quranRange")}
           selected={currentQuranRange}
           options={quranRangeOptions.map(o => ({ ...o, dot: "bg-amber-400" }))}
-          counts={dummyCounts}
+          counts={emptyCounts}
           onChange={(value) => updateFilters("quranRange", value)}
         />
 

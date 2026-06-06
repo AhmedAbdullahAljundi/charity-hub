@@ -25,10 +25,10 @@ async function runScoringPipeline(householdId, options = { persist: true }) {
 
   if (options.persist !== false) {
     const saved = await scoringRepository.saveResult(householdId, result);
-    return { ...result, scoreResultId: saved.id };
+    return { ...result, scoreResultId: saved.id, calculatedAt: saved.calculatedAt };
   }
 
-  return result;
+  return { ...result, calculatedAt: new Date() };
 }
 
 module.exports = { runScoringPipeline };

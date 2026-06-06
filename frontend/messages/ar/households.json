@@ -724,7 +724,7 @@
         "original": "السكور الأصلي",
         "simulated": "السكور المتوقع",
         "difference": "الفرق",
-        "affectedLayers": "الطبقات المتأثرة"
+        "affectedLayers": "الطبقات (الأساسي → المحاكي)"
       },
       "eligibility": {
         "CRITICAL": "حرجة جداً",
@@ -742,7 +742,8 @@
         "L5B_HOUSING": "السكن",
         "L6_HEALTH": "الصحة والإعاقات",
         "L7_CORRECTIONS": "التصحيحات",
-        "L8_INCOME": "الدخل"
+        "L8_INCOME": "الدخل",
+        "FE_FRAUD": "كشف التناقضات"
       },
       "warnings_labels": {
         "LOW_VERIFICATION_PENALTY": "عدد المصادر الموثقة أقل من الحد الأدنى",

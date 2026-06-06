@@ -183,6 +183,44 @@ const analyticsService = {
       totalPenaltyApplied: penalty
     };
   },
+
+  async expenseDistribution() {
+    const data = await prisma.household.groupBy({
+      by: ['classificationTag'],
+      where: { classificationTag: { not: null }, isDraft: false },
+      _count: { id: true },
+    });
+
+    return data.map((row) => ({
+      category: row.classificationTag,
+      count: row._count.id,
+    }));
+  },
+
+  async financialTrend() {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const rows = await prisma.$queryRaw`
+      SELECT
+        TO_CHAR(DATE_TRUNC('month', "calculatedAt"), 'YYYY-MM') AS month,
+        "systemRecommendation" AS level,
+        ROUND(AVG("normalizedPercent")::numeric, 1) AS avg_score,
+        COUNT(*) AS count
+      FROM "ScoreResult"
+      WHERE "calculatedAt" >= ${sixMonthsAgo}
+      GROUP BY 1, 2
+      ORDER BY 1
+    `;
+
+    const pivot = {};
+    for (const row of rows) {
+      if (!pivot[row.month]) pivot[row.month] = { month: row.month };
+      pivot[row.month][row.level] = parseFloat(row.avg_score);
+    }
+
+    return Object.values(pivot);
+  },
 };
 
 module.exports = analyticsService;

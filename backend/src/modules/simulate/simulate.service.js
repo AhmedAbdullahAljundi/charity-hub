@@ -49,13 +49,11 @@ function layerDelta(original, simulated) {
   const origMap = new Map((original.layerBreakdown || []).map((l) => [l.layerId, l.cappedScore]));
   for (const layer of simulated.layerBreakdown || []) {
     const before = origMap.get(layer.layerId) || '0';
-    if (before !== layer.cappedScore) {
-      affected.push({
-        layerId: layer.layerId,
-        before,
-        after: layer.cappedScore,
-      });
-    }
+    affected.push({
+      layerId: layer.layerId,
+      before,
+      after: layer.cappedScore,
+    });
   }
   return affected;
 }

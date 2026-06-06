@@ -282,7 +282,7 @@ export function PersonsStep() {
  const role = normalizeRole(member.role);
   const gender = member.gender || info?.gender || "MALE";
   const employmentType = member.employmentType || "NONE";
-  const isWorkingSon = member.role === "INDEPENDENT" && gender === "MALE" && employmentType !== "NONE" && member.relationship === "SON";
+  const isWorkingSon = member.role === "INDEPENDENT" && gender === "MALE" && employmentType !== "NONE";
   
   const isDisplacedReason = flags.hasDivorce || flags.hasPrison || flags.absenceReason === "other";
 
@@ -514,8 +514,8 @@ export function PersonsStep() {
           updated.role === "CHILD" && 
           (
             calcAge < 15 || 
-            (calcAge >= 15 && updated.gender === "FEMALE" && (!updated.maritalStatus || updated.maritalStatus === "SINGLE")) || 
-            (calcAge >= 15 && updated.gender === "MALE" && updated.isStudent)
+            (calcAge >= 15 && calcAge <= 25 && updated.gender === "FEMALE" && (!updated.maritalStatus || updated.maritalStatus === "SINGLE")) || 
+            (calcAge >= 15 && calcAge <= 25 && updated.gender === "MALE" && updated.isStudent)
           );
           
         if (!updated._manualOrphan) {
@@ -530,8 +530,8 @@ export function PersonsStep() {
           updated.role === "CHILD" && 
           (
             calcAge < 15 || 
-            (calcAge >= 15 && updated.gender === "FEMALE" && (!updated.maritalStatus || updated.maritalStatus === "SINGLE")) || 
-            (calcAge >= 15 && updated.gender === "MALE" && updated.isStudent)
+            (calcAge >= 15 && calcAge <= 25 && updated.gender === "FEMALE" && (!updated.maritalStatus || updated.maritalStatus === "SINGLE")) || 
+            (calcAge >= 15 && calcAge <= 25 && updated.gender === "MALE" && updated.isStudent)
           );
           
         if (!updated._manualDisplaced) {

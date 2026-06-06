@@ -36,4 +36,18 @@ module.exports = {
       next(e);
     }
   },
+  expenseDistribution: async (req, res, next) => {
+    try {
+      res.json({ success: true, data: await analyticsService.expenseDistribution() });
+    } catch (e) {
+      next(e);
+    }
+  },
+  financialTrend: async (req, res, next) => {
+    try {
+      res.json({ success: true, data: await analyticsService.financialTrend() });
+    } catch (e) {
+      next(e);
+    }
+  },
 };

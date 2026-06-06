@@ -12,5 +12,7 @@ router.get('/regional', controller.regional);
 router.get('/health-burden', controller.healthBurden);
 router.get('/score-trends', controller.scoreTrends);
 router.get('/verification-stats', controller.verificationStats);
+router.get('/expense-distribution', controller.expenseDistribution);
+router.get('/financial-trend', controller.financialTrend);
 
 module.exports = router;

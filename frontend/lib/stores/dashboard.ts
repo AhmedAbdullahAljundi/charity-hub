@@ -4,7 +4,7 @@ import { create } from "zustand";
 import api from "@/lib/api/client";
 
 /* ─────────── Dashboard Store ─────────── */
-type DashboardEndpointKey = "stats" | "prediction" | "regions" | "workflow";
+type DashboardEndpointKey = "stats" | "prediction" | "regions" | "workflow" | "expenses" | "financialTrend";
 
 interface DashboardState {
   stats: any;
@@ -52,7 +52,7 @@ export const useDashboardStore = create<DashboardState>()((set, get) => ({
   workflow: null,
   loadingDashboard: false,
   dashboardError: null,
-  dashboardErrors: { stats: null, prediction: null, regions: null, workflow: null },
+  dashboardErrors: { stats: null, prediction: null, regions: null, workflow: null, expenses: null, financialTrend: null },
   setStats: (stats) => set({ stats }),
   fetchStats: async () => {
     await get().fetchDashboardBundle();
@@ -67,7 +67,7 @@ export const useDashboardStore = create<DashboardState>()((set, get) => ({
     set({
       loadingDashboard: true,
       dashboardError: null,
-      dashboardErrors: { stats: null, prediction: null, regions: null, workflow: null },
+      dashboardErrors: { stats: null, prediction: null, regions: null, workflow: null, expenses: null, financialTrend: null },
     });
 
     const results = await Promise.allSettled([
@@ -75,6 +75,8 @@ export const useDashboardStore = create<DashboardState>()((set, get) => ({
       api.get("/analytics/regional"),
       api.get("/analytics/score-trends"),
       api.get("/analytics/verification-stats"),
+      api.get("/analytics/expense-distribution"),
+      api.get("/analytics/financial-trend"),
     ]);
 
     const errors: Record<DashboardEndpointKey, string | null> = {
@@ -82,6 +84,8 @@ export const useDashboardStore = create<DashboardState>()((set, get) => ({
       prediction: null,
       regions: null,
       workflow: null,
+      expenses: null,
+      financialTrend: null,
     };
 
     let statsPayload = prev.stats;
@@ -152,7 +156,21 @@ export const useDashboardStore = create<DashboardState>()((set, get) => ({
       errors.workflow = w.reason;
     }
 
-    const anyOk = s.ok || p.ok || g.ok || w.ok;
+    const e = parseOk(4);
+    if (e.ok) {
+      classificationExpenses = Array.isArray(e.data) ? e.data : [];
+    } else {
+      errors.expenses = e.reason;
+    }
+
+    const f = parseOk(5);
+    if (f.ok) {
+      financialTrendMonthly = Array.isArray(f.data) ? f.data : [];
+    } else {
+      errors.financialTrend = f.reason;
+    }
+
+    const anyOk = s.ok || p.ok || g.ok || w.ok || e.ok || f.ok;
     if (!anyOk) {
       console.error("Dashboard bundle: all endpoints failed", errors);
     } else {

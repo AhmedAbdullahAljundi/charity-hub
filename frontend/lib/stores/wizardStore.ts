@@ -461,6 +461,8 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       isDirty: false,
       autosaveStatus: "idle",
       lastSavedAt: null,
+      personDraft: null,
+      personEditingIdx: null,
       conditionalFlags: deriveFlags(initialForm),
     }),
 

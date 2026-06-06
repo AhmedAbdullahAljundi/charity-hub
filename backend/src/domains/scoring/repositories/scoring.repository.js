@@ -28,8 +28,6 @@ const scoringRepository = {
         finalScore: finalScore.toFixed(4),
         normalizedPercent: toDecimal(result.normalizedPercent).toFixed(3),
         systemRecommendation: result.systemRecommendation,
-        humanDecision: result.humanDecision,
-        reviewStatus: result.reviewStatus,
         previousScore: previousScore ? previousScore.toFixed(4) : null,
         scoreDelta: scoreDelta ? scoreDelta.toFixed(4) : null,
         calculationSnapshot: result.calculationSnapshot || result.snapshot,

@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDashboardStore } from "@/lib/store";
+import { useDashboardStore } from "@/lib/stores/dashboard";
 import { useTranslations } from "next-intl";
 import {
   PieChart,

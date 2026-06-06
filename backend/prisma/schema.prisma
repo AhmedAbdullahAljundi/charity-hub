@@ -256,6 +256,7 @@ model User {
   households           Household[]    @relation("CreatedBy")
   auditLogs            AuditLog[]
   decisions            ScoreResult[]  @relation("DecidedBy")
+  decidedHouseholds    Household[]    @relation("HouseholdDecidedBy")
   refreshTokens        RefreshToken[]
   notifications        Notification[] @relation("UserNotifications")
   householdNotes       HouseholdNote[]
@@ -334,6 +335,13 @@ model Household {
   updatedAt        DateTime          @updatedAt
   createdById      String
   createdBy        User              @relation("CreatedBy", fields: [createdById], references: [id])
+  humanDecision    HumanDecision     @default(PENDING)
+  reviewStatus     ReviewStatus      @default(SCORE_READY)
+  decisionNote     String?
+  decidedById      String?
+  decidedBy        User?             @relation("HouseholdDecidedBy", fields: [decidedById], references: [id])
+  decidedAt        DateTime?
+  classificationTag String?
   persons          Person[]
   incomeSources    IncomeSource[]
   temporaryBurdens TemporaryBurden[]

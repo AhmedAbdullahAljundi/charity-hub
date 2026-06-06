@@ -762,7 +762,8 @@
         "L5B_HOUSING": "Housing",
         "L6_HEALTH": "Health and Disabilities",
         "L7_CORRECTIONS": "Corrections",
-        "L8_INCOME": "Income"
+        "L8_INCOME": "Income",
+        "FE_FRAUD": "Fraud Detection"
       },
       "warnings_labels": {
         "LOW_VERIFICATION_PENALTY": "Number of verified sources below minimum threshold",

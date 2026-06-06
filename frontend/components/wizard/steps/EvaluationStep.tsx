@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { useScoringStore } from "@/lib/stores/scoringStore";
@@ -17,6 +17,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
  Accordion,
  AccordionContent,
@@ -39,7 +40,7 @@ const ELIGIBILITY_COLORS: Record<string, string> = {
 
 const ELIGIBILITY_KEYS: string[] = ["CRITICAL", "HIGH_NEED", "MODERATE_NEED", "LOW_NEED", "NOT_ELIGIBLE"];
 
-const LAYER_KEYS = ['L1_HEAD', 'L2_DEPENDENTS', 'L3_STUDENTS', 'L4_VULNERABILITY', 'L5_BURDENS', 'L5B_HOUSING', 'L6_HEALTH', 'L7_CORRECTIONS', 'L8_INCOME'];
+const LAYER_KEYS = ['L1_HEAD', 'L2_DEPENDENTS', 'L3_STUDENTS', 'L4_VULNERABILITY', 'L5_BURDENS', 'L5B_HOUSING', 'L6_HEALTH', 'L7_CORRECTIONS', 'L8_INCOME', 'FE_FRAUD'];
 
 const LAYER_FALLBACK_PATTERNS: [RegExp, string][] = [
  [/head/i, 'L1_HEAD'],
@@ -51,18 +52,23 @@ const LAYER_FALLBACK_PATTERNS: [RegExp, string][] = [
  [/health|disease|disab/i, 'L6_HEALTH'],
  [/correct/i, 'L7_CORRECTIONS'],
  [/income/i, 'L8_INCOME'],
+ [/fraud|fe/i, 'FE_FRAUD'],
 ];
 
 /** Maps any layerId variant to readable label via i18n */
 function getLayerLabel(id: string, t: (key: string) => string): string {
+ if (!id) return id;
  // Try exact match first
  if (LAYER_KEYS.includes(id)) return t(`wizard.evaluation.layers.${id}`);
- // Try matching by prefix (L1, L2, etc.)
- const shortId = id?.replace(/[^L0-9B]/gi, '').toUpperCase();
+ 
+ // Try matching by prefix (L1, L2, L5B, FE, etc.)
  for (const key of LAYER_KEYS) {
- const shortKey = key.replace(/[^L0-9B]/gi, '').toUpperCase();
- if (shortKey === shortId) return t(`wizard.evaluation.layers.${key}`);
+ const prefix = key.split('_')[0];
+ if (id.toUpperCase() === prefix.toUpperCase()) {
+ return t(`wizard.evaluation.layers.${key}`);
  }
+ }
+ 
  // Fallback patterns
  for (const [pattern, key] of LAYER_FALLBACK_PATTERNS) {
  if (pattern.test(id)) return t(`wizard.evaluation.layers.${key}`);
@@ -195,9 +201,7 @@ export function EvaluationStep() {
 
  const liveScore = useScoringStore((s) => s.liveScore);
  const isCalculating = useScoringStore((s) => s.isCalculating);
- const calculate = useScoringStore((s) => s.calculate);
- const simulate = useScoringStore((s) => s.simulate);
- const simulationResult = useScoringStore((s) => s.simulationResult);
+  const calculate = useScoringStore((s) => s.calculate);
 
  const [decision, setDecision] = useState({
  humanDecision: "",
@@ -206,36 +210,68 @@ export function EvaluationStep() {
  decisionNote: "",
  });
  const [isDecisionSaved, setIsDecisionSaved] = useState(false);
+  const [layerOverrides, setLayerOverrides] = useState<Record<string, number>>({});
+  const [localSimResult, setLocalSimResult] = useState<{ 
+    originalPct: number; 
+    simPct: number; 
+    delta: number;
+    origEligibility: string;
+    simEligibility: string;
+  } | null>(null);
 
- const [simFields, setSimFields] = useState({
- housingType: "RENTED",
- totalIncome: "",
- employmentType: "REGULAR",
- });
+  // Initialize overrides with current score
+  useEffect(() => {
+    if (liveScore?.layerBreakdown) {
+      const overrides: Record<string, number> = {};
+      liveScore.layerBreakdown.forEach((l: any) => {
+        overrides[l.layerId] = Number(l.cappedScore);
+      });
+      // Ensure all 9 layers exist even if missing
+      LAYER_KEYS.forEach(k => {
+        if (overrides[k] === undefined) overrides[k] = 0;
+      });
+      setLayerOverrides(overrides);
+    }
+  }, [liveScore]);
+
+  const getEligibilityLevel = (pct: number) => {
+    if (pct >= 80) return "CRITICAL";
+    if (pct >= 60) return "HIGH_NEED";
+    if (pct >= 40) return "MODERATE_NEED";
+    if (pct >= 20) return "LOW_NEED";
+    return "NOT_ELIGIBLE";
+  };
+
+  const runLocalSimulation = () => {
+    if (!liveScore) return;
+    const origPct = Number(liveScore.normalizedPercent);
+    // User requested the weights NOT be modified, meaning THEORETICAL_MAX is 15.0
+    // So percentage is sum / 15.0 * 100
+    const sum = LAYER_KEYS.reduce((acc, key) => acc + (Number(layerOverrides[key]) || 0), 0);
+    const simPct = Math.min(100, Math.max(0, (sum / 15.0) * 100));
+    setLocalSimResult({
+      originalPct: origPct,
+      simPct: simPct,
+      delta: simPct - origPct,
+      origEligibility: liveScore.systemRecommendation,
+      simEligibility: getEligibilityLevel(simPct)
+    });
+  };
 
  const handleCalculate = async () => {
  if (householdId) await calculate(householdId);
  };
 
- const submitDecision = async () => {
- if (!householdId) return;
- const { decideScore } = await import("@/lib/api/scoring-api");
- try {
- await decideScore(householdId, decision);
- setIsDecisionSaved(true);
- } catch (e) {
- console.error("Decision failed", e);
- }
- };
-
- const runSimulation = async () => {
- if (!householdId) return;
- const modifications = [];
- if (simFields.housingType) modifications.push({ field: "housingType", value: simFields.housingType });
- if (simFields.totalIncome) modifications.push({ field: "totalIncome", value: Number(simFields.totalIncome) });
- if (simFields.employmentType) modifications.push({ field: "employmentType", value: simFields.employmentType });
- await simulate(householdId, modifications);
- };
+  const submitDecision = async () => {
+    if (!householdId) return;
+    const { decideScore } = await import("@/lib/api/scoring-api");
+    try {
+      await decideScore(householdId, decision);
+      setIsDecisionSaved(true);
+    } catch (e) {
+      console.error("Decision failed", e);
+    }
+  };
 
  return (
  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col" >
@@ -294,9 +330,9 @@ export function EvaluationStep() {
  {Number(liveScore.scoreDelta) >= 0 ? "▲" : "▼"} {Number(liveScore.scoreDelta) > 0 ? "+" : ""}{Number(liveScore.scoreDelta).toFixed(1)} {t("wizard.evaluation.fromLastScore")}
  </span>
  )}
- <span className="text-xs text-muted-foreground">
- {t("wizard.evaluation.calculatedAt")}: {new Date(liveScore.calculatedAt ?? "").toLocaleDateString("ar-EG")}
- </span>
+  <span className="text-xs text-muted-foreground">
+  {t("wizard.evaluation.calculatedAt")}: {liveScore.calculatedAt ? new Date(liveScore.calculatedAt).toLocaleString("ar-EG", { year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
+  </span>
  </div>
 
  {/* Warnings (compact) */}
@@ -320,18 +356,19 @@ export function EvaluationStep() {
  <div className="bg-slate-50/50 border rounded-lg divide-y divide-border/50 max-h-60 overflow-y-auto">
  {liveScore.layerBreakdown?.map((layer: any) => {
  const score = Number(layer.score);
- const cap = Number(layer.cap);
- const isNeg = score < 0;
+ const capVal = Number(layer.cap);
+ const cap = isNaN(capVal) || capVal === 0 ? 1 : capVal; // Safe cap
+ const isNeg = score < 0 || cap < 0;
  const pct = Math.min(100, (Math.abs(score) / Math.abs(cap)) * 100);
  const barColor = isNeg ? 'bg-red-400' : pct > 60 ? 'bg-rose-500' : pct > 30 ? 'bg-amber-400' : 'bg-emerald-500';
  return (
  <div key={layer.layerId} className="flex items-center gap-3 px-3 py-2 text-sm">
  <span className="w-36 font-medium text-slate-700 truncate">{getLayerLabel(layer.layerId, t)}</span>
  <span className={cn("w-14 font-mono text-left text-xs tabular-nums", isNeg ? "text-red-500 font-semibold" : "text-slate-800")}>
- {score.toFixed(2)}
+ {score > 0 ? `+${score.toFixed(2)}` : score.toFixed(2)}
  </span>
- <span className="text-[10px] text-muted-foreground w-10">/ {cap}</span>
- <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
+ <span className="text-[10px] text-muted-foreground w-10">/ {capVal > 0 ? `+${capVal}` : capVal}</span>
+ <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden flex flex-row-reverse">
  <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${pct}%` }} />
  </div>
  </div>
@@ -517,87 +554,71 @@ export function EvaluationStep() {
  {/* ══════════════════════════════════════════════════
  المحاكاة (ماذا لو)
  ══════════════════════════════════════════════════ */}
- {liveScore && (
+ {liveScore && user?.role === 'ADMIN' && (
  <section>
  <Accordion type="single" collapsible className="bg-card border rounded-xl">
  <AccordionItem value="sim" className="border-none">
  <AccordionTrigger className="text-sm font-semibold hover:no-underline px-4 py-3 flex gap-2">
+ <div className="flex items-center gap-2">
  <Play className="w-4 h-4 text-indigo-500" />
  {t("wizard.evaluation.simulation.title")}
+ </div>
+ <Badge variant="outline" className="text-[10px] mr-auto bg-indigo-50 text-indigo-600 border-indigo-200 font-normal">
+ ميزة لمدير النظام فقط
+ </Badge>
  </AccordionTrigger>
  <AccordionContent className="space-y-4 pt-1 pb-4 px-4">
 
  <p className="text-xs text-muted-foreground">{t("wizard.evaluation.simulation.disclaimer")}</p>
 
- <div className="grid gap-3 sm:grid-cols-3 bg-muted/20 p-3 rounded-xl border">
- <div className="space-y-1.5">
- <Label className="text-xs">{t("wizard.burdens.housing.type")}</Label>
- <Select value={simFields.housingType} onValueChange={(v) => setSimFields({ ...simFields, housingType: v })}>
- <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
- <SelectContent>
- <SelectItem value="OWNED">{t("wizard.burdens.housing.options.owned")}</SelectItem>
- <SelectItem value="SHARED">{t("wizard.burdens.housing.options.shared")}</SelectItem>
- <SelectItem value="DONATED_RENT">{t("wizard.burdens.housing.options.donated")}</SelectItem>
- <SelectItem value="RENTED">{t("wizard.burdens.housing.options.rented")}</SelectItem>
- </SelectContent>
- </Select>
+ <div className="bg-muted/20 p-3 rounded-xl border">
+ <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+ {LAYER_KEYS.map(layerId => (
+ <div key={layerId} className="space-y-1">
+ <Label className="text-[11px] truncate" title={getLayerLabel(layerId, t)}>{getLayerLabel(layerId, t)}</Label>
+ <Input 
+ type="number" 
+ step="0.01"
+ className="h-8 text-xs font-mono"
+ value={Number.isNaN(layerOverrides[layerId]) ? "" : (layerOverrides[layerId] ?? "")}
+ onChange={(e) => setLayerOverrides({...layerOverrides, [layerId]: parseFloat(e.target.value)})}
+ />
  </div>
-
- <div className="space-y-1.5">
- <Label className="text-xs">{t("wizard.evaluation.simulation.altIncome")}</Label>
- <Input className="h-8 text-xs" type="number" placeholder="3000" value={simFields.totalIncome} onChange={(e) => setSimFields({ ...simFields, totalIncome: e.target.value })} />
+ ))}
  </div>
-
- <div className="space-y-1.5">
- <Label className="text-xs">{t("wizard.persons.workType")}</Label>
- <Select value={simFields.employmentType} onValueChange={(v) => setSimFields({ ...simFields, employmentType: v })}>
- <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
- <SelectContent>
- <SelectItem value="NONE">{t("wizard.persons.workCorrectionOptions.none")}</SelectItem>
- <SelectItem value="WEAK">{t("wizard.persons.workTypeOptions.weak")}</SelectItem>
- <SelectItem value="SEASONAL">{t("wizard.persons.workTypeOptions.seasonal")}</SelectItem>
- <SelectItem value="REGULAR">{t("wizard.persons.workTypeOptions.regular")}</SelectItem>
- </SelectContent>
- </Select>
- </div>
-
- <div className="sm:col-span-3 flex justify-end">
- <Button variant="secondary" onClick={runSimulation} size="sm" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200">
+ <div className="mt-4 flex justify-end">
+ <Button variant="secondary" onClick={runLocalSimulation} size="sm" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200">
  {t("wizard.evaluation.simulation.run")}
  </Button>
  </div>
  </div>
 
- {simulationResult && (
+ {localSimResult && (
  <div className="p-4 border-2 border-indigo-200 bg-indigo-50/30 rounded-xl space-y-3 max-h-48 overflow-y-auto">
  <h4 className="font-bold text-sm text-indigo-800">{t("wizard.evaluation.simulation.results")}</h4>
 
  <div className="flex items-center gap-3">
- <div className="flex-1 bg-white p-2.5 rounded-lg border text-center">
+ <div className="flex-1 bg-white p-2.5 rounded-lg border text-center relative">
  <p className="text-[10px] text-muted-foreground mb-0.5">{t("wizard.evaluation.simulation.original")}</p>
- <p className="text-lg font-bold">{Math.round(simulationResult.originalScore.normalizedPercent)}%</p>
+ <p className="text-lg font-bold mb-1">{Math.round(localSimResult.originalPct)}%</p>
+ <Badge className={cn("text-[10px] px-2 py-0 font-normal", ELIGIBILITY_COLORS[localSimResult.origEligibility] || "bg-slate-100 text-slate-800")}>
+ {t(`wizard.evaluation.eligibility.${localSimResult.origEligibility}`) || localSimResult.origEligibility}
+ </Badge>
  </div>
  <span className="text-lg text-muted-foreground">→</span>
- <div className="flex-1 bg-indigo-100 p-2.5 rounded-lg border border-indigo-200 text-center">
+ <div className="flex-1 bg-indigo-100 p-2.5 rounded-lg border border-indigo-200 text-center relative">
  <p className="text-[10px] text-indigo-600 mb-0.5">{t("wizard.evaluation.simulation.simulated")}</p>
- <p className="text-lg font-bold text-indigo-900">{Math.round(simulationResult.simulatedScore.normalizedPercent)}%</p>
+ <p className="text-lg font-bold text-indigo-900 mb-1">{Math.round(localSimResult.simPct)}%</p>
+ <Badge className={cn("text-[10px] px-2 py-0 font-normal", ELIGIBILITY_COLORS[localSimResult.simEligibility] || "bg-slate-100 text-slate-800")}>
+ {t(`wizard.evaluation.eligibility.${localSimResult.simEligibility}`) || localSimResult.simEligibility}
+ </Badge>
  </div>
- <div className="flex-1 bg-white p-2.5 rounded-lg border text-center">
+ <div className="flex-1 bg-white p-2.5 rounded-lg border text-center flex flex-col justify-center">
  <p className="text-[10px] text-muted-foreground mb-0.5">{t("wizard.evaluation.simulation.difference")}</p>
- <p className={cn("text-lg font-bold", simulationResult.scoreDelta > 0 ? "text-emerald-600" : simulationResult.scoreDelta < 0 ? "text-rose-600" : "text-slate-600")}>
- {simulationResult.scoreDelta > 0 ? "+" : ""}{simulationResult.scoreDelta.toFixed(1)}
+ <p className={cn("text-lg font-bold", localSimResult.delta > 0 ? "text-emerald-600" : localSimResult.delta < 0 ? "text-rose-600" : "text-slate-600")}>
+ {localSimResult.delta > 0 ? "+" : ""}{localSimResult.delta.toFixed(1)}
  </p>
  </div>
- </div>
-
- <div className="space-y-1 pt-1">
- <p className="text-xs font-semibold">{t("wizard.evaluation.simulation.affectedLayers")}</p>
- {simulationResult.affectedLayers.map((l: any, i: number) => (
- <div key={i} className="text-xs flex justify-between bg-white/60 p-1.5 rounded">
- <span className="font-medium">{getLayerLabel(l.layerId, t)}</span>
- <span className="text-muted-foreground">{l.before} → <span className="font-bold text-foreground">{l.after}</span></span>
- </div>
- ))}
  </div>
  </div>
  )}

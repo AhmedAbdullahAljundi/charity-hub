@@ -1,4 +1,4 @@
-import type { LabeledValue } from "@/lib/store";
+import type { LabeledValue } from "@/lib/stores/constants";
 
 /** Translate a store `LabeledValue` via `families.dictionaries.<group>.<key>` */
 export function dictLabel(

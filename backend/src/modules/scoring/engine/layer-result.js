@@ -22,6 +22,7 @@ function createLayerResult(layerId, score, cap, triggeredRules = [], skippedRule
   return {
     layerId,
     score: rawScore,
+    cap: toDecimal(cap),
     cappedScore,
     triggeredRules,
     skippedRules,

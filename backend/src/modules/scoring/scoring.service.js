@@ -43,30 +43,68 @@ const scoringService = {
     const row = await prisma.scoreResult.findFirst({
       where: { householdId },
       orderBy: { calculatedAt: 'desc' },
+      include: {
+        household: {
+          select: {
+            humanDecision: true,
+            reviewStatus: true,
+            decisionNote: true,
+            classificationTag: true,
+            decidedAt: true,
+            decidedById: true,
+          },
+        },
+      },
     });
     if (!row) return null;
-    return serializeScoreResult(row);
+    return {
+      ...serializeScoreResult(row),
+      humanDecision: row.household.humanDecision,
+      reviewStatus: row.household.reviewStatus,
+      decisionNote: row.household.decisionNote,
+      classificationTag: row.household.classificationTag,
+      decidedAt: row.household.decidedAt,
+    };
   },
 
   async decide(user, householdId, body) {
     await assertHouseholdAccessById(user, householdId);
+
+    // Verify a score exists before allowing a decision.
     const latest = await prisma.scoreResult.findFirst({
       where: { householdId },
       orderBy: { calculatedAt: 'desc' },
     });
     if (!latest) throw new NotFoundError('ScoreResult');
 
-    const updated = await prisma.scoreResult.update({
-      where: { id: latest.id },
+    const updatedHousehold = await prisma.household.update({
+      where: { id: householdId },
       data: {
         humanDecision: body.humanDecision,
         reviewStatus: body.reviewStatus,
         decisionNote: body.decisionNote,
+        classificationTag: body.categoryClass ?? null,
         decidedById: user.userId,
         decidedAt: new Date(),
       },
+      select: {
+        humanDecision: true,
+        reviewStatus: true,
+        decisionNote: true,
+        classificationTag: true,
+        decidedAt: true,
+        decidedById: true,
+      },
     });
-    return serializeScoreResult(updated);
+
+    return {
+      ...serializeScoreResult(latest),
+      humanDecision: updatedHousehold.humanDecision,
+      reviewStatus: updatedHousehold.reviewStatus,
+      decisionNote: updatedHousehold.decisionNote,
+      classificationTag: updatedHousehold.classificationTag,
+      decidedAt: updatedHousehold.decidedAt,
+    };
   },
 };
 

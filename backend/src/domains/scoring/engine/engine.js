@@ -63,6 +63,7 @@ function runScoringEngine(input, options = {}) {
       layerId: l.layerId,
       score: l.score.toFixed(4),
       cappedScore: l.cappedScore.toFixed(4),
+      cap: l.cap ? l.cap.toFixed(4) : undefined,
       triggeredRules: l.triggeredRules.map((r) => ({
         ruleId: r.ruleId,
         reasonCode: r.reasonCode,
