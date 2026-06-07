@@ -35,6 +35,36 @@ const householdsService = {
       if (dbUser?.assignedDistrict) filters.district = dbUser.assignedDistrict;
     }
 
+    const complexSorts = ['score', 'wifeName', 'husbandName', 'dependentCount', 'totalPersons', 'totalIncome', 'classification'];
+    const needsComplexSort = query.sort && complexSorts.some(s => query.sort.includes(s));
+
+    if (needsComplexSort) {
+      // Fetch all records ignoring pagination, but pass filters
+      const [rows, total] = await householdsRepository.findMany({ ...filters, sort: null, sortBy: null }, { page: 1, limit: 100000 });
+      let enrichedData = await Promise.all(rows.map((h) => applyPiiResponse(req, enrichListRow(h), h.id)));
+      
+      // Perform JS sorting
+      const sorts = String(query.sort).split(',').slice(0, 2).map((item) => {
+        const [column, direction] = item.split(':');
+        return column ? { column, direction: direction === 'desc' ? 'desc' : 'asc' } : null;
+      }).filter(Boolean);
+
+      enrichedData.sort((a, b) => {
+        for (const sort of sorts) {
+          const valA = sortValue(a, sort.column);
+          const valB = sortValue(b, sort.column);
+          const compared = compareValues(valA, valB);
+          if (compared !== 0) return sort.direction === 'asc' ? compared : -compared;
+        }
+        return 0;
+      });
+
+      const startIndex = (page - 1) * limit;
+      const paginatedData = enrichedData.slice(startIndex, startIndex + limit);
+      
+      return { data: paginatedData, meta: { page, limit, total, pages: Math.ceil(total / limit) } };
+    }
+
     const [rows, total] = await householdsRepository.findMany(filters, { page, limit });
     const data = await Promise.all(rows.map((h) => applyPiiResponse(req, enrichListRow(h), h.id)));
     return { data, meta: { page, limit, total, pages: Math.ceil(total / limit) } };
@@ -334,6 +364,26 @@ function extractClassificationTag(note) {
     'لا يستحق',
   ];
   return tags.find((tag) => note.includes(tag)) || null;
+}
+
+function sortValue(household, column) {
+  const values = {
+    code: String(household.code || '').match(/(\d{4})$/)?.[1] || String(household.code || '').slice(-4),
+    wifeName: household.spouseName || '',
+    husbandName: household.headName || '',
+    address: household.district || household.village || '',
+    dependentCount: household.dependentCount || 0,
+    totalPersons: household.totalMembersCount || household.totalPersons || 0,
+    totalIncome: household.totalMonthlyIncome || 0,
+    score: Number(household.latestScore?.normalizedPercent || -1),
+    classification: household.classificationTag || household.latestClassification || '',
+  };
+  return values[column] !== undefined ? values[column] : '';
+}
+
+function compareValues(a, b) {
+  if (typeof a === 'number' && typeof b === 'number') return a - b;
+  return String(a).localeCompare(String(b), 'ar');
 }
 
 module.exports = householdsService;

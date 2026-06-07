@@ -24,17 +24,16 @@ import { cn } from "@/lib/utils";
 const COLUMN_STORAGE_KEY = "households_columns";
 
 const allColumns: Array<{ key: HouseholdColumnKey; label: string }> = [
- { key: "select", label: "تحديد" },
- { key: "code", label: "رقم القيد" },
- { key: "family", label: "الأسرة" },
- { key: "address", label: "العنوان" },
- { key: "phone", label: "الهاتف" },
- { key: "dependents", label: "أطفال/معالون" },
- { key: "total", label: "إجمالي الأسرة" },
- { key: "income", label: "إجمالي الدخل" },
- { key: "score", label: "التقييم" },
- { key: "classification", label: "التصنيف" },
- { key: "actions", label: "أكشن" },
+  { key: "select", label: "تحديد" },
+  { key: "code", label: "رقم القيد" },
+  { key: "family", label: "الأسرة" },
+  { key: "address", label: "العنوان" },
+  { key: "phone", label: "الهاتف" },
+  { key: "dependents", label: "الأبناء" },
+  { key: "income", label: "إجمالي الدخل" },
+  { key: "score", label: "التقييم" },
+  { key: "classification", label: "التصنيف" },
+  { key: "actions", label: "أكشن" },
 ];
 
 const eligibilityOptions = [
@@ -273,30 +272,61 @@ function HouseholdsContent() {
  };
 
  return (
- <div
+ <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900/50 pb-12 [--border-subtle:#F1F5F9] [--border:#E2E8F0] [--brand-dark:#16A34A] [--brand:#22C55E] [--page-bg:#F8FAFC] [--surface-raised:#F1F5F9] [--surface:#FFFFFF] [--text-muted:#94A3B8] [--text-primary:#0F172A] [--text-secondary:#475569] dark:[--border-subtle:#1E293B] dark:[--border:#334155] dark:[--brand-dark:#4ADE80] dark:[--brand:#22C55E] dark:[--page-bg:#0F172A] dark:[--surface-raised:#334155] dark:[--surface:#1E293B] dark:[--text-muted:#475569] dark:[--text-primary:#F1F5F9] dark:[--text-secondary:#94A3B8]">
  
- className="grid h-[calc(100vh-6rem)] min-h-0 grid-rows-[auto_auto_1fr_auto] gap-3 overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)] [--border-subtle:#F1F5F9] [--border:#E2E8F0] [--brand-dark:#16A34A] [--brand:#22C55E] [--page-bg:#F8FAFC] [--surface-raised:#F1F5F9] [--surface:#FFFFFF] [--text-muted:#94A3B8] [--text-primary:#0F172A] [--text-secondary:#475569] dark:[--border-subtle:#1E293B] dark:[--border:#334155] dark:[--brand-dark:#4ADE80] dark:[--brand:#22C55E] dark:[--page-bg:#0F172A] dark:[--surface-raised:#334155] dark:[--surface:#1E293B] dark:[--text-muted:#475569] dark:[--text-primary:#F1F5F9] dark:[--text-secondary:#94A3B8] lg:h-[calc(100vh-7rem)]"
- >
- <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
- <KpiCard icon={Users} label={t("dashboard.metrics.total")} value={stats.total} accent="#22C55E" />
- <KpiCard icon={CheckCircle2} label={t("dashboard.metrics.evaluated")} value={stats.evaluated} accent="#10B981" />
- <KpiCard icon={Clock} label={t("dashboard.metrics.pending")} value={stats.pending} accent="#F59E0B" />
- <KpiCard icon={MapPin} label={t("dashboard.metrics.visit")} value={stats.fieldVisits} accent="#F97316" />
- <KpiCard icon={FileWarning} label={t("dashboard.metrics.incomplete")} value={stats.missingFiles} accent="#F43F5E" />
- </div>
+  {/* PREMIUM HEADER SECTION */}
+  <div className="relative bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 pt-16 pb-24 overflow-hidden shadow-lg">
+    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+    <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="absolute top-1/2 -left-24 w-72 h-72 bg-slate-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
- <div className="flex min-h-12 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 shadow-[0_1px_3px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
- <Button asChild className="h-9 shrink-0 rounded-lg bg-[var(--brand)] px-3 text-white hover:bg-[var(--brand-dark)]">
- <Link href="/dashboard/households/new">
- <Plus className="ms-1 h-4 w-4" />
- {t("dashboard.actions.add")}
- </Link>
- </Button>
+    <div className="relative max-w-7xl mx-auto px-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm font-medium backdrop-blur-md">
+            <Users className="w-4 h-4" />
+            <span>إدارة الأسر المستهدفة</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
+            الأسر المستهدفة
+          </h1>
+          <p className="text-slate-300 text-lg max-w-xl leading-relaxed">
+            متابعة شاملة لبيانات الأسر، التقييم الآلي، وتحديد الاستحقاق لضمان وصول الدعم لمستحقيه بكل دقة وشفافية.
+          </p>
+        </div>
 
- <FilterPopover
- name={t("dashboard.filters.class")}
- selected={currentEligibility}
- options={eligibilityOptions}
+        <Link
+          href="/dashboard/households/new"
+          className="group relative inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white text-emerald-950 rounded-xl hover:bg-emerald-50 transition-all duration-300 shadow-[0_0_40px_rgba(16,185,129,0.15)] hover:shadow-[0_0_60px_rgba(16,185,129,0.25)] font-bold text-base overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-50 to-slate-50 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Plus className="w-5 h-5 relative z-10 text-emerald-600 transition-transform group-hover:rotate-90" />
+          <span className="relative z-10">{t("dashboard.actions.add")}</span>
+        </Link>
+      </div>
+    </div>
+  </div>
+
+  <div className="max-w-7xl mx-auto px-6 -mt-12 relative z-20 space-y-6 flex flex-col min-h-[500px]">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <KpiCard icon={Users} label={t("dashboard.metrics.total")} value={stats.total} accent="#22C55E" />
+      <KpiCard icon={CheckCircle2} label={t("dashboard.metrics.evaluated")} value={stats.evaluated} accent="#10B981" />
+      <KpiCard icon={Clock} label={t("dashboard.metrics.pending")} value={stats.pending} accent="#F59E0B" />
+      <KpiCard icon={MapPin} label={t("dashboard.metrics.visit")} value={stats.fieldVisits} accent="#F97316" />
+      <KpiCard icon={FileWarning} label={t("dashboard.metrics.incomplete")} value={stats.missingFiles} accent="#F43F5E" />
+    </div>
+
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200/60 bg-white/95 backdrop-blur-sm px-4 py-3 shadow-lg shadow-slate-200/40 dark:border-slate-800 dark:bg-slate-900/95 dark:shadow-none">
+        <Button asChild className="h-9 shrink-0 rounded-lg bg-[var(--brand)] px-3 text-white hover:bg-[var(--brand-dark)]">
+          <Link href="/dashboard/households/new">
+            <Plus className="ms-1 h-4 w-4" />
+            {t("dashboard.actions.add")}
+          </Link>
+        </Button>
+        <FilterPopover
+          name={t("dashboard.filters.class")}
+          selected={currentEligibility}
+          options={eligibilityOptions}
  counts={optionCounts.eligibility}
  onChange={(value) => updateFilters("eligibility", value)}
  />
@@ -315,19 +345,19 @@ function HouseholdsContent() {
  onChange={(value) => updateFilters("decisionStatus", value)}
  />
 
- <div className="relative min-w-[220px] flex-1">
- <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
- <Input
- value={searchValue}
- onChange={(event) => setSearchValue(event.target.value)}
- placeholder={t("dashboard.actions.searchPlaceholder")}
- className="h-9 rounded-lg border-[var(--border)] bg-[var(--surface)] pr-9 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
- />
- {searchValue && (
+        <div className="relative min-w-[220px] flex-1">
+          <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+          <Input
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
+            placeholder={t("dashboard.actions.searchPlaceholder")}
+            className="h-9 rounded-lg border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 pr-9 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+          />
+          {searchValue && (
  <button
  type="button"
  onClick={() => setSearchValue("")}
- className="absolute left-2 top-1/2 rounded-full p-1 text-[var(--text-muted)] hover:bg-[var(--surface-raised)]"
+ className="absolute left-2 top-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
  >
  <X className="h-3.5 w-3.5" />
  </button>
@@ -336,7 +366,7 @@ function HouseholdsContent() {
 
  <DropdownMenu>
  <DropdownMenuTrigger asChild>
- <Button variant="outline" className="h-9 rounded-lg border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)]">
+ <Button variant="outline" className="h-9 rounded-lg border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50">
  <Settings2 className="ms-1 h-4 w-4" />
  {t("dashboard.actions.columns")}
  </Button>
@@ -356,7 +386,7 @@ function HouseholdsContent() {
 
  <DropdownMenu>
  <DropdownMenuTrigger asChild>
- <Button variant="outline" className="h-9 rounded-lg border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)]">
+ <Button variant="outline" className="h-9 rounded-lg border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50">
  <Download className="ms-1 h-4 w-4" />
  {t("dashboard.actions.export")}
  </Button>
@@ -368,15 +398,18 @@ function HouseholdsContent() {
  </DropdownMenu>
  </div>
 
- <HouseholdsTable
- list={list}
- loading={loading}
- pagination={pagination}
- searchQuery={currentSearch}
- visibleColumns={visibleColumns}
- selectedIds={selectedIds}
- onSelectedIdsChange={setSelectedIds}
- />
+ <div className="flex-1 bg-white/95 dark:bg-slate-900/95 rounded-xl border border-slate-200/60 dark:border-slate-800 shadow-lg shadow-slate-200/40 dark:shadow-none overflow-hidden flex flex-col">
+   <HouseholdsTable
+   list={list}
+   loading={loading}
+   pagination={pagination}
+   searchQuery={currentSearch}
+   visibleColumns={visibleColumns}
+   selectedIds={selectedIds}
+   onSelectedIdsChange={setSelectedIds}
+   />
+ </div>
+ </div>
  </div>
  );
 }
@@ -394,81 +427,62 @@ function FilterPopover({
  counts: Map<string, number>;
  onChange: (value: string) => void;
 }) {
- const selectedOption = options.find((option) => option.value === selected);
- const label = selectedOption ? `${name}: ${selectedOption.label}` : name;
- return (
- <Popover>
- <PopoverTrigger asChild>
- <button
- type="button"
- className={cn(
- "inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border px-3 text-sm transition-colors hover:bg-[var(--surface-raised)]",
- selected
- ? "border-green-500 bg-[var(--surface)] text-green-700 font-medium dark:border-green-400 dark:text-green-300"
- : "border-[var(--border)] bg-[var(--surface)] text-slate-500 dark:text-slate-200"
- )}
- >
- {label}
- {selected && (
- <span
- role="button"
- tabIndex={0}
- onClick={(event) => {
- event.stopPropagation();
- onChange("");
- }}
- className="rounded-full p-0.5 text-green-600 hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900/50"
- >
- <X className="h-3 w-3" />
- </span>
- )}
- {!selected && <ChevronDown className="h-3.5 w-3.5 opacity-50" />}
- </button>
- </PopoverTrigger>
- <PopoverContent align="start" className="w-56 p-1">
- <button
- className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
- onClick={() => onChange("")}
- >
- <span>الكل</span>
- <span className="text-xs text-slate-400">{Array.from(counts.values()).reduce((a, b) => a + b, 0)}</span>
- </button>
- {options.map((option) => (
- <button
- key={option.value}
- className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
- onClick={() => onChange(option.value)}
- >
- <span className="inline-flex items-center gap-2">
- <span className={cn("h-2.5 w-2.5 rounded-full", option.dot)} />
- {option.label}
- </span>
- <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800">
- {counts.get(option.value) || 0}
- </span>
- </button>
- ))}
- </PopoverContent>
- </Popover>
- );
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="h-9 rounded-lg border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <span className="truncate max-w-[120px]">{selected ? options.find(o => o.value === selected)?.label || selected : name}</span>
+          <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-2 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xl" align="end">
+        <button
+          className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+          onClick={() => onChange("")}
+        >
+          <span>الكل</span>
+          <span className="text-xs text-slate-400">{Array.from(counts.values()).reduce((a, b) => a + b, 0)}</span>
+        </button>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+            onClick={() => onChange(option.value)}
+          >
+            <span className="inline-flex items-center gap-2">
+              <span className={cn("h-2.5 w-2.5 rounded-full", option.dot)} />
+              {option.label}
+            </span>
+            <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-500">
+              {counts.get(option.value) || 0}
+            </span>
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
 }
 
-function KpiCard({ icon: Icon, label, value, accent }: { icon: typeof Users; label: string; value: number; accent: string }) {
- const displayValue = useCountUp(value);
- return (
- <div
- className="flex h-20 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.3)]"
- style={{ borderInlineStart: `3px solid ${accent}` }}
- >
- <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--surface-raised)]">
- <Icon className="h-5 w-5" style={{ color: accent }} />
- </div>
- <div className="min-w-0">
- <span className="block text-[28px] font-bold leading-none text-[var(--text-primary)]">{displayValue.toLocaleString("ar-EG")}</span>
- <span className="mt-1 block truncate text-xs font-medium text-[var(--text-secondary)]">{label}</span>
- </div>
- </div>
- );
+function KpiCard({ icon: Icon, label, value, accent }: { icon: any; label: string; value: number; accent: string }) {
+  const displayValue = useCountUp(value);
+  return (
+    <div className="flex items-start justify-between rounded-xl border border-slate-200/60 bg-white/80 backdrop-blur-xl px-5 py-4 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-none">
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
+        <p className="text-3xl font-bold" style={{ color: accent }}>{displayValue.toLocaleString("ar-EG")}</p>
+      </div>
+      <div 
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-inner border" 
+        style={{ 
+          backgroundColor: `${accent}15`,
+          color: accent,
+          borderColor: `${accent}30`
+        }}
+      >
+        <Icon className="h-6 w-6" />
+      </div>
+    </div>
+  );
 }
 
 function useCountUp(value: number) {

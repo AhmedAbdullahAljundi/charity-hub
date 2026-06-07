@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Edit, Eye, FileText, MessageCircle, Paperclip, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Edit, Eye, FileText, MessageCircle, MoreVertical, Paperclip, Trash2 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -60,15 +60,15 @@ interface HouseholdsTableProps {
 const columnWidths: Record<HouseholdColumnKey, string> = {
   select: "3%",
   code: "6%",
-  family: "18%",
-  address: "12%",
-  phone: "9%",
-  dependents: "9%",
-  total: "7%",
-  income: "9%",
+  family: "24%",
+  address: "16%",
+  phone: "10%",
+  dependents: "6%",
+  total: "0%", // We merge this into dependents
+  income: "12%",
   score: "9%",
-  classification: "11%",
-  actions: "7%",
+  classification: "10%",
+  actions: "4%",
 };
 
 const eligibilityLabels: Record<string, string> = {
@@ -93,6 +93,14 @@ const eligibilityBars: Record<string, string> = {
   MODERATE_NEED: "bg-amber-500",
   LOW_NEED: "bg-blue-500",
   NOT_ELIGIBLE: "bg-slate-400",
+};
+
+const eligibilityText: Record<string, string> = {
+  CRITICAL: "text-rose-600 dark:text-rose-400",
+  HIGH_NEED: "text-orange-500",
+  MODERATE_NEED: "text-amber-500",
+  LOW_NEED: "text-blue-500",
+  NOT_ELIGIBLE: "text-slate-400 dark:text-slate-500",
 };
 
 const classificationPills: Record<string, string> = {
@@ -197,11 +205,11 @@ export function HouseholdsTable({
   };
 
   return (
-    <div className="relative grid min-h-0 grid-rows-[auto_1fr_48px] overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--surface)]">
-      <table className="w-full min-w-[900px] table-fixed border-collapse">
+    <div className="relative grid min-h-0 grid-rows-[auto_1fr_48px] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900">
+      <table className="w-full table-fixed border-collapse">
         <ColumnGroup visibleColumns={visibleColumns} />
-        <thead className="bg-[var(--surface-raised)] text-[13px] font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)] dark:bg-[#1E293B]">
-          <tr className="border-b-2 border-[var(--border)]">
+        <thead className="bg-primary/5 dark:bg-primary/10 text-[13px] font-semibold uppercase tracking-[0.05em] text-primary/80 dark:text-primary/70">
+          <tr className="border-b-2 border-primary/10 dark:border-primary/20">
             {show("select") && (
               <th className="px-2 py-3">
                 <Checkbox checked={sortedList.length > 0 && sortedList.every((row) => selectedIds.includes(row.id))} onCheckedChange={toggleAll} />
@@ -228,19 +236,18 @@ export function HouseholdsTable({
             {show("address") && <SortableTh label={t("table.headers.address")} column="address" sorts={sorts} onSort={toggleSort} />}
             {show("phone") && <th className="px-3 py-3 text-center">{t("table.headers.phone")}</th>}
             {show("dependents") && (
-              <SortableTh label={t("table.headers.dependents")} column="dependentCount" sorts={sorts} onSort={toggleSort} center />
+              <SortableTh label="الأبناء" column="dependentCount" sorts={sorts} onSort={toggleSort} center />
             )}
-            {show("total") && <SortableTh label={t("table.headers.total")} column="totalPersons" sorts={sorts} onSort={toggleSort} center />}
-            {show("income") && <SortableTh label={t("table.headers.income")} column="totalIncome" sorts={sorts} onSort={toggleSort} />}
-            {show("score") && <SortableTh label={t("table.headers.score")} column="score" sorts={sorts} onSort={toggleSort} />}
-            {show("classification") && <SortableTh label={t("table.headers.classification")} column="classification" sorts={sorts} onSort={toggleSort} />}
+            {show("income") && <SortableTh label={t("table.headers.income")} column="totalIncome" sorts={sorts} onSort={toggleSort} center />}
+            {show("score") && <SortableTh label={t("table.headers.score")} column="score" sorts={sorts} onSort={toggleSort} center />}
+            {show("classification") && <SortableTh label={t("table.headers.classification")} column="classification" sorts={sorts} onSort={toggleSort} center />}
             {show("actions") && <th className="px-2 py-3" aria-label={t("table.headers.actions")} />}
           </tr>
         </thead>
       </table>
 
-      <div ref={bodyRef} className="min-h-0 overflow-y-auto" style={{ maxHeight: "calc(100vh - 280px)" }}>
-        <table className="w-full min-w-[900px] table-fixed border-collapse text-sm">
+      <div ref={bodyRef} className="min-h-0 overflow-y-auto overflow-x-hidden" style={{ maxHeight: "calc(100vh - 280px)" }}>
+        <table className="w-full table-fixed border-collapse text-sm">
           <ColumnGroup visibleColumns={visibleColumns} />
           <tbody>
             {loading &&
@@ -272,11 +279,11 @@ export function HouseholdsTable({
             {!loading && sortedList.length === 0 && (
               <tr>
                 <td colSpan={colSpan} className="h-72 text-center">
-                  <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-[var(--text-secondary)]">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-raised)] text-[var(--text-muted)]">
+                  <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-slate-500 dark:text-slate-400">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500">
                       <FileText className="h-7 w-7" />
                     </div>
-                    <p className="text-base font-semibold text-[var(--text-primary)]">{t("table.empty.title")}</p>
+                    <p className="text-base font-semibold text-slate-900 dark:text-slate-100">{t("table.empty.title")}</p>
                     <Button variant="outline" onClick={() => router.replace(pathname)}>
                       {t("table.empty.clear")}
                     </Button>
@@ -299,8 +306,8 @@ export function HouseholdsTable({
         </div>
       )}
 
-      <div className="flex h-12 items-center justify-between border-t border-[var(--border)] bg-[var(--surface)] px-4">
-        <p className="text-sm text-[var(--text-muted)]">
+      <div className="flex h-12 items-center justify-between border-t border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 px-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           {t("table.pagination.showing")} {from.toLocaleString("ar-EG")}{t("table.pagination.to")}{to.toLocaleString("ar-EG")} {t("table.pagination.of")} {total.toLocaleString("ar-EG")} {t("table.pagination.items")}
         </p>
         <div className="flex items-center gap-1">
@@ -316,7 +323,7 @@ export function HouseholdsTable({
                 key={page}
                 onClick={() => updatePage(page)}
                 className={cn(
-                  "h-8 w-8 rounded-lg border border-[var(--border)] text-sm transition-colors hover:bg-[var(--surface-raised)]",
+                  "h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700/50 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50",
                   page === currentPage && "border-green-600 bg-green-600 text-white hover:bg-green-600"
                 )}
               >
@@ -369,18 +376,21 @@ function HouseholdRow({
 }) {
   const t = useTranslations("households");
   const show = (key: HouseholdColumnKey) => visibleColumns.includes(key);
-  const wife = findPerson(household, "SPOUSE", "FEMALE");
-  const husband = findPerson(household, "HEAD", "MALE");
+  // Prioritize isHead, then female spouse (often the primary applicant in charities), then HEAD role, then fallback
+  const head = household.persons?.find((p) => p.isHead) || 
+               household.persons?.find((p) => p.gender === "FEMALE" && (p.role === "SPOUSE" || p.role === "HEAD")) || 
+               household.persons?.find((p) => p.role === "HEAD") || 
+               household.persons?.[0];
+  const headGender = head?.gender === "FEMALE" ? "FEMALE" : "MALE";
   const score = household.latestScore || household.scoreResults?.[0];
   const recommendation = score?.systemRecommendation;
   const percent = score ? Math.round(Number(score.normalizedPercent || 0)) : null;
   const income = Math.abs(Number(household.totalMonthlyIncome || 0));
   const classification = score?.classificationTag || extractClassification(household.latestClassification || score?.decisionNote);
-  const phones = [household.primaryPhone, household.secondaryPhone].filter(Boolean) as string[];
-  const familyName = (household as any).familyName || wife?.name || (household as any).spouseName || husband?.name || (household as any).headName || household.code;
+  const familyName = (household as any).familyName || household.headName || household.spouseName || household.code;
 
   return (
-    <tr className={cn("group h-[56px] border-b border-[var(--border-subtle)] text-sm transition-[background-color] duration-150 hover:bg-[var(--surface-raised)]", selected && "bg-green-50/60 dark:bg-green-950/20")}>
+    <tr className={cn("group h-[56px] border-b border-slate-100 dark:border-slate-800 text-sm transition-[background-color] duration-150 hover:bg-slate-50 dark:hover:bg-slate-800/50", selected && "bg-green-50/60 dark:bg-green-950/20")}>
       {show("select") && (
         <td className="px-2 text-center">
           <div className="opacity-0 transition-opacity group-hover:opacity-100 data-[selected=true]:opacity-100" data-selected={selected}>
@@ -391,12 +401,12 @@ function HouseholdRow({
       {show("code") && (
         <td className="px-2 align-middle">
           <div className="flex items-center gap-1">
-            <button onClick={() => onExpand(household.id)} className="rounded p-0.5 text-[var(--text-muted)] hover:bg-[var(--surface)] hover:text-green-600">
+            <button onClick={() => onExpand(household.id)} className="rounded p-0.5 text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-900 hover:text-green-600">
               <ChevronLeft className={cn("h-3.5 w-3.5 transition-transform", expanded && "-rotate-90")} />
             </button>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{shortCode(household.code)}</span>
+                <span className="font-mono text-sm font-bold text-slate-900 dark:text-slate-100">{shortCode(household.code)}</span>
               </TooltipTrigger>
               <TooltipContent>{household.code}</TooltipContent>
             </Tooltip>
@@ -405,15 +415,19 @@ function HouseholdRow({
       )}
       {show("family") && (
         <td className="px-3 py-2 align-middle">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 space-y-1">
-              <NameLine person={wife} fallback={household.spouseName || "-"} highlight={searchQuery} gender="FEMALE" strong />
-              <div className="flex items-center gap-2">
-                <NameLine person={husband} fallback={household.headName || "-"} highlight={searchQuery} gender="MALE" />
-                <CompactTags household={household} />
+          <div className="flex items-start gap-2">
+            <span className={cn("mt-0.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] font-bold", headGender === "FEMALE" ? "bg-pink-100 text-pink-700 dark:bg-pink-900/60 dark:text-pink-300" : "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300")}>
+              {head ? getAge(head) ?? "-" : "-"}
+            </span>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate text-sm font-bold text-slate-900 dark:text-slate-100" title={familyName || "-"}>
+                  {highlightText(familyName || "-", searchQuery)}
+                </span>
+                <PdfLink url={household.pdfUrl} />
               </div>
+              <TagList household={household} />
             </div>
-            <PdfLink url={household.pdfUrl} />
           </div>
         </td>
       )}
@@ -421,12 +435,12 @@ function HouseholdRow({
         <td className="px-3 align-middle">
           <div className="space-y-1">
             <div className="flex items-center gap-1.5">
-              <span className="rounded border border-[var(--border)] bg-[var(--surface-raised)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">
+              <span className="rounded border border-slate-200 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/50 px-1.5 py-0.5 font-mono text-[11px] text-slate-600 dark:text-slate-300">
                 {household.addressRegion || "--"}
               </span>
-              <span className="truncate text-sm text-[var(--text-secondary)]">{household.district || household.village || "-"}</span>
+              <span className="truncate text-sm text-slate-600 dark:text-slate-300" title={household.district || household.village || "-"}>{household.district || household.village || "-"}</span>
             </div>
-            <p className="line-clamp-2 text-xs text-[var(--text-muted)]">
+            <p className="line-clamp-2 text-xs text-slate-400 dark:text-slate-500">
               {[household.addressStreet, household.addressDetails || household.address].filter(Boolean).join(" - ") || "-"}
             </p>
           </div>
@@ -434,94 +448,117 @@ function HouseholdRow({
       )}
       {show("phone") && (
         <td className="px-2 text-center align-middle">
-          <div className="flex flex-col items-center gap-1">
-            {phones.length ? phones.slice(0, 2).map((phone, index) => (
-              <span key={phone} dir="ltr" className={cn("rounded px-2 py-0.5 text-xs text-[var(--text-secondary)]", index === 0 ? "bg-slate-50 dark:bg-slate-700" : "bg-green-50 dark:bg-green-900")}>
-                {phone}
-              </span>
-            )) : <span className="text-[var(--text-muted)]">—</span>}
-            {household.primaryPhone && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <a href={`https://wa.me/2${cleanEgyptPhone(household.whatsappPhone || household.primaryPhone || '')}`}
-                    target="_blank" rel="noreferrer" className="rounded-full p-1 text-[#25D366] hover:bg-emerald-50 dark:hover:bg-emerald-900/30">
-                    <MessageCircle className="h-3.5 w-3.5" />
-                  </a>
-                </TooltipTrigger>
-                <TooltipContent>{t("table.tooltips.whatsapp")}</TooltipContent>
-              </Tooltip>
+          <div className="flex items-center justify-center gap-1.5">
+            {household.primaryPhone ? (
+              <>
+                <span dir="ltr" className="text-xs font-medium text-slate-900 dark:text-slate-100">{household.primaryPhone}</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a href={`https://wa.me/2${cleanEgyptPhone(household.whatsappPhone || household.primaryPhone)}`}
+                      target="_blank" rel="noreferrer" className="rounded-full p-1 text-[#25D366] hover:bg-emerald-50 dark:hover:bg-emerald-900/30">
+                      <MessageCircle className="h-4 w-4" />
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("table.tooltips.whatsapp")}</TooltipContent>
+                </Tooltip>
+              </>
+            ) : (
+              <span className="text-slate-400 dark:text-slate-500">—</span>
             )}
           </div>
         </td>
       )}
       {show("dependents") && (
-        <td className="px-2 text-center align-middle">
+        <td className="px-1 text-center align-middle">
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="font-bold text-[var(--text-primary)]">{household.dependentCount ?? 0}</span>
+              <div className="flex items-center justify-center gap-1 mx-auto w-fit">
+                <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{household.dependentCount ?? 0}</span>
+                <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold px-1.5 py-0.5 rounded-md" title="إجمالي أفراد الأسرة">
+                  {household.totalMembersCount ?? household.totalPersons ?? 0}
+                </span>
+              </div>
             </TooltipTrigger>
-            <TooltipContent>{t("table.tooltips.dependents")}</TooltipContent>
+            <TooltipContent>الأبناء المعالين / إجمالي الأفراد</TooltipContent>
           </Tooltip>
         </td>
       )}
-      {show("total") && <td className="px-2 text-center align-middle font-bold text-[var(--text-secondary)]">{household.totalMembersCount ?? household.totalPersons ?? 0}</td>}
       {show("income") && (
-        <td className="px-3 align-middle">
+        <td className="px-3 text-center align-middle">
           <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-medium", recommendation ? eligibilityPills[recommendation] : "bg-slate-100 text-slate-500 dark:bg-slate-800")}>
             {income.toLocaleString("ar-EG")} ج
           </span>
         </td>
       )}
       {show("score") && (
-        <td className="px-3 align-middle">
+        <td className="px-3 text-center align-middle">
           {score && percent != null ? (
-            <div className="space-y-1">
-              <div className="h-2 overflow-hidden rounded bg-[var(--surface-raised)]">
+            <div className="space-y-1 w-full max-w-[100px] mx-auto">
+              <div className="h-1.5 w-full overflow-hidden rounded bg-slate-100 dark:bg-slate-800">
                 <div className={cn("h-full rounded", recommendation ? eligibilityBars[recommendation] : "bg-slate-300")} style={{ width: `${Math.min(Math.max(percent, 0), 100)}%` }} />
               </div>
-              <p className="text-xs font-bold text-[var(--text-primary)]">{percent}%</p>
-              <p className="truncate text-xs text-[var(--text-muted)]">{recommendation ? eligibilityLabels[recommendation] : "-"}</p>
+              <div className="flex items-center justify-between gap-1 text-[10px] font-bold">
+                <span 
+                  className={cn("truncate", recommendation ? eligibilityText[recommendation] : "text-slate-500")}
+                  title={recommendation ? eligibilityLabels[recommendation] : ""}
+                >
+                  {recommendation ? eligibilityLabels[recommendation] : ""}
+                </span>
+                <span className="text-slate-900 dark:text-slate-100">{percent}%</span>
+              </div>
             </div>
-          ) : <span className="text-[var(--text-muted)]">—</span>}
+          ) : <span className="text-slate-400 dark:text-slate-500">—</span>}
         </td>
       )}
       {show("classification") && (
-        <td className="px-3 align-middle">
+        <td className="px-3 text-center align-middle">
           {classification ? (
-            <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-medium", classificationPills[classification] || "bg-slate-100 text-slate-500 dark:bg-slate-800")}>{classification}</span>
+            <span className={cn("inline-flex justify-center rounded-full px-3 py-1 text-xs font-medium min-w-[70px]", classificationPills[classification] || "bg-slate-100 text-slate-500 dark:bg-slate-800")}>{classification}</span>
           ) : (
-            <span className="inline-flex rounded-full border border-dashed border-[var(--border)] px-3 py-1 text-xs text-[var(--text-muted)]">{t("table.status.pending")}</span>
+            <span className="inline-flex justify-center rounded-full border border-dashed border-slate-200 dark:border-slate-700/50 px-3 py-1 text-xs text-slate-400 dark:text-slate-500 min-w-[70px]">{t("table.status.pending")}</span>
           )}
         </td>
       )}
       {show("actions") && (
         <td className="px-2 text-center align-middle">
-          <div className="flex items-center justify-center gap-1">
-            <IconLink href={`/dashboard/households/${household.id}/view`} label="عرض" className="text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30"><Eye className="h-4 w-4" /></IconLink>
-            <IconLink href={`/dashboard/households/${household.id}/wizard`} label="تعديل" className="text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"><Edit className="h-4 w-4" /></IconLink>
-            {isAdmin && (
-              <AlertDialog>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AlertDialogTrigger asChild>
-                      <button className="rounded-full p-1.5 text-rose-400 transition-colors hover:bg-rose-50 dark:hover:bg-rose-900/30"><Trash2 className="h-4 w-4" /></button>
-                    </AlertDialogTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("table.actions.delete")}</TooltipContent>
-                </Tooltip>
-                <AlertDialogContent >
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t("table.deleteDialog.title")}</AlertDialogTitle>
-                    <AlertDialogDescription>{t("table.deleteDialog.desc")} {familyName}؟ {t("table.deleteDialog.warning")}</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t("table.deleteDialog.cancel")}</AlertDialogCancel>
-                    <AlertDialogAction disabled={deleting} onClick={() => onDelete(household.id)} className="bg-rose-600 text-white hover:bg-rose-700">{t("table.deleteDialog.confirm")}</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-100">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem asChild>
+                <Link href={`/dashboard/households/${household.id}/view`} className="flex items-center gap-2 cursor-pointer">
+                  <Eye className="h-4 w-4 text-green-500" /> عرض
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/dashboard/households/${household.id}/wizard`} className="flex items-center gap-2 cursor-pointer">
+                  <Edit className="h-4 w-4 text-emerald-500" /> تعديل
+                </Link>
+              </DropdownMenuItem>
+              {isAdmin && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer text-rose-500 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-900/30">
+                      <Trash2 className="h-4 w-4" /> حذف
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t("table.deleteDialog.title")}</AlertDialogTitle>
+                      <AlertDialogDescription>{t("table.deleteDialog.desc")} {familyName}؟ {t("table.deleteDialog.warning")}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t("table.deleteDialog.cancel")}</AlertDialogCancel>
+                      <AlertDialogAction disabled={deleting} onClick={() => onDelete(household.id)} className="bg-rose-600 text-white hover:bg-rose-700">{t("table.deleteDialog.confirm")}</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </td>
       )}
     </tr>
@@ -530,31 +567,222 @@ function HouseholdRow({
 
 function ExpandedPanel({ household, open }: { household: HouseholdDto; open: boolean }) {
   const t = useTranslations("households");
+  const tFam = useTranslations("families") as any;
   const score = household.latestScore || household.scoreResults?.[0];
   const layers = normalizeLayers(score?.layerBreakdown);
+  
+  const pCount = household.persons?.length || 0;
+  const isCompactPersons = pCount > 3;
+
+  const iCount = household.incomeSources?.length || 0;
+  const isCompactIncome = iCount > 2;
+
+  // Helper for safe translation
+  const getIncomeLabel = (channel: string) => {
+    if (!channel) return channel;
+    
+    const key1 = `wizard.income.channels.${channel}`;
+    if (t.has(key1)) return t(key1);
+    
+    const key2 = `wizard.income.channels.${channel.toUpperCase()}`;
+    if (t.has(key2)) return t(key2);
+
+    const key3 = `dictionaries.incomeSources.${channel}`;
+    if (tFam.has(key3)) return tFam(key3);
+
+    const key4 = `dictionaries.incomeSources.${channel.toLowerCase()}`;
+    if (tFam.has(key4)) return tFam(key4);
+
+    return channel;
+  };
+
+  const getLayerLabel = (id: string) => {
+    if (!id) return id;
+    const cleanId = id.replace('layer_', '');
+    const key = `wizard.evaluation.layers.${cleanId}`;
+    if (t.has(key)) return t(key);
+    
+    const LAYER_KEYS = ['L1_HEAD', 'L2_DEPENDENTS', 'L3_STUDENTS', 'L4_VULNERABILITY', 'L5_BURDENS', 'L5B_HOUSING', 'L6_HEALTH', 'L7_CORRECTIONS', 'L8_INCOME', 'FE_FRAUD'];
+    
+    for (const k of LAYER_KEYS) {
+      const prefix = k.split('_')[0];
+      if (cleanId.toUpperCase() === prefix.toUpperCase()) {
+        return t(`wizard.evaluation.layers.${k}`);
+      }
+    }
+    
+    const LAYER_FALLBACK_PATTERNS: [RegExp, string][] = [
+      [/head/i, 'L1_HEAD'],
+      [/depend/i, 'L2_DEPENDENTS'],
+      [/student/i, 'L3_STUDENTS'],
+      [/vuln/i, 'L4_VULNERABILITY'],
+      [/burden/i, 'L5_BURDENS'],
+      [/hous/i, 'L5B_HOUSING'],
+      [/health|disease|disab/i, 'L6_HEALTH'],
+      [/correct/i, 'L7_CORRECTIONS'],
+      [/income/i, 'L8_INCOME'],
+      [/fraud|fe/i, 'FE_FRAUD'],
+    ];
+    for (const [pattern, fbKey] of LAYER_FALLBACK_PATTERNS) {
+      if (pattern.test(cleanId)) return t(`wizard.evaluation.layers.${fbKey}`);
+    }
+    return id;
+  };
+
   return (
-    <div className={cn("grid overflow-hidden transition-[max-height,opacity] duration-200", open ? "max-h-[140px] opacity-100" : "max-h-0 opacity-0")}>
-      <div className="grid min-h-[120px] grid-cols-3 gap-4 border-b border-[var(--border-subtle)] bg-[var(--surface-raised)] px-4 py-3">
-        <MiniSection title={t("table.expanded.members")}>
-          <div className="mb-2"><TagList household={household} /></div>
-          {(household.persons || []).slice(0, 4).map((person) => (
-            <p key={person.id} className="truncate text-xs text-[var(--text-secondary)]">{person.name} · {roleLabel(person.role)} · {getAge(person) ?? "-"} سنة</p>
-          ))}
-          <p className="mt-2 text-[10px] text-[var(--text-muted)]">{t("table.expanded.lastModified")}: {relativeDate(household.updatedAt)}</p>
-        </MiniSection>
-        <MiniSection title={t("table.expanded.income")}>
-          {(household.incomeSources || []).slice(0, 4).map((income) => <IncomeLine key={income.id} income={income} />)}
-        </MiniSection>
-        <MiniSection title={t("table.expanded.scoreBreakdown")}>
-          {layers.slice(0, 8).map((layer) => (
-            <div key={layer.layerId} className="grid grid-cols-[36px_1fr] items-center gap-2">
-              <span className="text-[10px] text-[var(--text-muted)]">{layer.layerId}</span>
-              <div className="h-1.5 overflow-hidden rounded bg-[var(--surface)]">
-                <div className="h-full rounded bg-green-500" style={{ width: `${layer.percent}%` }} />
+    <div className={cn("grid overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out", open ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0")}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-b border-primary/10 dark:border-primary/20 bg-gradient-to-l from-primary/5 to-white dark:from-primary/10 dark:to-slate-900 px-6 py-5 shadow-inner">
+        
+        {/* RIGHT: Individuals */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">{t("table.expanded.members") || "الأفراد"}</h4>
+            <span className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] px-2 py-0.5 rounded-full font-bold">{pCount}</span>
+          </div>
+          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+            {(household.persons || []).map((person) => {
+               const pTags = [];
+               if (person.isStudent) pTags.push({ label: "طالب", className: "bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300" });
+               if ((person.diseases?.length || 0) > 0) pTags.push({ label: "مرض مزمن", className: "bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" });
+               if ((person.disabilities?.length || 0) > 0) pTags.push({ label: "إعاقة", className: "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" });
+               
+               return (
+                 <div key={person.id} className="flex items-center gap-2 bg-white dark:bg-slate-800/80 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm p-1.5 shrink-0 overflow-hidden">
+                   <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[11px] max-w-[110px]" title={person.name}>{person.name}</span>
+                   
+                   <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar no-scrollbar shrink-0 mr-auto">
+                     <span className="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 text-[9px] px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap">{roleLabel(person.role)}</span>
+                     <span className="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 text-[9px] px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap">{getAge(person) ?? "-"} سنة</span>
+                     {pTags.map(tag => <span key={tag.label} className={cn("font-bold rounded-md whitespace-nowrap text-[9px] px-1.5 py-0.5", tag.className)}>{tag.label}</span>)}
+                   </div>
+                 </div>
+               );
+            })}
+          </div>
+        </div>
+
+        {/* CENTER: Phones & Income */}
+        <div className="space-y-4 border-t md:border-t-0 md:border-r border-slate-200 dark:border-slate-700 pt-4 md:pt-0 md:pr-6 flex flex-col">
+          
+          {/* Confidence Progress */}
+          <div className="space-y-1.5 bg-white dark:bg-slate-800/80 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm shrink-0">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">مؤشر الثقة (Confidence)</span>
+              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400" dir="ltr">{Math.round(Number(score?.confidenceScore || 0) * 100)}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+               <div 
+                 className={cn("h-full rounded-full transition-all duration-1000", (Number(score?.confidenceScore || 0) * 100) >= 70 ? "bg-emerald-500" : (Number(score?.confidenceScore || 0) * 100) >= 40 ? "bg-amber-500" : "bg-rose-500")}
+                 style={{ width: `${Math.round(Number(score?.confidenceScore || 0) * 100)}%` }} 
+               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
+            {/* Phones Half */}
+            <div className="space-y-2 flex flex-col">
+              <h5 className="text-[11px] font-bold text-slate-500 dark:text-slate-400">التواصل</h5>
+              <div className="flex flex-col gap-1.5 overflow-y-auto pr-1 custom-scrollbar max-h-[140px]">
+                {/* Primary Phone */}
+                <div className="flex items-center gap-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1.5 rounded-lg border border-green-100 dark:border-green-800/50 text-[10px] font-semibold shrink-0">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                  <span>أساسي:</span>
+                  <span dir="ltr" className="mr-auto">{household.primaryPhone || "—"}</span>
+                </div>
+                
+                {/* WhatsApp Phone */}
+                {household.whatsappPhone && household.whatsappPhone !== household.primaryPhone && (
+                  <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-800/50 text-[10px] font-semibold shrink-0">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+                    <span>واتس:</span>
+                    <span dir="ltr" className="mr-auto">{household.whatsappPhone}</span>
+                  </div>
+                )}
+
+                {/* Secondary Phone */}
+                {household.secondaryPhone && (
+                  <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[10px] font-medium shrink-0">
+                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                    <span>إضافي 1:</span>
+                    <span dir="ltr" className="mr-auto">{household.secondaryPhone}</span>
+                  </div>
+                )}
+                
+                {/* Backup Phone */}
+                {household.backupPhone && (
+                  <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[10px] font-medium shrink-0">
+                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                    <span>إضافي 2:</span>
+                    <span dir="ltr" className="mr-auto">{household.backupPhone}</span>
+                  </div>
+                )}
               </div>
             </div>
-          ))}
-        </MiniSection>
+
+            {/* Income Half */}
+            <div className="space-y-2 flex flex-col min-w-0">
+              <h5 className="text-[11px] font-bold text-slate-500 dark:text-slate-400">الدخل</h5>
+              <div className={cn("overflow-y-auto pr-1 custom-scrollbar flex-col flex gap-1.5", isCompactIncome ? "max-h-[140px]" : "max-h-[140px]")}>
+                 {(household.incomeSources || []).map((income) => (
+                   <div key={income.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 rounded border border-slate-100 dark:border-slate-700 p-1.5 shrink-0 gap-2">
+                     <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={cn("shrink-0 rounded-full w-1.5 h-1.5", income.verified ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600")} title={income.verified ? "موثق" : "غير موثق"} />
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 text-[10px] truncate" title={getIncomeLabel(income.channel)}>
+                          {getIncomeLabel(income.channel)}
+                        </span>
+                     </div>
+                     <div className="font-bold text-slate-900 dark:text-emerald-400 text-[10px] shrink-0" dir="ltr">
+                       {Number(income.monthlyAmount || 0).toLocaleString("ar-EG")} <span className="text-[8px] text-slate-500 font-normal">ج.م</span>
+                     </div>
+                   </div>
+                 ))}
+                 {(!household.incomeSources || household.incomeSources.length === 0) && (
+                   <div className="text-[10px] text-slate-500 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700 text-center">لا يوجد دخل</div>
+                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* LEFT: Layers */}
+        <div className="space-y-4 border-t md:border-t-0 md:border-r border-slate-200 dark:border-slate-700 pt-4 md:pt-0 md:pr-6">
+          <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-2">تفاصيل التقييم الطبقي</h4>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-x-2 gap-y-4">
+            {layers.map((layer, index) => {
+              const label = getLayerLabel(layer.layerId);
+              const circleColors = [
+                "text-emerald-500",
+                "text-sky-500",
+                "text-amber-500",
+                "text-rose-500",
+                "text-indigo-500",
+                "text-fuchsia-500",
+                "text-teal-500",
+                "text-orange-500"
+              ];
+              const strokeColor = circleColors[index % circleColors.length];
+              
+              return (
+                <div key={layer.layerId} className="flex flex-col items-center justify-center gap-1.5" title={label}>
+                  <div className="relative flex items-center justify-center w-10 h-10">
+                     <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full -rotate-90">
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke="currentColor" strokeWidth="3.5" className="text-slate-100 dark:text-slate-800" />
+                        <path strokeDasharray={`${layer.progress}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" className={strokeColor} />
+                     </svg>
+                     <span className="absolute text-[10px] font-bold text-slate-800 dark:text-slate-200">{Math.round(layer.progress)}%</span>
+                  </div>
+                  <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400 text-center leading-[1.2] w-full line-clamp-2 px-1">
+                    {label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {layers.length === 0 && (
+             <div className="text-xs text-slate-500 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 text-center">لا توجد تفاصيل تقييم متاحة.</div>
+          )}
+        </div>
+        
       </div>
     </div>
   );
@@ -563,7 +791,7 @@ function ExpandedPanel({ household, open }: { household: HouseholdDto; open: boo
 function MiniSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <p className="mb-2 text-xs font-semibold text-[var(--text-primary)]">{title}</p>
+      <p className="mb-2 text-xs font-semibold text-slate-900 dark:text-slate-100">{title}</p>
       <div className="space-y-1">{children}</div>
     </div>
   );
@@ -571,7 +799,7 @@ function MiniSection({ title, children }: { title: string; children: React.React
 
 function IncomeLine({ income }: { income: IncomeSourceDto }) {
   return (
-    <p className="truncate text-xs text-[var(--text-secondary)]">
+    <p className="truncate text-xs text-slate-600 dark:text-slate-300">
       {income.channel} · {Number(income.monthlyAmount || 0).toLocaleString("ar-EG")} ج · {income.verified}
     </p>
   );
@@ -590,7 +818,7 @@ function SortableTh({ label, column, sorts, onSort, center }: { label: string; c
 
 function SortIndicator({ column, sorts }: { column: string; sorts: SortItem[] }) {
   const index = sorts.findIndex((item) => item.column === column);
-  if (index === -1) return <span className="text-[var(--text-muted)]">↕</span>;
+  if (index === -1) return <span className="text-slate-400 dark:text-slate-500">↕</span>;
   return (
     <span className="inline-flex items-center gap-0.5 text-green-600">
       {sorts[index].direction === "asc" ? "↑" : "↓"}
@@ -604,7 +832,7 @@ function NameLine({ person, fallback, highlight, gender, strong }: { person?: Pe
   return (
     <div className="flex min-w-0 items-center gap-1.5">
       <span className={cn("inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold", gender === "FEMALE" ? "bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300" : "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300")}>{age ?? "-"}</span>
-      <span className={cn("truncate", strong ? "text-sm font-bold text-[var(--text-primary)]" : "text-xs text-[var(--text-secondary)]")}>{highlightText(person?.name || fallback, highlight)}</span>
+      <span className={cn("truncate", strong ? "text-sm font-bold text-slate-900 dark:text-slate-100" : "text-xs text-slate-600 dark:text-slate-300")}>{highlightText(person?.name || fallback, highlight)}</span>
     </div>
   );
 }
@@ -615,7 +843,7 @@ function TagList({ household }: { household: HouseholdDto }) {
   return (
     <div className="flex flex-wrap gap-1">
       {tags.slice(0, 3).map((tag) => <span key={tag.label} className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-medium", tag.className)}>{tag.label}</span>)}
-      {tags.length > 3 && <span className="text-[10px] text-[var(--text-muted)]">+{tags.length - 3}</span>}
+      {tags.length > 3 && <span className="text-[10px] text-slate-400 dark:text-slate-500">+{tags.length - 3}</span>}
     </div>
   );
 }
@@ -654,14 +882,14 @@ function PdfLink({ url }: { url?: string | null }) {
   if (!url) {
     return (
       <Tooltip>
-        <TooltipTrigger asChild><span className="rounded-full p-1 text-[var(--text-muted)] opacity-50"><Paperclip className="h-4 w-4" /></span></TooltipTrigger>
+        <TooltipTrigger asChild><span className="rounded-full p-1 text-slate-400 dark:text-slate-500 opacity-50"><Paperclip className="h-4 w-4" /></span></TooltipTrigger>
         <TooltipContent>{t("table.tooltips.noFile")}</TooltipContent>
       </Tooltip>
     );
   }
   return (
     <Tooltip>
-      <TooltipTrigger asChild><a href={url} target="_blank" rel="noreferrer" className="rounded-full p-1 text-[var(--text-muted)] hover:text-green-500"><Paperclip className="h-4 w-4" /></a></TooltipTrigger>
+      <TooltipTrigger asChild><a href={url} target="_blank" rel="noreferrer" className="rounded-full p-1 text-slate-400 dark:text-slate-500 hover:text-green-500"><Paperclip className="h-4 w-4" /></a></TooltipTrigger>
       <TooltipContent>{t("table.tooltips.openFile")}</TooltipContent>
     </Tooltip>
   );
@@ -680,7 +908,7 @@ function IconLink({ href, label, className, children }: { href: string; label: s
 
 function PageButton({ disabled, onClick, children }: { disabled: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button disabled={disabled} onClick={onClick} className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--border)] px-4 text-sm transition-colors hover:bg-[var(--surface-raised)] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40">
+    <button disabled={disabled} onClick={onClick} className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700/50 px-4 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40">
       {children}
     </button>
   );
@@ -688,7 +916,7 @@ function PageButton({ disabled, onClick, children }: { disabled: boolean; onClic
 
 function SkeletonRow({ visibleColumns }: { visibleColumns: HouseholdColumnKey[] }) {
   return (
-    <tr className="h-[68px] border-b border-[var(--border-subtle)]">
+    <tr className="h-[68px] border-b border-slate-100 dark:border-slate-800">
       {visibleColumns.map((column) => (
         <td key={column} className="px-3">
           <Skeleton className="h-4 w-full animate-pulse bg-slate-200 dark:bg-slate-700" />
@@ -817,11 +1045,28 @@ function roleLabel(role?: string) {
   return labels[role || ""] || "فرد";
 }
 
-function normalizeLayers(value: unknown): Array<{ layerId: string; percent: number }> {
-  const layers = Array.isArray(value) ? value as LayerBreakdownItem[] : [];
+export function normalizeLayers(value: unknown): Array<{ layerId: string; normalizedScore: number; maxScore: number; progress: number; isNegative: boolean }> {
+  const layers = Array.isArray(value) ? value as any[] : [];
   return layers.map((layer) => {
-    const score = Number(layer.cappedScore ?? layer.score ?? 0);
-    const cap = Number(layer.cap ?? (score || 1));
-    return { layerId: layer.layerId, percent: Math.min(100, Math.max(0, (score / cap) * 100)) };
+    let rawScore = layer.score;
+    if (rawScore === undefined || rawScore === null || rawScore === "") rawScore = layer.cappedScore;
+    
+    let score = Number(rawScore);
+    if (isNaN(score)) score = 0;
+
+    let capVal = Number(layer.cap);
+    if (isNaN(capVal) || capVal === 0) capVal = 1;
+    
+    const isNeg = score < 0 || capVal < 0;
+    const progress = Math.min(100, (Math.abs(score) / Math.abs(capVal)) * 100);
+
+    return { 
+      ...layer,
+      layerId: layer.layerId, 
+      normalizedScore: score,
+      maxScore: capVal,
+      progress: Math.round(progress),
+      isNegative: isNeg
+    };
   });
 }

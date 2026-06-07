@@ -5,5 +5,5 @@ export default function MedicalPageRoute() {
 }
 
 export const metadata = {
-  title: 'السجل الطبي والإعانات — CharityHub',
+  title: 'السجلات الطبية والاعانات — CharityHub',
 }

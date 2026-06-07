@@ -20,7 +20,7 @@
   "nav": {
     "dashboard": "لوحة التحكم",
     "households": "الأسر المستهدفة",
-    "medical": "السجل الطبي",
+    "medical": "السجلات الطبية والاعانات",
     "education": "التعليم",
     "volunteers": "المتطوعون",
     "analytics": "التحليلات",
@@ -43,7 +43,7 @@
     "admin": "إدارة القواعد",
     "audit": "سجل التدقيق",
     "families": "الأسر",
-    "medical_record": "السجل الطبي",
+    "medical_record": "السجلات الطبية والاعانات",
     "education": "التعليم",
     "volunteers": "المتطوعين",
     "reports": "التقارير",

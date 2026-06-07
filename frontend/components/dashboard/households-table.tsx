@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter, usePathname } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
-import { Eye, Edit, Trash2, Phone, SearchX, ArrowUpDown } from "lucide-react";
+import { Eye, Edit, Trash2, Phone, SearchX, ArrowUpDown, FileText, MoreVertical } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -14,6 +14,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -114,7 +120,6 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
               <TableHead>الأسرة</TableHead>
               <TableHead>العنوان</TableHead>
               <TableHead>الهاتف</TableHead>
-              <TableHead>الأفراد المعالون</TableHead>
               <TableHead>إجمالي الدخل</TableHead>
               <TableHead>التقييم</TableHead>
               <TableHead>التصنيف</TableHead>
@@ -128,7 +133,6 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
                 <TableCell><Skeleton className="h-8 w-32" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-12" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                 <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
@@ -164,33 +168,30 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
           <TableHeader className="bg-muted/30">
             <TableRow>
               <SortableHeader title="رقم القيد" column="code" currentSort={currentSort} onToggle={toggleSort} />
-              <TableHead className="min-w-[200px]">الأسرة</TableHead>
+              <TableHead className="w-[35%] whitespace-normal">الأسرة</TableHead>
               <SortableHeader title="العنوان" column="district" currentSort={currentSort} onToggle={toggleSort} />
               <TableHead>الهاتف</TableHead>
-              <TableHead className="text-center">الأفراد المعالون</TableHead>
-              <TableHead>إجمالي الدخل</TableHead>
-              <TableHead className="min-w-[150px]">التقييم</TableHead>
+              <TableHead className="text-center">إجمالي الدخل</TableHead>
+              <TableHead className="w-[15%] text-center">التقييم</TableHead>
               <SortableHeader title="التصنيف" column="eligibility" currentSort={currentSort} onToggle={toggleSort} />
-              <TableHead className="text-right">أكشن</TableHead>
+              <TableHead className="w-8 px-1 text-center"><span className="sr-only">أكشن</span></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {list.map((h) => {
-              const head = h.persons?.find((p) => p.role === "HEAD" || p.isHead);
-              const spouse = h.persons?.find((p) => p.role === "SPOUSE");
-
+              // Prioritize isHead, then HEAD role, then female spouse (often the primary applicant in charities), then fallback
+              const head = h.persons?.find((p) => p.isHead) || 
+                           h.persons?.find((p) => p.role === "HEAD") || 
+                           h.persons?.find((p) => p.gender === "FEMALE" && p.role === "SPOUSE") || 
+                           h.persons?.[0];
+              
               // Safe access for custom properties
               const anyHead = head as any;
-              const anySpouse = spouse as any;
               const anyH = h as any;
 
               const headId = anyHead?.nationalId || "—";
-              const spouseId = anySpouse?.nationalId || "—";
               const phones = Array.isArray(anyH.phones) ? anyH.phones : [];
-
-              const dependentsCount = (h.persons || []).filter(
-                (p) => p.role !== "HEAD" && p.role !== "SPOUSE" && p.isSonContributor !== true && p.maritalStatus !== "MARRIED"
-              ).length;
+              const primaryPhone = h.primaryPhone || phones[0];
 
               const totalIncome = (h.incomeSources || []).reduce((sum, s) => sum + Number(s.monthlyAmount || 0), 0);
 
@@ -203,57 +204,61 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
                   <TableCell className="font-medium text-xs text-muted-foreground whitespace-nowrap">
                     {h.code}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="whitespace-normal">
                     <div className="flex flex-col gap-1">
-                      {head && (
-                        <div>
-                          <p className="font-bold text-sm leading-none">{head.name}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{headId}</p>
+                      {head ? (
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <p className="font-bold text-sm text-foreground leading-snug">{h.familyName || head.name}</p>
+                            <p className="text-[10px] text-muted-foreground mt-1">{headId}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 ms-auto">
+                            <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center justify-center min-w-[28px] ${head.gender === 'FEMALE' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'}`}>
+                              {head.birthDate ? new Date().getFullYear() - new Date(head.birthDate).getFullYear() : "—"}
+                            </div>
+                            <Link href={`/dashboard/households/${h.id}/view`} className="text-muted-foreground hover:text-primary transition-colors flex items-center justify-center p-1 rounded-md hover:bg-primary/10" title="ملف الأسرة">
+                              <FileText className="h-4 w-4" />
+                            </Link>
+                          </div>
                         </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">غير محدد</span>
                       )}
-                      {spouse && (
-                        <div className="mt-1.5 border-t border-border/40 pt-1.5">
-                          <p className="font-medium text-xs text-foreground/80 leading-none">{spouse.name}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{spouseId}</p>
-                        </div>
-                      )}
-                      {!head && !spouse && <span className="text-muted-foreground text-sm">غير محدد</span>}
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm">
-                    <p className="font-medium">{h.district || h.village || "—"}</p>
-                    {h.address && <p className="text-[11px] text-muted-foreground truncate max-w-[150px] mt-0.5">{h.address}</p>}
+                  <TableCell className="text-sm whitespace-normal">
+                    <p className="font-medium text-foreground">{h.district || h.village || "—"}</p>
+                    {h.address && <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{h.address}</p>}
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1.5">
-                      {phones.length > 0 ? (
-                        phones.slice(0, 2).map((phone: string, idx: number) => (
+                      {primaryPhone ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-medium text-foreground">{primaryPhone}</span>
                           <a
-                            key={idx}
-                            href={`https://web.whatsapp.com/send/?phone=+2${phone}`}
+                            href={`https://web.whatsapp.com/send/?phone=+2${primaryPhone}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-green-600 transition-colors"
+                            className="text-muted-foreground hover:text-green-600 dark:hover:text-green-500 transition-colors"
                             dir="ltr"
+                            title="واتساب"
                           >
-                            <Phone className="h-3 w-3" />
-                            <span>{phone}</span>
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+                            </svg>
                           </a>
-                        ))
+                        </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="secondary" className="bg-muted/60">{dependentsCount}</Badge>
-                  </TableCell>
-                  <TableCell className="text-sm font-semibold tabular-nums text-foreground/90">
+                  <TableCell className="text-sm font-semibold tabular-nums text-foreground/90 text-center">
                     {totalIncome.toLocaleString()} ج
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center align-middle">
                     {score ? (
-                      <div className="flex items-center gap-2 w-full max-w-[120px]">
+                      <div className="flex items-center gap-2 w-full max-w-[100px] mx-auto">
                         <Progress
                           value={percent}
                           className="h-1.5 flex-1"
@@ -262,10 +267,10 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
                         <span className="text-[10px] font-bold w-7 text-right" dir="ltr">{percent}%</span>
                       </div>
                     ) : (
-                      <span className="text-[11px] text-muted-foreground">لا يوجد تقييم</span>
+                      <span className="text-[11px] text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     {rec ? (
                       <Badge className={ELIGIBILITY_TAILWIND[rec]} variant="outline">
                         {tDict(`eligibility.${rec}`)}
@@ -274,24 +279,31 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity">
-                      <Button asChild variant="ghost" size="icon" className="h-7 w-7 hover:text-blue-600 hover:bg-blue-50" title="عرض">
-                        <Link href={`/dashboard/households/${h.id}/view`}>
-                          <Eye className="h-3.5 w-3.5" />
-                        </Link>
-                      </Button>
-                      <Button asChild variant="ghost" size="icon" className="h-7 w-7 hover:text-primary hover:bg-primary/10" title="تعديل">
-                        <Link href={`/dashboard/households/${h.id}/wizard`}>
-                          <Edit className="h-3.5 w-3.5" />
-                        </Link>
-                      </Button>
-                      {isAdmin && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive hover:bg-destructive/10" title="حذف">
-                          <Trash2 className="h-3.5 w-3.5" />
+                  <TableCell className="text-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-100">
+                          <MoreVertical className="h-4 w-4" />
                         </Button>
-                      )}
-                    </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-36">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/households/${h.id}/view`} className="flex items-center gap-2 cursor-pointer">
+                            <Eye className="h-4 w-4 text-sky-600" /> عرض
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/households/${h.id}/wizard`} className="flex items-center gap-2 cursor-pointer">
+                            <Edit className="h-4 w-4 text-emerald-500" /> تعديل
+                          </Link>
+                        </DropdownMenuItem>
+                        {isAdmin && (
+                          <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-rose-500 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-900/30">
+                            <Trash2 className="h-4 w-4" /> حذف
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               );

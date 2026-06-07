@@ -57,7 +57,7 @@ export function MedicalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-12">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 pb-12">
       {/* 
         PREMIUM HEADER SECTION 
         Uses a subtle gradient and a pattern overlay for a high-end feel.
@@ -76,7 +76,7 @@ export function MedicalPage() {
                 <span>إدارة القطاع الطبي</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
-                السجلات الطبية
+                السجلات الطبية والاعانات
               </h1>
               <p className="text-emerald-100/80 text-lg max-w-xl leading-relaxed">
                 متابعة دقيقة وشاملة للحالات المرضية، إدارة الاستقطاعات، وتحليل المصروفات الطبية لضمان تقديم الرعاية الأمثل للمستفيدين.
@@ -99,14 +99,14 @@ export function MedicalPage() {
         {/* KPI CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Card 1: Total Cases */}
-          <Card className="bg-white/80 backdrop-blur-xl border-slate-200/60 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-slate-200/60 dark:border-slate-800 shadow-lg shadow-slate-200/40 dark:shadow-none hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-500">إجمالي السجلات الطبية</p>
-                  <p className="text-3xl font-bold text-slate-900">{kpis?.totalCases || 0}</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">إجمالي السجلات الطبية</p>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis?.totalCases || 0}</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-inner">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/50 shadow-inner">
                   <FileText className="w-6 h-6" />
                 </div>
               </div>
@@ -114,14 +114,14 @@ export function MedicalPage() {
           </Card>
 
           {/* Card 2: Critical Cases */}
-          <Card className="bg-white/80 backdrop-blur-xl border-slate-200/60 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-slate-200/60 dark:border-slate-800 shadow-lg shadow-slate-200/40 dark:shadow-none hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-500">حالات حرجة ومزمنة</p>
-                  <p className="text-3xl font-bold text-rose-600">{kpis?.criticalCases || 0}</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">حالات حرجة ومزمنة</p>
+                  <p className="text-3xl font-bold text-rose-600 dark:text-rose-500">{kpis?.criticalCases || 0}</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-inner">
+                <div className="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-900/50 shadow-inner">
                   <AlertTriangle className="w-6 h-6" />
                 </div>
               </div>
@@ -129,17 +129,17 @@ export function MedicalPage() {
           </Card>
 
           {/* Card 3: Monthly Estimate */}
-          <Card className="bg-white/80 backdrop-blur-xl border-slate-200/60 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-slate-200/60 dark:border-slate-800 shadow-lg shadow-slate-200/40 dark:shadow-none hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-500">التكلفة الشهرية المقدرة</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">التكلفة الشهرية المقدرة</p>
                   <div className="flex items-baseline gap-1">
-                    <p className="text-3xl font-bold text-emerald-600">{kpis?.monthlyEstimate || 0}</p>
-                    <span className="text-sm text-emerald-600/70 font-semibold">ج.م</span>
+                    <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-500">{kpis?.monthlyEstimate || 0}</p>
+                    <span className="text-sm text-emerald-600/70 dark:text-emerald-500/70 font-semibold">ج.م</span>
                   </div>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-inner">
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/50 shadow-inner">
                   <Banknote className="w-6 h-6" />
                 </div>
               </div>
@@ -147,14 +147,14 @@ export function MedicalPage() {
           </Card>
 
           {/* Card 4: Active Treatments */}
-          <Card className="bg-white/80 backdrop-blur-xl border-slate-200/60 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-slate-200/60 dark:border-slate-800 shadow-lg shadow-slate-200/40 dark:shadow-none hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-500">إجراءات قيد التنفيذ</p>
-                  <p className="text-3xl font-bold text-amber-600">0</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">إجراءات قيد التنفيذ</p>
+                  <p className="text-3xl font-bold text-amber-600 dark:text-amber-500">0</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-inner">
+                <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-900/50 shadow-inner">
                   <Activity className="w-6 h-6" />
                 </div>
               </div>
@@ -164,24 +164,24 @@ export function MedicalPage() {
 
         {/* MAIN CONTENT TABS */}
         <Tabs defaultValue="active-cases" className="space-y-6">
-          <TabsList className="bg-white border border-slate-200/60 p-1 rounded-xl shadow-sm inline-flex">
+          <TabsList className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-1 rounded-xl shadow-sm inline-flex">
             <TabsTrigger 
               value="active-cases" 
-              className="rounded-lg px-6 py-2.5 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm transition-all"
+              className="rounded-lg px-6 py-2.5 text-slate-600 dark:text-slate-400 data-[state=active]:bg-emerald-50 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm transition-all"
             >
               <LayoutDashboard className="w-4 h-4 ml-2 inline-block" />
               السجلات النشطة
             </TabsTrigger>
             <TabsTrigger 
               value="history" 
-              className="rounded-lg px-6 py-2.5 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm transition-all"
+              className="rounded-lg px-6 py-2.5 text-slate-600 dark:text-slate-400 data-[state=active]:bg-emerald-50 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm transition-all"
             >
               <History className="w-4 h-4 ml-2 inline-block" />
               تاريخ الصرف الطبي
             </TabsTrigger>
             <TabsTrigger 
               value="analytics" 
-              className="rounded-lg px-6 py-2.5 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm transition-all"
+              className="rounded-lg px-6 py-2.5 text-slate-600 dark:text-slate-400 data-[state=active]:bg-emerald-50 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm transition-all"
             >
               <PieChart className="w-4 h-4 ml-2 inline-block" />
               تحليلات وإحصائيات
@@ -190,12 +190,12 @@ export function MedicalPage() {
 
           {/* TAB 1: ACTIVE CASES */}
           <TabsContent value="active-cases" className="outline-none">
-            <Card className="border-0 shadow-xl shadow-slate-200/40 rounded-2xl overflow-hidden bg-white/95 backdrop-blur-sm">
-              <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+            <Card className="border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-none rounded-2xl overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
+              <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-bold text-slate-800">قائمة الحالات</CardTitle>
-                    <CardDescription className="text-slate-500 mt-1">
+                    <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">قائمة الحالات</CardTitle>
+                    <CardDescription className="text-slate-500 dark:text-slate-400 mt-1">
                       إدارة والبحث في سجلات المستفيدين الطبية.
                     </CardDescription>
                   </div>
@@ -204,12 +204,12 @@ export function MedicalPage() {
                       <input
                         type="text"
                         placeholder="ابحث بالاسم، المرض، أو رقم الأسرة..."
-                        className="w-full pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm"
+                        className="w-full pl-4 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         value={searchQuery}
                         onChange={(e) => handleSearch(e.target.value)}
                       />
                       <svg
-                        className="absolute right-3 top-2.5 w-4 h-4 text-slate-400"
+                        className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-500"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -233,10 +233,10 @@ export function MedicalPage() {
 
           {/* TAB 2: DISBURSEMENT HISTORY */}
           <TabsContent value="history" className="outline-none">
-            <Card className="border-0 shadow-xl shadow-slate-200/40 rounded-2xl bg-white/95 p-12 text-center">
-              <History className="w-16 h-16 mx-auto text-slate-200 mb-4" />
-              <h3 className="text-xl font-bold text-slate-700 mb-2">سجل الصرف الطبي</h3>
-              <p className="text-slate-500 max-w-md mx-auto">
+            <Card className="border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-none rounded-2xl bg-white/95 dark:bg-slate-900/95 p-12 text-center">
+              <History className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+              <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200 mb-2">سجل الصرف الطبي</h3>
+              <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
                 هذه الشاشة ستعرض جميع عمليات الصرف والمساعدات الطبية السابقة التي تم تقديمها. سيتم تفعيلها قريباً.
               </p>
             </Card>
@@ -244,10 +244,10 @@ export function MedicalPage() {
 
           {/* TAB 3: ANALYTICS */}
           <TabsContent value="analytics" className="outline-none">
-            <Card className="border-0 shadow-xl shadow-slate-200/40 rounded-2xl bg-white/95 p-12 text-center">
-              <PieChart className="w-16 h-16 mx-auto text-slate-200 mb-4" />
-              <h3 className="text-xl font-bold text-slate-700 mb-2">التحليلات الطبية</h3>
-              <p className="text-slate-500 max-w-md mx-auto">
+            <Card className="border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-none rounded-2xl bg-white/95 dark:bg-slate-900/95 p-12 text-center">
+              <PieChart className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+              <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200 mb-2">التحليلات الطبية</h3>
+              <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
                 مؤشرات أداء الرعاية الصحية وتوزيع الأمراض والتكاليف سيتم عرضها هنا في تحديث قادم.
               </p>
             </Card>

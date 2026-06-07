@@ -9,7 +9,9 @@ const { getArabicMessage } = require('../utils/arabicMessages')
 function errorHandler(err, req, res, next) {
   // Log error (suppress stack traces for expected operational errors like AuthError)
   if (err.code === 'AUTH_ERROR' || err.statusCode === 401) {
-    console.warn(`[Auth] ${err.message || 'Unauthorized'}`);
+    if (err.message !== 'Access token expired') {
+      console.warn(`[Auth] ${err.message || 'Unauthorized'}`);
+    }
   } else {
     console.error('Error:', err);
   }
