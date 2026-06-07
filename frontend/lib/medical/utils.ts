@@ -148,14 +148,12 @@ export function getAidTypeLabel(type: string | null | undefined): string {
     case 'TREATMENT': return 'علاج'
     case 'LAB_TEST': return 'تحاليل'
     case 'IMAGING': return 'أشعة'
-    case 'CONSULTATION': return 'كشف'
+    case 'CONSULTATION': return 'كشف طبي'
     case 'SURGERY': return 'عملية جراحية'
     case 'MEDICATION': return 'أدوية'
-    case 'cash_aid': return 'مساعدة نقدية'
-    case 'medical_fees': return 'مصاريف علاج'
-    case 'medical_supplies': return 'مستلزمات طبية'
-    case 'food_packages': return 'سلال غذائية'
-    case 'housing_support': return 'دعم إيجار'
+    case 'EQUIPMENT': return 'أجهزة طبية'
+    case 'FINANCIAL_AID': return 'مساعدة نقدية'
+    case 'MARRIAGE_AID': return 'مساعدة زواج (استثناء)'
     default: return type || 'غير محدد'
   }
 }

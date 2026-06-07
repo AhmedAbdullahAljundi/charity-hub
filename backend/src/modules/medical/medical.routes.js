@@ -32,4 +32,7 @@ router.delete('/:id', requireAnyRole(['ADMIN']), ctrl.deleteCase)
 // GET  /api/medical-cases/eligibility/:householdId?aidType=TREATMENT&personId=xxx
 router.get('/eligibility/:householdId', ctrl.checkEligibility)
 
+// GET  /api/medical-cases/summary/:householdId
+router.get('/summary/:householdId', ctrl.getMedicalSummary)
+
 module.exports = router

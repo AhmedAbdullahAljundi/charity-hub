@@ -70,6 +70,13 @@ export function Step3AidSelection() {
       }
 
       closeModal();
+      
+      // Refresh the table and KPIs
+      import("../../../lib/stores/medicalStore").then(module => {
+        module.useMedicalStore.getState().loadCases();
+        module.useMedicalStore.getState().loadKpis();
+      });
+      
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? 'حدث خطأ أثناء الحفظ';
       toast.error(msg);
@@ -91,12 +98,13 @@ export function Step3AidSelection() {
       />
 
       <div>
-        <label className="block text-sm font-semibold mb-3">نوع المساعدة</label>
+        <label className="block text-sm font-semibold mb-3">الإجراء الطبي المطلوب</label>
+        <p className="text-xs text-gray-500 mb-3">هذا الإجراء خاضع لمراجعة واعتماد اللجنة الطبية بناءً على الأهلية الموضحة أعلاه.</p>
         <AidTypeGrid selectedAidType={aidType} onSelect={setAidType} />
       </div>
 
       <div>
-        <label className="block text-sm font-semibold mb-2">المبلغ (ريال سعودي)</label>
+        <label className="block text-sm font-semibold mb-2">التكلفة التقديرية (ج.م)</label>
         <div className="relative">
           <input
             type="number"

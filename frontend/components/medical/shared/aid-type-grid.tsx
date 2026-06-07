@@ -3,7 +3,7 @@
 import { getAidTypeLabel } from "@/lib/medical/utils";
 import type { AidType } from "@/types/medical";
 
-const AID_TYPES: AidType[] = ["cash_aid", "medical_fees", "medical_supplies", "food_packages", "housing_support"];
+const AID_TYPES: AidType[] = ["TREATMENT", "LAB_TEST", "IMAGING", "CONSULTATION", "SURGERY", "MEDICATION", "EQUIPMENT", "FINANCIAL_AID", "MARRIAGE_AID"] as any[];
 
 interface AidTypeGridProps {
   selectedAidType: AidType | null;

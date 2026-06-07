@@ -13,7 +13,7 @@ export function AddRecordModal() {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-96 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white">
           <button
@@ -53,7 +53,7 @@ export function AddRecordModal() {
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto">
           {currentStep === 1 && <Step1HouseholdPerson />}
           {currentStep === 2 && <Step2MedicalData />}
           {currentStep === 3 && <Step3AidSelection />}

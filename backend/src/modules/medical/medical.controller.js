@@ -19,7 +19,7 @@ const getCasesByHousehold = asyncHandler(async (req, res) => {
 })
 
 const createCase = asyncHandler(async (req, res) => {
-  const c = await svc.createCase(req.body, req.user.id)
+  const c = await svc.createCase(req.body, req.user.userId)
   res.status(201).json({ success: true, data: c })
 })
 
@@ -46,7 +46,7 @@ const checkEligibility = asyncHandler(async (req, res) => {
 // ─── Disbursements ────────────────────────────────────────
 
 const createDisbursement = asyncHandler(async (req, res) => {
-  const result = await svc.createDisbursement(req.body, req.user.id)
+  const result = await svc.createDisbursement(req.body, req.user.userId)
   const status = result.amountWarning ? 201 : 201
   res.status(status).json({ success: true, data: result })
 })
@@ -57,17 +57,17 @@ const getDisbursementsByHousehold = asyncHandler(async (req, res) => {
 })
 
 const approveDisbursement = asyncHandler(async (req, res) => {
-  const d = await svc.approveDisbursement(req.params.id, req.user.id)
+  const d = await svc.approveDisbursement(req.params.id, req.user.userId)
   res.json({ success: true, data: d })
 })
 
 const payDisbursement = asyncHandler(async (req, res) => {
-  const d = await svc.payDisbursement(req.params.id, req.user.id)
+  const d = await svc.payDisbursement(req.params.id, req.user.userId)
   res.json({ success: true, data: d })
 })
 
 const rejectDisbursement = asyncHandler(async (req, res) => {
-  const d = await svc.rejectDisbursement(req.params.id, req.user.id)
+  const d = await svc.rejectDisbursement(req.params.id, req.user.userId)
   res.json({ success: true, data: d })
 })
 

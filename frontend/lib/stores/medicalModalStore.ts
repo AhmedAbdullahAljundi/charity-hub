@@ -28,6 +28,13 @@ interface MedicalModalState {
   medicalNotes: string;
   setMedicalNotes: (notes: string) => void;
 
+  treatmentCost: string;
+  setTreatmentCost: (v: string) => void;
+  followup: string;
+  setFollowup: (v: string) => void;
+  workImpact: string;
+  setWorkImpact: (v: string) => void;
+
   aidType: string | null;
   setAidType: (type: string | null) => void;
   amount: number;
@@ -53,6 +60,9 @@ export const useMedicalModalStore = create<MedicalModalState>((set) => ({
       medicalCondition: "",
       severity: "mild",
       medicalNotes: "",
+      treatmentCost: "NONE",
+      followup: "NONE_OR_RARE",
+      workImpact: "NONE",
       aidType: null,
       amount: 0,
       aidNotes: "",
@@ -80,8 +90,14 @@ export const useMedicalModalStore = create<MedicalModalState>((set) => ({
   setMedicalCondition: (condition) => set({ medicalCondition: condition }),
   severity: "mild",
   setSeverity: (severity) => set({ severity }),
-  medicalNotes: "",
   setMedicalNotes: (notes) => set({ medicalNotes: notes }),
+
+  treatmentCost: "NONE",
+  setTreatmentCost: (v) => set({ treatmentCost: v }),
+  followup: "NONE_OR_RARE",
+  setFollowup: (v) => set({ followup: v }),
+  workImpact: "NONE",
+  setWorkImpact: (v) => set({ workImpact: v }),
 
   aidType: null,
   setAidType: (type) => set({ aidType: type }),
@@ -100,6 +116,9 @@ export const useMedicalModalStore = create<MedicalModalState>((set) => ({
       medicalCondition: "",
       severity: "mild",
       medicalNotes: "",
+      treatmentCost: "NONE",
+      followup: "NONE_OR_RARE",
+      workImpact: "NONE",
       aidType: null,
       amount: 0,
       aidNotes: "",

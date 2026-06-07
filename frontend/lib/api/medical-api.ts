@@ -204,7 +204,7 @@ export const medicalApi = {
 
   // Medical summary (for evaluation tab)
   async getMedicalSummary(householdId: string): Promise<MedicalSummary> {
-    const res = await client.get(`/households/${householdId}/medical-summary`)
+    const res = await client.get(`/medical-cases/summary/${householdId}`)
     const d = res.data.data
     // تحويل الأرقام من Prisma Decimal
     return {

@@ -16,6 +16,7 @@ export function Step1HouseholdPerson() {
   } = useMedicalModalStore();
 
   const [households, setHouseholds] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     client.get('/households?limit=100')
@@ -32,9 +33,24 @@ export function Step1HouseholdPerson() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="font-semibold mb-3">اختر الأسرة</h3>
-        <div className="space-y-2">
-          {households.map((household) => (
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">اختر الأسرة</h3>
+          <input
+            type="text"
+            placeholder="ابحث برقم الملف أو اسم رب الأسرة..."
+            className="w-1/2 px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm text-right"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+          {households
+            .filter((h) => 
+              h.name?.includes(searchQuery) || 
+              h.householdHead?.includes(searchQuery) ||
+              h.code?.includes(searchQuery)
+            )
+            .map((household) => (
             <button
               key={household.id}
               onClick={() => {
@@ -49,13 +65,16 @@ export function Step1HouseholdPerson() {
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="font-medium">{household.name}</p>
+                  <p className="font-medium">{household.name} {household.code ? `(${household.code})` : ''}</p>
                   <p className="text-sm text-gray-600">رب الأسرة: {household.householdHead}</p>
                   <p className="text-xs text-gray-500 mt-1">عدد الأفراد: {household.size}</p>
                 </div>
               </div>
             </button>
           ))}
+          {households.length > 0 && households.filter((h) => h.name?.includes(searchQuery) || h.householdHead?.includes(searchQuery) || h.code?.includes(searchQuery)).length === 0 && (
+             <p className="text-center text-gray-500 py-4 text-sm">لا توجد أسر مطابقة للبحث</p>
+          )}
         </div>
       </div>
 
