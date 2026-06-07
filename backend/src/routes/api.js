@@ -8,6 +8,7 @@ const { getApiLimiter } = require('../middleware/rateLimit');
 const medicalCasesRouter = require('../modules/medical/medical.routes')
 const medicalDisbursementsRouter = require('../modules/medical/medical-disbursements.routes')
 const medicalSummaryRouter = require('../modules/medical/medical-summary.routes')
+const disbursementRouter = require('../modules/disbursement/disbursement.routes')
 
 const router = express.Router();
 
@@ -28,5 +29,7 @@ router.use('/public',       require('../modules/public/public.routes'));
 router.use('/medical-cases', medicalCasesRouter)
 router.use('/medical-disbursements', medicalDisbursementsRouter)
 router.use('/households', medicalSummaryRouter)
+router.use('/disbursement', disbursementRouter)
 
 module.exports = router;
+

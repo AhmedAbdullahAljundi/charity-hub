@@ -17,6 +17,7 @@ import arVerification from "../messages/ar/verification.json";
 import arRuleEditor from "../messages/ar/ruleEditor.json";
 import arAnalytics from "../messages/ar/analytics.json";
 import arEducation from "../messages/ar/education.json";
+import arDisbursement from "../messages/ar/disbursement.json";
 
 import enCommon from "../messages/en/common.json";
 import enDomain from "../messages/en/domain.json";
@@ -33,6 +34,7 @@ import enVerification from "../messages/en/verification.json";
 import enRuleEditor from "../messages/en/ruleEditor.json";
 import enAnalytics from "../messages/en/analytics.json";
 import enEducation from "../messages/en/education.json";
+import enDisbursement from "../messages/en/disbursement.json";
 
 const messagesMap = {
   ar: {
@@ -51,6 +53,7 @@ const messagesMap = {
     ruleEditor: arRuleEditor,
     analytics: arAnalytics,
     education: arEducation,
+    disbursement: arDisbursement,
     nav: arCommon.nav,
   },
   en: {
@@ -69,6 +72,7 @@ const messagesMap = {
     ruleEditor: enRuleEditor,
     analytics: enAnalytics,
     education: enEducation,
+    disbursement: enDisbursement,
     nav: enCommon.nav,
   }
 };
@@ -111,6 +115,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       verification: data.verification,
       ruleEditor: data.ruleEditor,
       analytics: data.analytics,
+      disbursement: data.disbursement,
       nav: data.nav,
     },
   };

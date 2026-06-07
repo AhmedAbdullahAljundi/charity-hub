@@ -17,6 +17,7 @@ import {
   Heart,
   FileText,
   Shield,
+  Banknote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,11 +30,12 @@ const menuGroups = [
   {
     labelKey: "groups.main",
     items: [
-      { key: "dashboard",   href: "/dashboard",              icon: LayoutDashboard },
-      { key: "households",  href: "/dashboard/households",   icon: Users },
-      { key: "medical",     href: "/dashboard/medical",      icon: HeartPulse },
-      { key: "education",   href: "/dashboard/education",    icon: GraduationCap },
-      { key: "volunteers",  href: "/dashboard/volunteers",   icon: Heart },
+      { key: "dashboard",      href: "/dashboard",                   icon: LayoutDashboard },
+      { key: "households",     href: "/dashboard/households",        icon: Users },
+      { key: "medical",        href: "/dashboard/medical",           icon: HeartPulse },
+      { key: "education",      href: "/dashboard/education",         icon: GraduationCap },
+      { key: "disbursement",   href: "/dashboard/disbursement",      icon: Banknote },
+      { key: "volunteers",     href: "/dashboard/volunteers",        icon: Heart },
     ]
   },
   {

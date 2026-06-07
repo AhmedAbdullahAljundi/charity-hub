@@ -45,17 +45,23 @@ const eligibilityOptions = [
 ];
 
 const classificationOptions = [
+ "كفالة أيتام",
  "أيتام",
  "فقراء",
  "مساكين",
  "أسر سجناء",
+ "ملف إعاقة",
  "ذوو إعاقة",
  "مسنون",
+ "علاج شهري",
  "أمراض مزمنة",
  "حالات هجر",
+ "طلاب علم",
  "طالب علم",
  "كبار سن",
- "لا يستحق",
+ "مساعدات",
+ "مساعدات موسمية",
+ "لا يستحق المساعدة",
 ];
 
 const decisionOptions = [
@@ -130,19 +136,19 @@ function HouseholdsContent() {
  });
  }, [fetchList, currentPage, currentSearch, currentEligibility, currentClassification, currentDecision, currentSort]);
 
- const stats = useMemo(() => {
- const total = pagination?.total || list.length;
- const evaluated = list.filter((household) => household.latestScore || household.scoreResults?.[0]).length;
- const fieldVisits = list.filter((household) => household.latestScore?.humanDecision === "NEEDS_REVIEW").length;
- const missingFiles = list.filter((household) => !household.pdfUrl).length;
- return {
- total,
- evaluated,
- pending: Math.max(0, total - evaluated),
- fieldVisits,
- missingFiles,
- };
- }, [list, pagination?.total]);
+  const stats = useMemo(() => {
+  const total = pagination?.total || list.length;
+  const evaluated = list.filter((household) => household.latestDecisionStatus && household.latestDecisionStatus !== "PENDING").length;
+  const fieldVisits = list.filter((household) => household.latestDecisionStatus === "NEEDS_REVIEW").length;
+  const missingFiles = list.filter((household) => !household.pdfUrl).length;
+  return {
+  total,
+  evaluated,
+  pending: Math.max(0, total - evaluated),
+  fieldVisits,
+  missingFiles,
+  };
+  }, [list, pagination?.total]);
 
  const optionCounts = useMemo(() => {
  const eligibility = new Map<string, number>();

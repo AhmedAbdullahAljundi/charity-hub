@@ -209,7 +209,7 @@ export function HouseholdsTable({ list, loading, pagination }: HouseholdsTablePr
                       {head ? (
                         <div className="flex items-center gap-3">
                           <div>
-                            <p className="font-bold text-sm text-foreground leading-snug">{h.familyName || head.name}</p>
+                            <p className="font-bold text-sm text-foreground leading-snug">{anyH.familyName || head.name}</p>
                             <p className="text-[10px] text-muted-foreground mt-1">{headId}</p>
                           </div>
                           <div className="flex items-center gap-1.5 ms-auto">

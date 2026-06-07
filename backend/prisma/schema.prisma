@@ -277,9 +277,13 @@ model User {
   refreshTokens        RefreshToken[]
   notifications        Notification[] @relation("UserNotifications")
   householdNotes       HouseholdNote[]
-  medicalCasesCreated        MedicalCase[]
-  medicalDisbursementsApproved MedicalDisbursement[] @relation("MedicalApprover")
-  medicalDisbursementsCreated  MedicalDisbursement[] @relation("MedicalCreator")
+  medicalCasesCreated          MedicalCase[]
+  medicalDisbursementsApproved MedicalDisbursement[]  @relation("MedicalApprover")
+  medicalDisbursementsCreated  MedicalDisbursement[]  @relation("MedicalCreator")
+  disbursementsCreated         DisbursementMonth[]    @relation("DisbursementCreatedBy")
+  disbursementsLocked          DisbursementMonth[]    @relation("DisbursementLockedBy")
+  disbursementsReopened        DisbursementMonth[]    @relation("DisbursementReopenedBy")
+  paymentsAdjusted             MonthlyPayment[]       @relation("PaymentAdjustedBy")
 
   @@index([email])
   @@index([role])
@@ -369,8 +373,12 @@ model Household {
   auditLogs        AuditLog[]
   academicRecords  StudentAcademicRecord[]
   notesArray       HouseholdNote[]
-  medicalCases        MedicalCase[]
+  hasMerge             Boolean           @default(false)
+  meezaCardNumber      String?
+  medicalCases         MedicalCase[]
   medicalDisbursements MedicalDisbursement[]
+  externalContributions ExternalContribution[]
+  monthlyPayments      MonthlyPayment[]
 
   @@index([governorate, district])
   @@index([isDraft])
@@ -673,3 +681,221 @@ model StudentAcademicRecord {
   @@index([totalScore])
   @@index([quranProgress])
 }
+
+// ════ DISBURSEMENT MODULE ════════════════════════════════════════
+
+enum MonthStatus {
+  DRAFT
+  CALCULATED
+  APPROVED
+  PAID
+}
+
+enum DisbursementMethod {
+  VULNERABILITY
+  PROPORTIONAL
+  SCORE_BASED
+}
+
+enum FundSource {
+  GENERAL
+  ZAKAT
+  SADAQA
+  ORPHAN_FUND
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum GrantType {
+  MONTHLY
+  ANNUAL
+  PERIODIC
+}
+
+enum PaymentAuditTrigger {
+  CALCULATE
+  MANUAL_EDIT
+  APPROVE
+  REOPEN
+  STATUS_CHANGE
+}
+
+// Category configuration (caps, limits per category code)
+model CategoryConfig {
+  id                  String   @id @default(cuid())
+  code                String   @unique  // '1','2'...'10'
+  nameAr              String
+  nameEn              String
+  active              Boolean  @default(true)
+  maxAmount           Decimal? @db.Decimal(10, 2)   // base max
+  maxPerChild         Decimal? @db.Decimal(10, 2)   // orphans: per child
+  widowBonus          Decimal? @db.Decimal(10, 2)   // orphans: widow bonus
+  baseMax             Decimal? @db.Decimal(10, 2)   // students/prisoners: base part
+  perDepMax           Decimal? @db.Decimal(10, 2)   // per dependent
+  poorScoreThreshold  Decimal? @db.Decimal(5, 2)    // cat 5: score threshold %
+  capWithDeps         Decimal  @db.Decimal(10, 2)   // hard cap with dependents
+  capNoDeps           Decimal  @db.Decimal(10, 2)   // hard cap without dependents
+  updatedAt           DateTime @updatedAt
+  updatedById         String?
+
+  @@index([active])
+  @@index([code])
+}
+
+// Grant/incentive configuration
+model GrantConfig {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  nameAr         String
+  nameEn         String
+  active         Boolean   @default(true)
+  type           GrantType @default(MONTHLY)
+  amount         Decimal   @db.Decimal(10, 2)
+  maxAmount      Decimal?  @db.Decimal(10, 2)  // ceiling when isPerUnit
+  isPerUnit      Boolean   @default(false)      // multiply by orphans/deps count
+  condition      String    // 'isOrphan' | 'hasStudents' | 'hasQuranStudents' | 'hasMerge'
+  categoryFilter String?   // JSON array of category codes, null = all
+  updatedAt      DateTime  @updatedAt
+
+  @@index([active])
+  @@index([type])
+}
+
+// External institution contributions per household per period
+model ExternalContribution {
+  id              String    @id @default(cuid())
+  householdId     String
+  household       Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  period          DateTime  // first day of month
+  institutionName String
+  amount          Decimal   @db.Decimal(10, 2)
+  confirmed       Boolean   @default(false)
+  notes           String?
+  createdById     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([householdId, period, institutionName])
+  @@index([householdId])
+  @@index([period])
+  @@index([householdId, period])
+}
+
+// Monthly disbursement session
+model DisbursementMonth {
+  id           String             @id @default(cuid())
+  period       DateTime           // first day of month  e.g. 2026-06-01
+  status       MonthStatus        @default(DRAFT)
+  method       DisbursementMethod @default(VULNERABILITY)
+  totalBudget  Decimal?           @db.Decimal(12, 2)  // required only for PROPORTIONAL
+  scoreSum     Decimal?           @db.Decimal(10, 4)  // Σ normalizedPercent for PROPORTIONAL
+  ratePerPoint Decimal?           @db.Decimal(8, 4)   // totalBudget ÷ scoreSum
+  notes        String?
+  createdById  String
+  createdBy    User               @relation("DisbursementCreatedBy", fields: [createdById], references: [id])
+  lockedAt     DateTime?
+  lockedById   String?
+  lockedBy     User?              @relation("DisbursementLockedBy", fields: [lockedById], references: [id])
+  reopenedAt   DateTime?
+  reopenedById String?
+  reopenedBy   User?              @relation("DisbursementReopenedBy", fields: [reopenedById], references: [id])
+  reopenReason String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  payments     MonthlyPayment[]
+
+  @@unique([period])
+  @@index([status])
+  @@index([period])
+}
+
+// Per-household payment record for a month
+model MonthlyPayment {
+  id                 String            @id @default(cuid())
+  monthId            String
+  month              DisbursementMonth @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  householdId        String
+  household          Household         @relation(fields: [householdId], references: [id])
+
+  // Snapshot & scoring
+  householdSnapshot  Json              // frozen copy at calculation time
+  category           String            // classificationTag at calc time
+  autoSubCategory    String?           // 'POOR' | 'NEEDY' for cat 5
+  normalizedPercent  Decimal           @db.Decimal(6, 3)
+  dependentCount     Int               @default(0)
+  orphanCount        Int               @default(0)
+  totalIncome        Decimal           @db.Decimal(10, 2)
+  isWidowNotRemarried Boolean          @default(false)
+
+  // Amounts breakdown
+  baseAmount         Decimal           @db.Decimal(10, 2)
+  grantsBreakdown    Json              @default("[]")
+  grantsTotal        Decimal           @db.Decimal(10, 2) @default(0)
+  mergeBonus         Decimal           @db.Decimal(10, 2) @default(0)
+  rawTotal           Decimal           @db.Decimal(10, 2)
+  appliedCap         Decimal           @db.Decimal(10, 2)
+  calculatedAmount   Decimal           @db.Decimal(10, 2)
+  externalTotal      Decimal           @db.Decimal(10, 2) @default(0)
+  compensationAmount Decimal           @db.Decimal(10, 2)
+
+  // Manual override
+  manualAdjustment   Decimal           @db.Decimal(10, 2) @default(0)
+  adjustmentReason   String?
+  adjustedById       String?
+  adjustedBy         User?             @relation("PaymentAdjustedBy", fields: [adjustedById], references: [id])
+  adjustedAt         DateTime?
+
+  // Final amounts
+  finalAmount        Decimal           @db.Decimal(10, 2)
+  fundSource         FundSource        @default(GENERAL)
+
+  // Payment channels
+  meezaAmount        Decimal           @db.Decimal(10, 2) @default(0)
+  meezaCardNumber    String?
+  meezaStatus        PaymentStatus     @default(PENDING)
+  cashAmount         Decimal           @db.Decimal(10, 2) @default(0)
+  cashStatus         PaymentStatus     @default(PENDING)
+  meezaPaidAt        DateTime?
+  cashPaidAt         DateTime?
+
+  notes              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  audits             PaymentAudit[]
+
+  @@unique([monthId, householdId])
+  @@index([monthId])
+  @@index([householdId])
+  @@index([category])
+  @@index([meezaStatus])
+  @@index([cashStatus])
+}
+
+// Immutable audit trail for every payment change
+model PaymentAudit {
+  id          String             @id @default(cuid())
+  paymentId   String
+  payment     MonthlyPayment     @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  changedById String             // userId who triggered the change
+  triggerType String             // CALCULATE | MANUAL_EDIT | APPROVE | REOPEN | STATUS_CHANGE
+  oldAmount   Decimal?           @db.Decimal(10, 2)
+  newAmount   Decimal?           @db.Decimal(10, 2)
+  oldStatus   String?            // previous meezaStatus / cashStatus
+  newStatus   String?            // updated meezaStatus / cashStatus
+  reason      String?
+  meta        Json?              // extra context
+  createdAt   DateTime           @default(now())
+
+  @@index([paymentId])
+  @@index([triggerType])
+  @@index([createdAt])
+}
+

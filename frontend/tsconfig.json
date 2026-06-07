@@ -41,6 +41,7 @@
   ],
   "exclude": [
     "node_modules",
-    "medical-module"
+    "medical-module",
+    "موديول القبض"
   ]
 }

@@ -15,7 +15,7 @@ const CAPS = {
 }
 
 // التصنيفات التي تسمح بالاعانات الطبية
-const ALLOWED_ASSISTANCE_TYPES = ['MONTHLY_CASH', 'MEDICAL', 'SEASONAL_INKIND']
+const ALLOWED_ASSISTANCE_TYPES = ['MONTHLY_CASH', 'MONTHLY_MEDICAL', 'SEASONAL_MIXED']
 
 /**
  * checkEligibility
@@ -66,12 +66,12 @@ function checkEligibility({ assistanceType, lastDisbursementDate, aidType, isCri
   const requiresSupervisor = aidType === 'SURGERY'
 
   // 4. حساب cooldown وفقاً للتصنيف
-  const cooldownDays = assistanceType === 'MEDICAL'
+  const cooldownDays = assistanceType === 'MONTHLY_MEDICAL'
     ? COOLDOWN_DAYS.MEDICAL_TREATMENT
     : COOLDOWN_DAYS.DEFAULT
 
   // 5. حساب السقف المطبق
-  let appliedCap = assistanceType === 'MEDICAL' && aidType === 'TREATMENT'
+  let appliedCap = assistanceType === 'MONTHLY_MEDICAL' && aidType === 'TREATMENT'
     ? CAPS.MEDICAL_TREATMENT
     : CAPS.DEFAULT
 

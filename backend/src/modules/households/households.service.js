@@ -275,7 +275,7 @@ function enrichListRow(row) {
     hasBride: (row.persons || []).some((p) => p.isBride === true),
     hasOrphan: (row.persons || []).some((p) => p.isOrphan === true),
   };
-  const classificationTag = latestScore?.classificationTag || extractClassificationTag(latestScore?.decisionNote);
+  const classificationTag = row.classificationTag || latestScore?.classificationTag || extractClassificationTag(latestScore?.decisionNote);
 
   return {
     ...serializeHousehold(row),
@@ -285,7 +285,7 @@ function enrichListRow(row) {
     totalMonthlyIncome,
     personTags,
     latestClassification: classificationTag || latestScore?.decisionNote || null,
-    latestDecisionStatus: latestScore?.humanDecision || null,
+    latestDecisionStatus: row.humanDecision !== 'PENDING' ? row.humanDecision : (latestScore?.humanDecision || null),
     latestScore: latestScore
       ? {
           ...serializeHousehold({ scoreResults: [latestScore] }).scoreResults[0],
@@ -361,7 +361,9 @@ function extractClassificationTag(note) {
     'حالات هجر',
     'طالب علم',
     'كبار سن',
-    'لا يستحق',
+    'مساعدات',
+    'مساعدات موسمية',
+    'لا يستحق المساعدة',
   ];
   return tags.find((tag) => note.includes(tag)) || null;
 }

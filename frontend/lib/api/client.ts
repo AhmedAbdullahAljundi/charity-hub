@@ -57,9 +57,10 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${token}`;
         return api(original);
       }
-      if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+      if (typeof window !== "undefined" && window.location.pathname !== `/${localStorage.getItem(LOCALE_KEY) || "ar"}`) {
+        clearAuthTokens();
         const locale = localStorage.getItem(LOCALE_KEY) || "ar";
-        window.location.href = `/${locale}/login`;
+        window.location.href = `/${locale}`;
       }
     } else if (error.response?.status && error.response.status >= 500) {
       const locale = typeof window !== "undefined" ? localStorage.getItem(LOCALE_KEY) || "ar" : "ar";
@@ -78,6 +79,7 @@ export function setAuthTokens(access: string, refresh: string) {
 export function clearAuthTokens() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_KEY);
+  localStorage.removeItem("charityhub-auth-v2");
 }
 
 export { TOKEN_KEY, REFRESH_KEY, LOCALE_KEY };

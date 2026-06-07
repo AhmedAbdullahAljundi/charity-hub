@@ -57,7 +57,10 @@ const householdsRepository = {
       and.push({
         scoreResults: {
           some: {
-            decisionNote: { contains: filters.classification, mode: 'insensitive' },
+            OR: [
+              { decisionNote: { contains: filters.classification, mode: 'insensitive' } },
+              { classificationTag: { contains: filters.classification, mode: 'insensitive' } }
+            ]
           },
         },
       });

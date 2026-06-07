@@ -104,17 +104,23 @@ const eligibilityText: Record<string, string> = {
 };
 
 const classificationPills: Record<string, string> = {
+  "كفالة أيتام": "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300",
   "أيتام": "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300",
   "فقراء": "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300",
   "مساكين": "bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300",
   "أسر سجناء": "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  "ملف إعاقة": "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
   "ذوو إعاقة": "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
   "مسنون": "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300",
+  "علاج شهري": "bg-yellow-50 text-yellow-700 dark:bg-yellow-950/60 dark:text-yellow-300",
   "أمراض مزمنة": "bg-yellow-50 text-yellow-700 dark:bg-yellow-950/60 dark:text-yellow-300",
   "حالات هجر": "bg-pink-50 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300",
+  "طلاب علم": "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
   "طالب علم": "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
   "كبار سن": "bg-violet-50 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300",
-  "لا يستحق": "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+  "مساعدات": "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+  "مساعدات موسمية": "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300",
+  "لا يستحق المساعدة": "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
 };
 
 export function HouseholdsTable({
@@ -386,7 +392,11 @@ function HouseholdRow({
   const recommendation = score?.systemRecommendation;
   const percent = score ? Math.round(Number(score.normalizedPercent || 0)) : null;
   const income = Math.abs(Number(household.totalMonthlyIncome || 0));
-  const classification = score?.classificationTag || extractClassification(household.latestClassification || score?.decisionNote);
+  let classification = score?.classificationTag || extractClassification(household.latestClassification || score?.decisionNote);
+  const legacyMap: Record<string, string> = { "1": "أيتام", "2": "إعاقة", "3": "طالب علم", "4": "أسر سجناء", "5": "مساعدات", "6": "دعم خارجي", "7": "منفردون", "9": "مطلقات", "10": "مساكين" };
+  if (classification && legacyMap[classification]) {
+    classification = legacyMap[classification];
+  }
   const familyName = (household as any).familyName || household.headName || household.spouseName || household.code;
 
   return (
@@ -1011,9 +1021,10 @@ function cleanEgyptPhone(phone: string) {
   return phone.replace(/\D/g, "").replace(/^20/, "");
 }
 
-function extractClassification(note?: string | null) {
+function extractClassification(note?: string) {
   if (!note) return null;
-  return Object.keys(classificationPills).find((key) => note.includes(key)) || null;
+  const tags = ["كفالة أيتام", "أيتام", "فقراء", "مساكين", "أسر سجناء", "ملف إعاقة", "ذوو إعاقة", "مسنون", "علاج شهري", "أمراض مزمنة", "حالات هجر", "طلاب علم", "طالب علم", "كبار سن", "مساعدات", "مساعدات موسمية", "لا يستحق المساعدة"];
+  return tags.find((tag) => note.includes(tag)) || null;
 }
 
 function highlightText(text: string, query: string) {

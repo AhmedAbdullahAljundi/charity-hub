@@ -97,12 +97,26 @@ const scoringService = {
       },
     });
 
+    await prisma.scoreResult.update({
+      where: { id: latest.id },
+      data: {
+        humanDecision: body.humanDecision,
+        reviewStatus: body.reviewStatus,
+        decisionNote: body.decisionNote,
+        classificationTag: body.categoryClass ?? null,
+        assistanceType: body.assistanceType ?? null,
+        decidedById: user.userId,
+        decidedAt: new Date(),
+      }
+    });
+
     return {
       ...serializeScoreResult(latest),
       humanDecision: updatedHousehold.humanDecision,
       reviewStatus: updatedHousehold.reviewStatus,
       decisionNote: updatedHousehold.decisionNote,
       classificationTag: updatedHousehold.classificationTag,
+      assistanceType: body.assistanceType ?? null,
       decidedAt: updatedHousehold.decidedAt,
     };
   },

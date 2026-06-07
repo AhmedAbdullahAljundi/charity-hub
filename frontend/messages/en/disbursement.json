@@ -1,0 +1,130 @@
+{
+  "title": "Monthly Disbursement",
+  "subtitle": "Manage monthly aid payments",
+  "addMonth": "Open New Month",
+  "settingsTitle": "Disbursement Settings",
+  "method": {
+    "VULNERABILITY": "By Vulnerability",
+    "PROPORTIONAL": "Budget Distribution",
+    "SCORE_BASED": "Score Based"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "CALCULATED": "Calculated",
+    "APPROVED": "Approved",
+    "PAID": "Paid"
+  },
+  "paymentStatus": {
+    "PENDING": "Pending",
+    "PROCESSING": "Processing",
+    "PAID": "Paid",
+    "FAILED": "Failed",
+    "CANCELLED": "Cancelled"
+  },
+  "columns": {
+    "code": "Code",
+    "family": "Family",
+    "category": "Category",
+    "score": "Score",
+    "base": "Base Amount",
+    "grants": "Grants",
+    "calculated": "Calculated",
+    "external": "External Contrib.",
+    "compensation": "Compensation",
+    "total": "Total",
+    "meeza": "Meeza",
+    "cash": "Cash",
+    "actions": ""
+  },
+  "actions": {
+    "calculate": "Calculate Month",
+    "approve": "Approve Month",
+    "reopen": "Reopen",
+    "recalculate": "Recalculate",
+    "exportMeeza": "Export Meeza",
+    "cashSheet": "Cash Sheet",
+    "adjust": "Adjust",
+    "view": "View",
+    "confirmApprove": "Confirm Approval",
+    "confirmReopen": "Confirm Reopen"
+  },
+  "messages": {
+    "approveWarning": "The month will be locked after approval. No further edits will be possible.",
+    "reopenWarning": "The month approval will be removed and reverted to Calculated status.",
+    "locked": "Month is approved and locked",
+    "lockedDetail": "Edits are not allowed on an approved month",
+    "adjustmentReasonRequired": "Adjustment reason is required",
+    "reopenReasonRequired": "Reopen reason is required",
+    "monthExists": "This month is already open",
+    "noPayments": "No payments for this month",
+    "noMonths": "No months opened yet",
+    "calculationSuccess": "Calculation completed",
+    "approveSuccess": "Month approved successfully",
+    "adjustSuccess": "Adjustment saved",
+    "loading": "Loading...",
+    "calculating": "Calculating..."
+  },
+  "kpis": {
+    "totalFamilies": "Total Families",
+    "totalAmount": "Total Disbursed",
+    "meezaTotal": "Meeza Transfers",
+    "cashTotal": "Cash at Office",
+    "months": "Total Cycles",
+    "activeMonths": "Active Cycles",
+    "totalBudget": "Total Budget",
+    "totalSpent": "Total Spent"
+  },
+  "simulation": {
+    "title": "Month Simulation",
+    "subtitle": "Estimated data before actual calculation",
+    "run": "Run Simulation",
+    "eligibleCount": "Eligible Families",
+    "totalRequired": "Expected Total",
+    "average": "Average Payment",
+    "max": "Highest Payment",
+    "min": "Lowest Payment",
+    "surplus": "Remaining Budget",
+    "deficit": "Deficit",
+    "byCategory": "Family Distribution by Category"
+  },
+  "categories": {
+    "1": "Orphans",
+    "2": "Disability",
+    "3": "Students",
+    "4": "Prisoners Families",
+    "5": "Aid",
+    "6": "External Support",
+    "7": "Singles",
+    "9": "Divorced",
+    "10": "Needy"
+  },
+  "fundSource": {
+    "GENERAL": "General",
+    "ZAKAT": "Zakat",
+    "SADAQA": "Sadaqa",
+    "ORPHAN_FUND": "Orphan Fund"
+  },
+  "settings": {
+    "title": "Disbursement Settings",
+    "categories": "Category Settings",
+    "grants": "Grants & Incentives",
+    "maxWithDeps": "Cap with Dependents",
+    "maxNoDeps": "Cap without Dependents",
+    "maxAmount": "Category Maximum",
+    "addGrant": "Add New Grant",
+    "saveChanges": "Save Changes"
+  },
+  "form": {
+    "period": "Month",
+    "method": "Calculation Method",
+    "totalBudget": "Total Budget",
+    "notes": "Notes",
+    "reopenReason": "Reopen Reason",
+    "adjustmentReason": "Adjustment Reason",
+    "manualAdjustment": "Adjustment Amount",
+    "fundSource": "Fund Source",
+    "institutionName": "Institution Name",
+    "amount": "Amount",
+    "confirmed": "Confirmed by Institution"
+  }
+}

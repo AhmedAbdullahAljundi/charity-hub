@@ -1,0 +1,130 @@
+{
+  "title": "الصرف المالي",
+  "subtitle": "إدارة الميزانيات المالية وصرف المساعدات النقدية الدورية",
+  "addMonth": "فتح شهر جديد",
+  "settingsTitle": "إعدادات القبض",
+  "method": {
+    "VULNERABILITY": "حسب الهشاشة",
+    "PROPORTIONAL": "توزيع الميزانية",
+    "SCORE_BASED": "حسب الدرجة"
+  },
+  "status": {
+    "DRAFT": "مسودة",
+    "CALCULATED": "محسوب",
+    "APPROVED": "معتمد",
+    "PAID": "مصروف"
+  },
+  "paymentStatus": {
+    "PENDING": "معلق",
+    "PROCESSING": "قيد التحويل",
+    "PAID": "تم",
+    "FAILED": "فشل",
+    "CANCELLED": "ملغي"
+  },
+  "columns": {
+    "code": "رقم القيد",
+    "family": "الأسرة",
+    "category": "الفئة",
+    "score": "الهشاشة",
+    "base": "القبض الأساسي",
+    "grants": "الحوافز",
+    "calculated": "المستحق",
+    "external": "مساهمة خارجية",
+    "compensation": "التعويض",
+    "total": "الإجمالي",
+    "meeza": "ميزة",
+    "cash": "نقدي",
+    "actions": ""
+  },
+  "actions": {
+    "calculate": "احسب الشهر",
+    "approve": "اعتماد الشهر",
+    "reopen": "إعادة الفتح",
+    "recalculate": "إعادة الحساب",
+    "exportMeeza": "تصدير ميزة",
+    "cashSheet": "كشف النقدي",
+    "adjust": "تعديل",
+    "view": "عرض",
+    "confirmApprove": "تأكيد الاعتماد",
+    "confirmReopen": "تأكيد إعادة الفتح"
+  },
+  "messages": {
+    "approveWarning": "سيتم قفل الشهر بعد الاعتماد ولن يمكن إجراء تعديلات.",
+    "reopenWarning": "ستتم إزالة اعتماد الشهر وإعادته لحالة محسوب.",
+    "locked": "الشهر معتمد ومقفل",
+    "lockedDetail": "لا يمكن إجراء تعديلات على شهر معتمد",
+    "adjustmentReasonRequired": "سبب التعديل مطلوب",
+    "reopenReasonRequired": "سبب إعادة الفتح مطلوب",
+    "monthExists": "هذا الشهر مفتوح بالفعل",
+    "noPayments": "لا توجد مدفوعات لهذا الشهر",
+    "noMonths": "لا توجد شهور مفتوحة بعد",
+    "calculationSuccess": "تم الحساب بنجاح",
+    "approveSuccess": "تم اعتماد الشهر",
+    "adjustSuccess": "تم حفظ التعديل",
+    "loading": "جاري التحميل...",
+    "calculating": "جاري الحساب..."
+  },
+  "kpis": {
+    "totalFamilies": "إجمالي الأسر",
+    "totalAmount": "إجمالي القبض",
+    "meezaTotal": "تحويلات ميزة",
+    "cashTotal": "نقدي في المقر",
+    "months": "إجمالي الدورات",
+    "activeMonths": "الدورات النشطة",
+    "totalBudget": "الميزانية الإجمالية",
+    "totalSpent": "المصروف"
+  },
+  "simulation": {
+    "title": "محاكاة الشهر",
+    "subtitle": "البيانات تقديرية قبل الحساب الفعلي",
+    "run": "تشغيل المحاكاة",
+    "eligibleCount": "الأسر المؤهلة",
+    "totalRequired": "إجمالي القبض المتوقع",
+    "average": "متوسط القبض",
+    "max": "أعلى قبض",
+    "min": "أقل قبض",
+    "surplus": "الميزانية المتبقية",
+    "deficit": "العجز",
+    "byCategory": "توزيع الأسر بالفئات"
+  },
+  "categories": {
+    "1": "أيتام",
+    "2": "إعاقة",
+    "3": "طالب علم",
+    "4": "أسر سجناء",
+    "5": "مساعدات",
+    "6": "دعم خارجي",
+    "7": "منفردون",
+    "9": "مطلقات",
+    "10": "مساكين"
+  },
+  "fundSource": {
+    "GENERAL": "عام",
+    "ZAKAT": "زكاة",
+    "SADAQA": "صدقة",
+    "ORPHAN_FUND": "صندوق الأيتام"
+  },
+  "settings": {
+    "title": "إعدادات القبض",
+    "categories": "إعدادات الفئات",
+    "grants": "الحوافز والمنح",
+    "maxWithDeps": "الحد الأقصى بأبناء",
+    "maxNoDeps": "الحد الأقصى بدون أبناء",
+    "maxAmount": "الحد الأقصى للفئة",
+    "addGrant": "إضافة حافز جديد",
+    "saveChanges": "حفظ التغييرات"
+  },
+  "form": {
+    "period": "الشهر",
+    "method": "طريقة الحساب",
+    "totalBudget": "الميزانية الإجمالية",
+    "notes": "ملاحظات",
+    "reopenReason": "سبب إعادة الفتح",
+    "adjustmentReason": "سبب التعديل",
+    "manualAdjustment": "مبلغ التعديل",
+    "fundSource": "مصدر التمويل",
+    "institutionName": "اسم المؤسسة",
+    "amount": "المبلغ",
+    "confirmed": "تم التأكيد من المؤسسة"
+  }
+}

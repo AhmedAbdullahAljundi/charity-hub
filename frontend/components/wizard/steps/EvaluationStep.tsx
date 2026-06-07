@@ -28,6 +28,7 @@ import { CheckCircle2, AlertTriangle, Play, RefreshCw, Calculator, ShieldAlert, 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { MedicalSummaryWidget } from "../../medical/MedicalSummaryWidget";
+import { CATEGORY_LABELS } from "@/lib/disbursement/types";
 
 /* ─────────── Arabic Labels ─────────── */
 
@@ -235,6 +236,51 @@ export function EvaluationStep() {
     }
   }, [liveScore]);
 
+  // Auto-set humanDecision based on categoryClass
+  useEffect(() => {
+    if (!decision.categoryClass || !liveScore) return;
+
+    let autoDecision = decision.humanDecision;
+    const cat = decision.categoryClass;
+    const pct = Number(liveScore.normalizedPercent || 0);
+
+    const monthlyCashCats = [
+      "كفالة أيتام", "أيتام",
+      "ملف إعاقة", "إعاقة",
+      "طلاب علم", "طالب علم",
+      "أسر سجناء",
+      "مساعدات",
+      "منفردون",
+      "كبار سن",
+      "مسنون",
+      "مطلقات",
+      "مساكين",
+      "فقراء",
+      "حالات هجر",
+      "دعم خارجي"
+    ];
+
+    if (monthlyCashCats.includes(cat)) {
+      autoDecision = "MONTHLY_CASH";
+    } else if (cat === "علاج شهري" || cat === "أمراض مزمنة") {
+      autoDecision = "MONTHLY_MEDICAL";
+    } else if (cat === "لا يستحق المساعدة") {
+      autoDecision = "NONE";
+    } else if (cat === "مساعدات موسمية") {
+      if (pct >= 40) {
+        autoDecision = "SEASONAL_MIXED";
+      } else if (pct >= 10) {
+        autoDecision = "GOODS_ONLY";
+      } else {
+        autoDecision = "NONE";
+      }
+    }
+
+    if (autoDecision !== decision.humanDecision && autoDecision !== "") {
+      setDecision(prev => ({ ...prev, humanDecision: autoDecision }));
+    }
+  }, [decision.categoryClass, liveScore]);
+
   const getEligibilityLevel = (pct: number) => {
     if (pct >= 80) return "CRITICAL";
     if (pct >= 60) return "HIGH_NEED";
@@ -267,7 +313,27 @@ export function EvaluationStep() {
     if (!householdId) return;
     const { decideScore } = await import("@/lib/api/scoring-api");
     try {
-      await decideScore(householdId, decision);
+      const assistanceTypeMap: Record<string, string> = {
+        MONTHLY_CASH: "نقدية شهرية",
+        MONTHLY_MEDICAL: "مساعدة طبية",
+        SEASONAL_MIXED: "موسمية/عينية",
+        GOODS_ONLY: "مواد عينية",
+        NONE: "لا مساعدة"
+      };
+
+      const assistanceText = decision.humanDecision 
+        ? `[نوع المساعدة: ${assistanceTypeMap[decision.humanDecision] || decision.humanDecision}] ` 
+        : "";
+
+      const payload = {
+        humanDecision: decision.reviewStatus, // Maps APPROVED, REJECTED etc.
+        reviewStatus: "DECIDED",              // Enforced by backend enum
+        categoryClass: decision.categoryClass,
+        assistanceType: decision.humanDecision,
+        decisionNote: `${assistanceText}${decision.decisionNote}`.trim()
+      };
+
+      await decideScore(householdId, payload);
       setIsDecisionSaved(true);
     } catch (e) {
       console.error("Decision failed", e);
@@ -520,13 +586,12 @@ export function EvaluationStep() {
  <Select value={decision.categoryClass} onValueChange={(v) => setDecision({ ...decision, categoryClass: v })}>
  <SelectTrigger><SelectValue placeholder="" /></SelectTrigger>
  <SelectContent>
- <SelectItem value="POOR">{t("wizard.evaluation.categoryOptions.poor")}</SelectItem>
- <SelectItem value="VERY_POOR">{t("wizard.evaluation.categoryOptions.veryPoor")}</SelectItem>
- <SelectItem value="PRISONERS_FAM">{t("wizard.evaluation.categoryOptions.prisoners")}</SelectItem>
- <SelectItem value="ORPHANS">{t("wizard.evaluation.categoryOptions.orphans")}</SelectItem>
- <SelectItem value="ELDERLY">{t("wizard.evaluation.categoryOptions.elderly")}</SelectItem>
- <SelectItem value="DISABLED">{t("wizard.evaluation.categoryOptions.disabled")}</SelectItem>
- <SelectItem value="OTHER">{t("wizard.evaluation.categoryOptions.other")}</SelectItem>
+ {Object.entries(CATEGORY_LABELS).map(([code, label]) => (
+   <SelectItem key={code} value={code}>
+     {label}
+   </SelectItem>
+ ))}
+ <SelectItem value="لا يستحق المساعدة" className="text-rose-600 font-bold">لا يستحق المساعدة</SelectItem>
  </SelectContent>
  </Select>
  </div>
