@@ -31,20 +31,42 @@ const disbursementRepository = {
   // ── Eligible households ────────────────────────────────────────────────────
 
   async findEligibleHouseholds() {
-    const households = await prisma.household.findMany({
+    // الأسر المستحقة (Cat 1-5, 7, 9, 10)
+    const eligible = await prisma.household.findMany({
       where: {
         humanDecision:     'APPROVED',
-        isDraft:           false,
-        classificationTag: { not: null },
+        isDraft:         false,
+        classificationTag: { not: null, notIn: ['6'] },
       },
-      include: HOUSEHOLD_INCLUDE_FOR_CALC,
+      include: {
+        persons:        { include: { diseases: true, disabilities: true } },
+        incomeSources:  true,
+        academicRecords: true,
+        scoreResults:   { orderBy: { calculatedAt: 'desc' }, take: 1 },
+      },
     });
 
-    // Post-filter: must have a score result with normalizedPercent >= 20
-    return households.filter((h) => {
+    // فئة 6 — غير مستحقة بمتبرع
+    const donorSponsored = await prisma.household.findMany({
+      where: {
+        classificationTag: '6',
+        isDraft: false,
+      },
+      include: {
+        persons:        { include: { diseases: true, disabilities: true } },
+        incomeSources:  true,
+        academicRecords: true,
+        scoreResults:   { orderBy: { calculatedAt: 'desc' }, take: 1 },
+      },
+    });
+
+    // الأسر المستحقة فقط تخضع لفلتر الـ score
+    const filteredEligible = eligible.filter(h => {
       const latest = h.scoreResults?.[0];
       return latest && Number(latest.normalizedPercent) >= 20;
     });
+
+    return [...filteredEligible, ...donorSponsored];
   },
 
   // ── Month operations ───────────────────────────────────────────────────────

@@ -26,9 +26,17 @@ const ARABIC_MONTHS = [
 const YEARS = [2024, 2025, 2026, 2027, 2028]
 
 const CATEGORY_COLORS_CHART: Record<string, string> = {
-  '1': '#10b981', '2': '#3b82f6', '3': '#8b5cf6',
-  '4': '#ec4899', '5': '#f59e0b', '6': '#14b8a6',
-  '7': '#f43f5e', '9': '#d946ef', '10': '#f97316',
+  'كفالة أيتام': '#10b981', 'أيتام': '#10b981',
+  'ملف إعاقة': '#3b82f6', 'إعاقة': '#3b82f6',
+  'طلاب علم': '#8b5cf6', 'طالب علم': '#8b5cf6',
+  'أسر سجناء': '#ec4899', 
+  'مساعدات': '#f59e0b', 
+  'دعم خارجي': '#14b8a6',
+  'منفردون': '#f43f5e', 
+  'مطلقات': '#d946ef', 
+  'مساكين': '#f97316',
+  'علاج شهري': '#eab308',
+  'مساعدات موسمية': '#14b8a6'
 }
 
 function StepIndicator({ currentStep }: { currentStep: 1 | 2 }) {
@@ -92,8 +100,15 @@ export function NewMonthSheet({ open, onOpenChange }: NewMonthSheetProps) {
       toast.success('تم فتح الشهر الجديد بنجاح!')
       onOpenChange(false)
       setTimeout(reset, 300)
-    } catch { /* error shown via store */ }
-    finally { setIsCreating(false) }
+    } catch (e: any) {
+      let errMsg = useDisbursementStore.getState().error || e.message || 'حدث خطأ عند إنشاء الشهر.';
+      if (errMsg.includes('409') || errMsg.includes('مفتوح بالفعل')) {
+        errMsg = `الشهر المختار (${ARABIC_MONTHS[monthIndex - 1]} ${year}) مضاف مسبقاً ولا يمكن تكراره.`;
+      }
+      toast.error(errMsg);
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   const handleClose = () => {
@@ -304,17 +319,62 @@ export function NewMonthSheet({ open, onOpenChange }: NewMonthSheetProps) {
                     : simulation
                     ? (
                       <>
-                        <MetricTile label="الأسر المؤهلة" value={simulation.eligibleCount.toString()} suffix="أسرة" icon="users" />
-                        <MetricTile label="الإجمالي المطلوب" value={formatAmount(simulation.totalRequired)} accent="emerald" icon="wallet" />
-                        <MetricTile label="متوسط الصرف" value={formatAmount(simulation.averagePayment)} icon="average" />
-                        <MetricTile label="أعلى مبلغ للأسرة" value={formatAmount(simulation.maxPayment)} accent="amber" />
-                        <MetricTile label="أقل مبلغ للأسرة" value={formatAmount(simulation.minPayment)} />
+                        <MetricTile 
+                          label="الأسر المؤهلة" 
+                          value={simulation.eligibleCount.toString()} 
+                          suffix="أسرة" 
+                          icon="users"
+                          description="عدد الأسر المستحقة التي تم شمولها في المحاكاة بناءً على الفلاتر وقواعد الاستحقاق."
+                        />
+                        <MetricTile 
+                          label="الإجمالي المطلوب" 
+                          value={formatAmount(simulation.totalRequired)} 
+                          accent="emerald" 
+                          icon="wallet"
+                          description="الميزانية الإجمالية التقديرية المطلوبة لتغطية كافة الأسر بناءً على المحاكاة."
+                        />
+                        <MetricTile 
+                          label="متوسط الصرف" 
+                          value={formatAmount(simulation.averagePayment)} 
+                          icon="average"
+                          description="متوسط ما ستحصل عليه الأسرة الواحدة (الإجمالي ÷ عدد الأسر)، وهو مؤشر لمدى كفاية الميزانية."
+                        />
+                        <MetricTile 
+                          label="أعلى مبلغ للأسرة" 
+                          value={formatAmount(simulation.maxPayment)} 
+                          accent="amber"
+                          description="أقصى مبلغ ستأخذه أسرة واحدة، ويساعد في التأكد من فعالية القيود القصوى (Caps)."
+                        />
+                        <MetricTile 
+                          label="أقل مبلغ للأسرة" 
+                          value={formatAmount(simulation.minPayment)}
+                          description="أقل مبلغ مخصص لأسرة، لتنبيهك إذا كانت هناك أسر ستحصل على مبالغ زهيدة جداً لا تكفي لاحتياجاتها."
+                        />
                         {simulation.surplus != null && (
                           <MetricTile
                             label={simulation.surplus >= 0 ? 'فائض الميزانية' : 'عجز الميزانية'}
                             value={formatAmount(Math.abs(simulation.surplus))}
                             accent={simulation.surplus >= 0 ? 'emerald' : 'rose'}
                             suffix={simulation.surplus >= 0 ? '✅' : '⚠️'}
+                            description={simulation.surplus >= 0 ? 'المبلغ المتبقي من الميزانية المحددة بعد التوزيع.' : 'المبلغ الناقص عن الميزانية لتغطية الحدود الدنيا للأسر.'}
+                          />
+                        )}
+                        {simulation.deficit != null && simulation.surplus == null && (
+                          <MetricTile
+                            label="عجز الميزانية"
+                            value={formatAmount(Math.abs(simulation.deficit))}
+                            accent="rose"
+                            suffix="⚠️"
+                            description="المبلغ الإضافي المطلوب للوصول بالصرف إلى الحدود الدنيا المسموح بها للأسر."
+                          />
+                        )}
+                        {simulation.appliedBoost != null && simulation.appliedBoost > 0 && (
+                          <MetricTile
+                            label="نسبة الرفع المطبقة (Boost)"
+                            value={`${simulation.appliedBoost}%`}
+                            accent="indigo"
+                            icon="trending-up"
+                            description="نسبة الزيادة التي تم إضافتها تلقائياً على حدود الصرف لاستغلال الميزانية بأفضل شكل."
                           />
                         )}
                       </>
@@ -329,9 +389,9 @@ export function NewMonthSheet({ open, onOpenChange }: NewMonthSheetProps) {
                 {/* Chart */}
                 {simulation && !isSimulating && simulation.byCategory.length > 0 && (
                   <div className="space-y-3 pt-2">
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 px-1">توزيع الأسر على الفئات</h3>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 px-1">توزيع الفئات على المساعدات (الصرف المالي)</h3>
                     <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-                      <ResponsiveContainer width="100%" height={220}>
+                      <ResponsiveContainer width="100%" height={Math.max(220, simulation.byCategory.length * 45)}>
                         <BarChart
                           data={simulation.byCategory.map(c => ({
                             nameAr: CATEGORY_LABELS[c.category] ?? c.category,
@@ -339,24 +399,37 @@ export function NewMonthSheet({ open, onOpenChange }: NewMonthSheetProps) {
                             fill: CATEGORY_COLORS_CHART[c.category] ?? '#94a3b8',
                           }))}
                           layout="vertical"
-                          margin={{ top: 0, right: 20, left: 80, bottom: 0 }}
+                          margin={{ top: 0, right: 110, left: 20, bottom: 0 }}
                         >
                           <XAxis type="number" hide />
                           <YAxis 
                             type="category" 
                             dataKey="nameAr" 
-                            width={75} 
-                            tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} 
+                            orientation="right"
+                            width={110} 
+                            tick={{ fontSize: 12, fill: '#64748b', fontWeight: 600 }} 
                             axisLine={false} 
                             tickLine={false}
                           />
                           <Tooltip 
                             cursor={{fill: 'transparent'}}
-                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-slate-900 border border-slate-700 text-white rounded-xl p-3 shadow-xl">
+                                    <p className="text-sm font-bold mb-1">{payload[0].payload.nameAr}</p>
+                                    <p className="text-xs text-slate-400">
+                                      عدد الأسر: <span className="text-white font-bold">{payload[0].value}</span>
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
                           />
                           <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={24}>
                             {simulation.byCategory.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                              <Cell key={`cell-${index}`} fill={CATEGORY_COLORS_CHART[entry.category] ?? '#94a3b8'} />
                             ))}
                           </Bar>
                         </BarChart>
@@ -431,20 +504,27 @@ function MetricTile({
   value: string
   accent?: 'emerald' | 'amber' | 'rose'
   suffix?: string
-  icon?: 'users' | 'wallet' | 'average'
+  icon?: 'users' | 'wallet' | 'average' | 'trending-up'
+  description?: string
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">
+    <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow group">
       <div className="relative z-10">
         <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">{label}</p>
         <p className={`text-xl font-black font-mono tracking-tight ${
           accent === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' :
           accent === 'amber' ? 'text-amber-600 dark:text-amber-400' :
           accent === 'rose' ? 'text-rose-600 dark:text-rose-400' :
+          accent === 'indigo' ? 'text-indigo-600 dark:text-indigo-400' :
           'text-slate-800 dark:text-white'
         }`}>
           {value} {suffix && <span className="text-sm font-medium opacity-80 ms-1">{suffix}</span>}
         </p>
+        {description && (
+          <p className="mt-2 text-[10px] leading-relaxed text-slate-400 opacity-0 max-h-0 overflow-hidden group-hover:opacity-100 group-hover:max-h-20 transition-all duration-300">
+            {description}
+          </p>
+        )}
       </div>
       {/* Decorative background circle depending on accent */}
       {accent && (

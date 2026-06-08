@@ -225,12 +225,15 @@ export function MonthDetailPage({ params }: MonthDetailPageProps) {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         {[
           { label: 'عدد الأسر',      value: payments.length.toLocaleString('en-US'),     color: 'text-slate-800 dark:text-white' },
           { label: 'إجمالي القبض',   value: formatAmount(totalFinal),                   color: 'text-green-600 dark:text-green-400' },
           { label: 'تحويلات ميزة',   value: formatAmount(totalMeeza),                   color: 'text-blue-600 dark:text-blue-400' },
           { label: 'نقدي في المقر',  value: formatAmount(totalCash),                    color: 'text-amber-600 dark:text-amber-400' },
+          ...(currentMonth.boostPercent
+            ? [{ label: 'نسبة الرفع (Boost)', value: `${Number(currentMonth.boostPercent)}%`, color: 'text-indigo-600 dark:text-indigo-400' }]
+            : []),
         ].map((item, idx) => (
           <div key={item.label} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-4 shadow-sm">
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{item.label}</p>

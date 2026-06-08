@@ -35,8 +35,8 @@ interface MedicalModalState {
   workImpact: string;
   setWorkImpact: (v: string) => void;
 
-  aidType: string | null;
-  setAidType: (type: string | null) => void;
+  aidType: AidType | null;
+  setAidType: (type: AidType | null) => void;
   amount: number;
   setAmount: (amount: number) => void;
   aidNotes: string;
@@ -90,6 +90,7 @@ export const useMedicalModalStore = create<MedicalModalState>((set) => ({
   setMedicalCondition: (condition) => set({ medicalCondition: condition }),
   severity: "mild",
   setSeverity: (severity) => set({ severity }),
+  medicalNotes: "",
   setMedicalNotes: (notes) => set({ medicalNotes: notes }),
 
   treatmentCost: "NONE",

@@ -99,19 +99,38 @@ export function getStatusColor(status: EligibilityStatus): string {
   }
 }
 
+export function getStatusLabel(status: string): string {
+  switch (status) {
+    case 'PENDING':
+    case 'pending':
+      return 'قيد المراجعة'
+    case 'APPROVED':
+    case 'approved':
+      return 'معتمد'
+    case 'PAID':
+    case 'disbursed':
+      return 'تم الصرف'
+    case 'REJECTED':
+    case 'rejected':
+      return 'مرفوض'
+    default:
+      return status || 'غير محدد'
+  }
+}
+
 export function getEligibilityColor(level: string): string {
   switch (level) {
     case 'eligible':
     case 'OK':
-      return 'bg-green-100 text-green-800 border-green-300'
+      return 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
     case 'warning':
     case 'WARNING':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      return 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800'
     case 'blocked':
     case 'BLOCKED':
-      return 'bg-red-100 text-red-800 border-red-300'
+      return 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800'
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-300'
+      return 'bg-slate-50 text-slate-800 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700'
   }
 }
 

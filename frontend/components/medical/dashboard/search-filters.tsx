@@ -15,7 +15,7 @@ export function SearchFilters() {
     resetFilters,
   } = useDashboardFiltersStore();
 
-  const aidTypes: AidType[] = ["cash_aid", "medical_fees", "medical_supplies", "food_packages", "housing_support"];
+  const aidTypes: AidType[] = ["TREATMENT", "LAB_TEST", "IMAGING", "CONSULTATION", "SURGERY", "FINANCIAL_AID", "MARRIAGE_AID"];
   const statuses: ("pending" | "approved" | "disbursed" | "rejected")[] = ["pending", "approved", "disbursed", "rejected"];
   const eligibilityLevels: EligibilityLevel[] = ["fully_eligible", "partial_eligible", "not_eligible", "pending"];
 

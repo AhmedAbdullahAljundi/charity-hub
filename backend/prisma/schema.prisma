@@ -808,6 +808,7 @@ model DisbursementMonth {
   reopenReason String?
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
+  boostPercent Decimal?           @db.Decimal(5, 2)  // نسبة الرفع المطبّقة
 
   payments     MonthlyPayment[]
 
@@ -833,6 +834,11 @@ model MonthlyPayment {
   orphanCount        Int               @default(0)
   totalIncome        Decimal           @db.Decimal(10, 2)
   isWidowNotRemarried Boolean          @default(false)
+
+  // فئة 6 فقط — الأسرة غير مستحقة ولها متبرع بالاسم
+  isDonorSponsored   Boolean           @default(false)
+  donorName          String?
+  donorNote          String?
 
   // Amounts breakdown
   baseAmount         Decimal           @db.Decimal(10, 2)

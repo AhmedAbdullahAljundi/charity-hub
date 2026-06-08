@@ -48,6 +48,7 @@ export interface DisbursementMonth {
   reopenReason?: string
   notes?: string
   createdAt: string
+  boostPercent?: string
   _count?: { payments: number }
   payments?: MonthlyPayment[]
   createdBy?: { id: string; name: string }
@@ -66,6 +67,8 @@ export interface MonthlyPayment {
   householdId: string
   household: { id: string; code: string; familyName?: string }
   category: string
+  isDonorSponsored?: boolean
+  donorName?: string
   autoSubCategory: AutoSubCategory
   normalizedPercent: string
   dependentCount: number
@@ -103,6 +106,7 @@ export interface SimulateResult {
   minPayment: number
   surplus?: number
   deficit?: number
+  appliedBoost?: number
   byCategory: { category: string; count: number; total: number }[]
 }
 

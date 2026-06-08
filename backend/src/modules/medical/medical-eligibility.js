@@ -1,94 +1,125 @@
-// medical-eligibility.js
-// ⚠️ هذا الملف يحتوي على قواعد الأهلية — لا تعدّل القيم مباشرة
-// كل المعاملات مأخوذة من assistanceType وآخر تاريخ صرف
-
 const COOLDOWN_DAYS = {
-  MEDICAL_TREATMENT: 30,  // مساعدة طبية + أي نوع = 30 يوم
-  DEFAULT: 40,            // باقي التصنيفات = 40 يوم
+  MONTHLY_MEDICAL: 30,
+  DEFAULT: 40,
 }
 
 const CAPS = {
-  MEDICAL_TREATMENT: 800,   // مساعدة طبية
-  DEFAULT: 400,             // باقي التصنيفات
-  CONSULTATION_DEFAULT: 200,// كشف طبي — القيمة الافتراضية
-  MARRIAGE_AID_MAX: 70000,  // إعانة زواج
+  MONTHLY_MEDICAL_TREATMENT: 800,
+  DEFAULT_TREATMENT: 400,
+  MARRIAGE_AID_ORPHAN: 70000,
+  MARRIAGE_AID_NON_ORPHAN: 30000,
+  PERCENTAGE_WARNING_AMOUNT: 2000,
 }
 
-// التصنيفات التي تسمح بالاعانات الطبية
-const ALLOWED_ASSISTANCE_TYPES = ['MONTHLY_CASH', 'MONTHLY_MEDICAL', 'SEASONAL_MIXED']
+const ALLOWED_ASSISTANCE_TYPES = ['MONTHLY_MEDICAL', 'MONTHLY_CASH', 'SEASONAL_MIXED']
+const PERCENTAGE_BASED_AID_TYPES = new Set(['SURGERY', 'FINANCIAL_AID'])
 
-/**
- * checkEligibility
- * @param {object} params
- * @param {string} params.assistanceType - من قرار اللجنة
- * @param {Date|null} params.lastDisbursementDate - تاريخ آخر اعانة أي نوع
- * @param {string} params.aidType - نوع الاعانة المطلوبة
- * @param {boolean} params.isCritical - هل الحالة حرجة
- * @param {boolean} params.hasPreviousMarriageAid - للزواج: هل سبق صرفها
- * @returns {object} EligibilityResult
- */
-function checkEligibility({ assistanceType, lastDisbursementDate, aidType, isCritical, hasPreviousMarriageAid }) {
-  // 1. فحص التصنيف — هل الأسرة مؤهلة أصلاً
+function asNumber(value, fallback = 0) {
+  if (value === null || value === undefined || value === '') return fallback
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+function getMarriageAidCap(isOrphan) {
+  return isOrphan ? CAPS.MARRIAGE_AID_ORPHAN : CAPS.MARRIAGE_AID_NON_ORPHAN
+}
+
+function getTreatmentCap(assistanceType) {
+  return assistanceType === 'MONTHLY_MEDICAL'
+    ? CAPS.MONTHLY_MEDICAL_TREATMENT
+    : CAPS.DEFAULT_TREATMENT
+}
+
+function buildPercentageWarning({ aidType, amount, totalCost, normalizedPercent }) {
+  if (!PERCENTAGE_BASED_AID_TYPES.has(aidType)) return null
+
+  const amountValue = asNumber(amount)
+  const totalCostValue = asNumber(totalCost)
+  const percentValue = asNumber(normalizedPercent)
+  const entitlementAmount = totalCostValue > 0 && percentValue > 0
+    ? totalCostValue * (percentValue / 100)
+    : amountValue
+
+  if (entitlementAmount <= CAPS.PERCENTAGE_WARNING_AMOUNT) return null
+
+  return `قيمة الإعانة حسب نسبة استحقاق الأسرة (${Math.round(entitlementAmount)} ج.م) تتجاوز 2000 ج.م وتحتاج مراجعة.`
+}
+
+function checkEligibility({
+  assistanceType,
+  lastDisbursementDate,
+  aidType,
+  isCritical,
+  hasPreviousMarriageAid,
+  isOrphan,
+  normalizedPercent,
+  amount,
+  totalCost,
+}) {
   if (!ALLOWED_ASSISTANCE_TYPES.includes(assistanceType)) {
     return {
       isEligible: false,
       warningLevel: 'BLOCKED',
-      message: 'هذه الأسرة غير مؤهلة للاعانات الطبية بناءً على تصنيف اللجنة',
+      message: 'هذه الأسرة غير مؤهلة للإعانات الطبية بناء على تصنيف اللجنة.',
       cooldownDays: 0,
       appliedCap: null,
       requiresSupervisor: false,
+      percentageWarning: null,
     }
   }
 
-  // 2. إعانة الزواج — قواعد خاصة (لا cooldown، مرة واحدة)
   if (aidType === 'MARRIAGE_AID') {
+    const appliedCap = getMarriageAidCap(Boolean(isOrphan))
     if (hasPreviousMarriageAid) {
       return {
         isEligible: false,
         warningLevel: 'BLOCKED',
-        message: 'تم صرف إعانة الزواج لهذا الشخص مسبقاً — تُصرف مرة واحدة فقط',
+        message: 'تم صرف إعانة الزواج لهذا الشخص مسبقا، وتصرف مرة واحدة فقط.',
         cooldownDays: 0,
-        appliedCap: CAPS.MARRIAGE_AID_MAX,
+        appliedCap,
         requiresSupervisor: false,
+        percentageWarning: null,
       }
     }
+
     return {
       isEligible: true,
       warningLevel: 'OK',
       message: null,
       cooldownDays: 0,
-      appliedCap: CAPS.MARRIAGE_AID_MAX,
+      appliedCap,
       requiresSupervisor: false,
+      percentageWarning: null,
     }
   }
 
-  // 3. العملية — تحتاج مشرف دائماً (لكن مش blocked)
-  const requiresSupervisor = aidType === 'SURGERY'
-
-  // 4. حساب cooldown وفقاً للتصنيف
   const cooldownDays = assistanceType === 'MONTHLY_MEDICAL'
-    ? COOLDOWN_DAYS.MEDICAL_TREATMENT
+    ? COOLDOWN_DAYS.MONTHLY_MEDICAL
     : COOLDOWN_DAYS.DEFAULT
 
-  // 5. حساب السقف المطبق
-  let appliedCap = assistanceType === 'MONTHLY_MEDICAL' && aidType === 'TREATMENT'
-    ? CAPS.MEDICAL_TREATMENT
-    : CAPS.DEFAULT
-
-  // 6. الحالة الحرجة تلغي السقف للعلاج فقط
-  const isCriticalOverride = isCritical && aidType === 'TREATMENT'
+  let appliedCap = aidType === 'TREATMENT' ? getTreatmentCap(assistanceType) : null
+  const isCriticalOverride = Boolean(isCritical) && aidType === 'TREATMENT'
   if (isCriticalOverride) appliedCap = null
 
-  // 7. فحص الـ cooldown (مشترك بين كل الأنواع)
+  const percentageWarning = buildPercentageWarning({
+    aidType,
+    amount,
+    totalCost,
+    normalizedPercent,
+  })
+
+  const requiresSupervisor = Boolean(isCritical)
+
   if (!lastDisbursementDate) {
     return {
       isEligible: true,
-      warningLevel: 'OK',
-      message: null,
+      warningLevel: percentageWarning ? 'WARNING' : 'OK',
+      message: percentageWarning,
       cooldownDays,
       appliedCap,
       requiresSupervisor,
       isCriticalOverride,
+      percentageWarning,
     }
   }
 
@@ -102,42 +133,47 @@ function checkEligibility({ assistanceType, lastDisbursementDate, aidType, isCri
     return {
       isEligible: false,
       warningLevel: 'WARNING',
-      message: `لم تمر المدة المطلوبة — الاعانة التالية بعد ${remaining} يوم`,
+      message: `لم تمر المدة المطلوبة، الإعانة التالية بعد ${remaining} يوم.`,
       cooldownDays,
       nextEligibleDate: nextDate.toISOString().split('T')[0],
       remaining,
       appliedCap,
       requiresSupervisor,
       isCriticalOverride,
+      percentageWarning,
     }
   }
 
   return {
     isEligible: true,
-    warningLevel: 'OK',
-    message: null,
+    warningLevel: percentageWarning ? 'WARNING' : 'OK',
+    message: percentageWarning,
     cooldownDays,
     appliedCap,
     requiresSupervisor,
     isCriticalOverride,
+    percentageWarning,
   }
 }
 
-/**
- * validateAmount
- * @param {number} amount - المبلغ المطلوب
- * @param {object} eligibility - نتيجة checkEligibility
- * @returns {{ valid: boolean, warning: string|null }}
- */
 function validateAmount(amount, eligibility) {
   if (!eligibility.appliedCap) return { valid: true, warning: null }
-  if (amount > eligibility.appliedCap) {
+
+  const amountValue = asNumber(amount)
+  if (amountValue > eligibility.appliedCap) {
     return {
       valid: false,
-      warning: `قيمة الاعانة (${amount} ج.م.) تتجاوز الحد المسموح (${eligibility.appliedCap} ج.م.)`,
+      warning: `قيمة الإعانة (${amountValue} ج.م) تتجاوز الحد المسموح (${eligibility.appliedCap} ج.م).`,
     }
   }
+
   return { valid: true, warning: null }
 }
 
-module.exports = { checkEligibility, validateAmount, CAPS, COOLDOWN_DAYS }
+module.exports = {
+  checkEligibility,
+  validateAmount,
+  CAPS,
+  COOLDOWN_DAYS,
+  ALLOWED_ASSISTANCE_TYPES,
+}

@@ -9,7 +9,14 @@ const CASE_INCLUDE = {
       scoreResults: {
         orderBy: { calculatedAt: 'desc' },
         take: 1,
-        select: { normalizedPercent: true, systemRecommendation: true, humanDecision: true, reviewStatus: true }
+        select: {
+          normalizedPercent: true,
+          systemRecommendation: true,
+          humanDecision: true,
+          reviewStatus: true,
+          assistanceType: true,
+          classificationTag: true,
+        }
       }
     }
   },
@@ -108,6 +115,13 @@ async function hasMarriageAidForPerson(personId) {
   return count > 0
 }
 
+async function getPersonAidContext(personId) {
+  return prisma.person.findUnique({
+    where: { id: personId },
+    select: { id: true, isOrphan: true, isBride: true }
+  })
+}
+
 async function createDisbursement(data) {
   return prisma.medicalDisbursement.create({
     data,
@@ -188,6 +202,6 @@ module.exports = {
   findAllCases, findCaseById, findCasesByHousehold,
   createCase, updateCase, deleteCase,
   findDisbursementsByHousehold, getLastDisbursementDate,
-  hasMarriageAidForPerson, createDisbursement, updateDisbursementStatus,
+  hasMarriageAidForPerson, getPersonAidContext, createDisbursement, updateDisbursementStatus,
   getMedicalSummary, getMedicalKpis,
 }

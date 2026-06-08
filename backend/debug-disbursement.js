@@ -6,13 +6,11 @@ async function test() {
     const households = await repo.findEligibleHouseholds();
     console.log(`Eligible households count: ${households.length}`);
     for (const h of households) {
-      console.log(`- ID: ${h.id}, Code: ${h.code}, Family: ${h.familyName}, Tag: ${h.classificationTag}, Decision: ${h.humanDecision}`);
-    }
-
-    const configs = await prisma.categoryConfig.findMany();
-    console.log(`\nConfigs count: ${configs.length}`);
-    for (const c of configs) {
-      console.log(`- Code: ${c.code}, Name: ${c.nameAr}, Active: ${c.active}`);
+      const latest = h.scoreResults?.[0];
+      console.log(`- ID: ${h.id}, Code: ${h.code}, Family: ${h.familyName}, Tag: ${h.classificationTag}, Decision: ${h.humanDecision}, isDraft: ${h.isDraft}`);
+      if (latest) {
+         console.log(`    ScoreResult: percent=${latest.normalizedPercent}, assistanceType=${latest.assistanceType}`);
+      }
     }
   } catch (err) {
     console.error(err);

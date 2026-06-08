@@ -60,6 +60,7 @@ async function getEligibility(householdId, aidType, personId) {
   const hasPreviousMarriage = personId && aidType === 'MARRIAGE_AID'
     ? await repo.hasMarriageAidForPerson(personId)
     : false
+  const personAidContext = personId ? await repo.getPersonAidContext(personId) : null
 
   const isCritical = false // يُحدَّد من بيانات الحالة، مش من هنا
 
@@ -69,6 +70,8 @@ async function getEligibility(householdId, aidType, personId) {
     aidType,
     isCritical,
     hasPreviousMarriageAid: hasPreviousMarriage,
+    isOrphan: Boolean(personAidContext?.isOrphan),
+    normalizedPercent: lastScore?.normalizedPercent ?? null,
   })
 
   return {
@@ -90,7 +93,7 @@ async function createDisbursement(data, userId) {
   const lastScore = await prisma.scoreResult.findFirst({
     where: { householdId },
     orderBy: { calculatedAt: 'desc' },
-    select: { assistanceType: true }
+    select: { assistanceType: true, normalizedPercent: true }
   })
   const assistanceType = lastScore?.assistanceType ?? 'NONE'
 
@@ -98,6 +101,7 @@ async function createDisbursement(data, userId) {
   const hasPreviousMarriage = aidType === 'MARRIAGE_AID'
     ? await repo.hasMarriageAidForPerson(personId)
     : false
+  const personAidContext = await repo.getPersonAidContext(personId)
 
   const eligibility = checkEligibility({
     assistanceType,
@@ -105,15 +109,26 @@ async function createDisbursement(data, userId) {
     aidType,
     isCritical: isCritical ?? false,
     hasPreviousMarriageAid: hasPreviousMarriage,
+    isOrphan: Boolean(personAidContext?.isOrphan),
+    normalizedPercent: lastScore?.normalizedPercent ?? null,
+    amount,
+    totalCost: data.totalCost,
   })
 
   // فحص المبلغ (تحذير فقط — لا نمنع الحفظ)
   const amountCheck = validateAmount(Number(amount), eligibility)
+  const warnings = [eligibility.percentageWarning, amountCheck.warning].filter(Boolean)
 
   // تحديد الـ status الابتدائي
   // العملية دائماً PENDING (تحتاج مشرف)
   // الحالات الأخرى: لو eligibility.warningLevel !== 'OK' → PENDING أيضاً لكن بنحفظ
-  const initialStatus = 'PENDING'
+  const requiresSupervisorReview =
+    Boolean(isCritical) ||
+    aidType === 'SURGERY' ||
+    eligibility.warningLevel === 'BLOCKED' ||
+    Boolean(eligibility.nextEligibleDate) ||
+    Boolean(amountCheck.warning)
+  const initialStatus = requiresSupervisorReview ? 'PENDING' : 'APPROVED'
 
   const disbursement = await repo.createDisbursement({
     householdId,
@@ -140,14 +155,14 @@ async function createDisbursement(data, userId) {
       action: 'CREATE',
       entity: 'MedicalDisbursement',
       entityId: disbursement.id,
-      after: { aidType, amount, status: initialStatus, warnings: amountCheck.warning },
+      after: { aidType, amount, status: initialStatus, warnings },
     })
   } catch (_) {}
 
   return {
     disbursement,
     eligibilityResult: eligibility,
-    amountWarning: amountCheck.warning,
+    amountWarning: warnings.length ? warnings.join(' ') : null,
   }
 }
 

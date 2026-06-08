@@ -311,7 +311,14 @@ export function PaymentTable({ families, isApproved, monthId }: PaymentTableProp
                     {name}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <CategoryBadge category={payment.category} />
+                    <div className="flex flex-col gap-1 items-start">
+                      <CategoryBadge category={payment.category} />
+                      {payment.isDonorSponsored && payment.donorName && (
+                        <span className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded font-bold">
+                          متبرع: {payment.donorName}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-2">

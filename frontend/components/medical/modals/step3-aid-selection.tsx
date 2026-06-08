@@ -27,7 +27,14 @@ export function Step3AidSelection() {
   } = useMedicalModalStore();
 
   const [eligibility, setEligibility] = useState<any>(null);
+  const [summary, setSummary] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (selectedHousehold) {
+      medicalApi.getMedicalSummary(selectedHousehold.id).then(setSummary).catch(() => {});
+    }
+  }, [selectedHousehold?.id]);
 
   useEffect(() => {
     if (!selectedHousehold || !aidType) return;
@@ -64,7 +71,7 @@ export function Step3AidSelection() {
       });
 
       if (result.amountWarning) {
-        toast.error(result.amountWarning); // Or toast.warning if available
+        toast.warning(result.amountWarning);
       } else {
         toast.success('تم حفظ السجل الطبي بنجاح');
       }
@@ -90,61 +97,73 @@ export function Step3AidSelection() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <EligibilityPanel
-        eligibilityLevel={eligibility?.eligibilityLevel || 'pending'}
+        eligibilityLevel={!aidType ? 'pending_aid_selection' : (eligibility?.warningLevel || 'pending')}
         personName={selectedPerson.name}
         personAge={selectedPerson.age}
+        lastDisbursementDate={summary?.lastDisbursementDate}
+        householdScore={selectedHousehold.scoreResults?.[0]?.normalizedPercent}
       />
 
-      <div>
-        <label className="block text-sm font-semibold mb-3">الإجراء الطبي المطلوب</label>
-        <p className="text-xs text-gray-500 mb-3">هذا الإجراء خاضع لمراجعة واعتماد اللجنة الطبية بناءً على الأهلية الموضحة أعلاه.</p>
-        <AidTypeGrid selectedAidType={aidType} onSelect={setAidType} />
-      </div>
+      <div className="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+        <div>
+          <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-100">الإجراء الطبي المطلوب <span className="text-rose-500">*</span></label>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">هذا الإجراء خاضع لمراجعة واعتماد اللجنة الطبية بناءً على الأهلية الموضحة أعلاه.</p>
+          <AidTypeGrid selectedAidType={aidType} onSelect={setAidType} />
+        </div>
 
-      <div>
-        <label className="block text-sm font-semibold mb-2">التكلفة التقديرية (ج.م)</label>
-        <div className="relative">
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
-            placeholder="0"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-right"
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+          <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-100">التكلفة التقديرية (ج.م) <span className="text-rose-500">*</span></label>
+          <div className="relative">
+            <input
+              type="number"
+              value={amount || ""}
+              onChange={(e) => setAmount(Number(e.target.value))}
+              placeholder="أدخل المبلغ المقدر..."
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/30 text-slate-800 dark:text-slate-100 transition-all text-right font-mono text-lg"
+            />
+            {amount > 0 && (
+              <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800 rounded-xl text-right text-sm text-emerald-800 dark:text-emerald-300 font-bold flex items-center justify-between">
+                <span>المبلغ الإجمالي المقدر:</span>
+                <span className="text-lg">{formatCurrency(amount)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="pt-4">
+          <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-100">ملاحظات إضافية</label>
+          <textarea
+            value={aidNotes}
+            onChange={(e) => setAidNotes(e.target.value)}
+            placeholder="أي ملاحظات حول المساعدة أو توصيات..."
+            rows={3}
+            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/30 text-slate-800 dark:text-slate-100 transition-all resize-none placeholder:text-slate-400"
           />
-          {amount > 0 && (
-            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-right text-sm text-blue-800">
-              المبلغ الإجمالي: {formatCurrency(amount)}
-            </div>
-          )}
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold mb-2">ملاحظات إضافية</label>
-        <textarea
-          value={aidNotes}
-          onChange={(e) => setAidNotes(e.target.value)}
-          placeholder="أي ملاحظات على المساعدة..."
-          rows={4}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-right resize-none"
-        />
-      </div>
-
-      <div className="flex gap-3">
+      <div className="flex gap-4 pt-4">
         <button
           onClick={prevStep}
-          className="flex-1 bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-400 transition-colors"
+          className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-3.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
         >
-          السابق
+          رجوع
         </button>
         <button
           onClick={handleSubmit}
           disabled={!aidType || amount <= 0 || submitting}
-          className="flex-1 bg-green-600 text-white font-semibold py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-300 transition-colors"
+          className="flex-[2] bg-gradient-to-l from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-slate-300 disabled:to-slate-300 dark:disabled:from-slate-800 dark:disabled:to-slate-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-md disabled:shadow-none disabled:text-slate-500 dark:disabled:text-slate-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {submitting ? 'جاري الإرسال...' : 'إرسال'}
+          {submitting ? (
+            <>
+              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              جاري الإرسال...
+            </>
+          ) : (
+            'حفظ وإرسال للجنة'
+          )}
         </button>
       </div>
     </div>

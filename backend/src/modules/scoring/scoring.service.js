@@ -84,6 +84,7 @@ const scoringService = {
         reviewStatus: body.reviewStatus,
         decisionNote: body.decisionNote,
         classificationTag: body.categoryClass ?? null,
+        isDraft: false,
         decidedById: user.userId,
         decidedAt: new Date(),
       },

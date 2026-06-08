@@ -40,10 +40,15 @@ function EditCategoryDialog({
   const handleSave = async () => {
     setIsSubmitting(true)
     try {
+      // Auto-adjust caps if maxAmount is raised higher than the caps
+      const newMax = Number(formData.maxAmount) || 0;
+      const capWith = Math.max(Number(formData.capWithDeps) || 0, newMax);
+      const capNo = Math.max(Number(formData.capNoDeps) || 0, newMax);
+
       await updateCategoryConfig(cat.code, {
-        maxAmount: formData.maxAmount,
-        capWithDeps: formData.capWithDeps,
-        capNoDeps: formData.capNoDeps,
+        maxAmount: newMax.toString(),
+        capWithDeps: capWith.toString(),
+        capNoDeps: capNo.toString(),
       })
       onSaved()
       onOpenChange(false)

@@ -27,6 +27,10 @@ function roundToNearest50(amount) {
   return Math.round(Number(amount) / 50) * 50;
 }
 
+function roundUp50(amount) {
+  return Math.ceil(Number(amount) / 50) * 50;
+}
+
 function countDependents(persons) {
   return persons.filter(
     (p) =>
@@ -99,174 +103,225 @@ function serializeMonth(m) {
   };
 }
 
-// ─── Core calculation for a single household ──────────────────────────────────
+async function calcCat6Family(family) {
+  const donorAmount = family.externalSupportAmount ?? 250;
+  return {
+    householdId:      family.id,
+    householdSnapshot: buildSnapshot(family),
+    category:         '6',
+    isDonorSponsored: true,
+    donorName:        family.donorName ?? null,
+    baseAmount:       new Decimal(donorAmount),
+    grantsBreakdown:  "[]",
+    grantsTotal:      new Decimal(0),
+    mergeBonus:       new Decimal(0),
+    rawTotal:         new Decimal(donorAmount),
+    appliedCap:       new Decimal(donorAmount),
+    calculatedAmount: new Decimal(donorAmount),
+    externalTotal:    new Decimal(0),
+    compensationAmount: new Decimal(donorAmount),
+    finalAmount:      new Decimal(donorAmount),
+    meezaAmount:      new Decimal(Math.round(donorAmount * 0.9)),
+    cashAmount:       new Decimal(donorAmount - Math.round(donorAmount * 0.9)),
+    meezaCardNumber:  family.meezaCardNumber ?? null,
+    fundSource:       'GENERAL',
+    meezaStatus:      'PENDING',
+    cashStatus:       'PENDING',
+    normalizedPercent: new Decimal(family.scoreResults?.[0]?.normalizedPercent || 0),
+    dependentCount:   0,
+    orphanCount:      0,
+    totalIncome:      new Decimal(0),
+    isWidowNotRemarried: false,
+  };
+}
 
-async function calcOneFamily(household, configs, grants, method, ratePerPoint) {
-  const latestScore = household.scoreResults?.[0];
-  if (!latestScore) return null;
+function findOptimalBoost(families, configs, totalBudget, targetUtilization = 0.98) {
+  for (let boostPct = 0; boostPct <= 100; boostPct += 0.5) {
+    const total = families.reduce((sum, family) => {
+      const cat    = family.classificationTag;
+      const config = configs.find(c => c.code === cat);
+      if (!config) return sum;
 
-  const score  = Number(latestScore.normalizedPercent) / 100; // 0→1
-  const cat    = household.classificationTag;
-  const config = configs.find((c) => c.code === cat && c.active);
-  if (!config) return null;
+      const score    = Number(family.scoreResults?.[0]?.normalizedPercent || 0) / 100;
+      const deps     = countDependents(family.persons || []);
+      const orphans  = (family.persons || []).filter(p => p.isOrphan).length;
+      const hasKids  = deps > 0 || orphans > 0;
+      const baseCap  = hasKids
+        ? Number(config.capWithDeps)
+        : Number(config.capNoDeps);
 
-  const deps    = countDependents(household.persons);
-  const orphans = household.persons.filter((p) => p.isOrphan).length;
-  const income  = household.incomeSources.reduce(
-    (s, i) => s + Number(i.monthlyAmount),
-    0,
-  );
-  const isWidowNotRemarried = checkWidowStatus(household);
+      const boostedCap = baseCap * (1 + boostPct / 100);
+      const boostedMax = Number(config.maxAmount) * (1 + boostPct / 100);
 
-  let base = 0;
+      let base = 0;
+      switch (cat) {
+        case '1':
+        case 'كفالة أيتام':
+        case 'أيتام': {
+          const perOrphan = roundUp50(score * Number(config.maxPerChild || 700) * (1 + boostPct / 100));
+          base = perOrphan * Math.max(orphans, 1);
+          if (checkWidowStatus(family)) base += Number(config.widowBonus ?? 200);
+          break;
+        }
+        case '3': case 'طالب علم': case 'طلاب علم':
+        case '4': case 'أسر سجناء':
+        case '9': case 'مطلقات': {
+          base = roundUp50(score * Number(config.baseMax || 400) * (1 + boostPct / 100))
+               + roundUp50(score * Number(config.perDepMax || 200) * (1 + boostPct / 100)) * deps;
+          break;
+        }
+        case '5': case 'مساعدات': case 'مساعدات موسمية': {
+          const threshold = Number(config.poorScoreThreshold ?? 60) / 100;
+          const max = score >= threshold ? boostedMax : boostedMax * 0.7;
+          base = roundUp50(score * max);
+          break;
+        }
+        default:
+          base = roundUp50(score * boostedMax);
+      }
 
-  if (method === 'PROPORTIONAL') {
-    base = roundToNearest50(Number(latestScore.normalizedPercent) * ratePerPoint);
-  } else {
-    // VULNERABILITY — category-specific formulas
-    switch (cat) {
-      case '1':
-      case 'كفالة أيتام':
-      case 'أيتام': {
-        const perOrphan = roundToNearest50(
-          score * Number(config.maxPerChild ?? 700),
-        );
-        base = perOrphan * Math.max(orphans, 1);
-        if (isWidowNotRemarried) base += Number(config.widowBonus ?? 200);
-        break;
-      }
-      case '2':
-      case 'ملف إعاقة':
-      case 'إعاقة': {
-        base = roundToNearest50(score * Number(config.maxAmount ?? 700));
-        break;
-      }
-      case '3':
-      case 'طلاب علم':
-      case 'طالب علم':
-      case '4':
-      case 'أسر سجناء':
-      case '9':
-      case 'مطلقات': {
-        const basePart = roundToNearest50(score * Number(config.baseMax ?? 400));
-        const perDep   = roundToNearest50(score * Number(config.perDepMax ?? 200));
-        base = basePart + perDep * deps;
-        break;
-      }
-      case '5':
-      case 'مساعدات':
-      case 'مساعدات موسمية': {
-        const threshold  = Number(config.poorScoreThreshold ?? 60) / 100;
-        const resolvedMax = score >= threshold
-          ? Number(config.maxAmount ?? 700)
-          : Number(config.maxAmount ?? 700) * 0.7;
-        base = roundToNearest50(score * resolvedMax);
-        break;
-      }
-      case '6':
-      case 'دعم خارجي': {
-        base = Math.max(income, 250);
-        break;
-      }
-      case '7':
-      case 'منفردون':
-      case '10':
-      case 'مساكين':
-      case 'فقراء':
-      case 'مسنون':
-      case 'كبار سن':
-      case 'علاج شهري':
-      case 'أمراض مزمنة':
-      case 'حالات هجر': {
-        base = roundToNearest50(score * Number(config.maxAmount ?? 500));
-        break;
-      }
-      default:
-        return null;
+      return sum + Math.min(base, boostedCap);
+    }, 0);
+
+    if (total >= totalBudget * targetUtilization) {
+      return { boostPct, projectedTotal: total };
     }
   }
+  return { boostPct: 100, projectedTotal: totalBudget };
+}
 
-  // ── Grants / incentives ──────────────────────────────────────────────────
-  const grantsBreakdown = [];
-  const condMap = {
-    isOrphan:         orphans > 0,
-    hasStudents:      household.persons.some((p) => p.isStudent),
-    hasQuranStudents: household.persons.some((p) => p.isStudent), // TODO: from StudentAcademicRecord
-    hasMerge:         household.hasMerge ?? false,
+function evaluateGrants(grants, family, cat, orphans, deps) {
+  const persons   = family.persons ?? [];
+  const academic  = family.academicRecords ?? [];
+
+  const conditions = {
+    'isOrphan':         orphans > 0,
+    'hasStudents':      persons.some(p => p.isStudent && p.role !== 'HEAD'),
+    'hasQuranStudents': academic.some(r => r.quranJuzCount && Number(r.quranJuzCount) > 0),
+    'hasMerge':         family.hasMerge === true,
   };
 
-  for (const grant of grants) {
-    if (!grant.active) continue;
+  const breakdown = [];
+  for (const grant of grants.filter(g => g.active)) {
+    const catFilter = grant.categoryFilter
+      ? (Array.isArray(grant.categoryFilter) ? grant.categoryFilter : (function(){ try { return JSON.parse(grant.categoryFilter); } catch { return []; } })())
+      : null;
+    if (catFilter && !catFilter.includes(cat)) continue;
 
-    // Category filter
-    if (grant.categoryFilter) {
-      let allowed;
-      try { allowed = JSON.parse(grant.categoryFilter); } catch { allowed = []; }
-      if (!allowed.includes(cat)) continue;
+    const conditionMet = conditions[grant.condition] ?? false;
+    if (!conditionMet) continue;
+
+    let amount = Number(grant.amount);
+    if (grant.isPerUnit) {
+      const unitCount = grant.condition === 'isOrphan' ? orphans : deps;
+      amount = Math.min(amount * Math.max(unitCount, 1), Number(grant.maxAmount ?? Infinity));
     }
 
-    if (!condMap[grant.condition]) continue;
-
-    const unitCount = Math.max(orphans, deps, 1);
-    const rawAmount = grant.isPerUnit
-      ? Number(grant.amount) * unitCount
-      : Number(grant.amount);
-    const amount = grant.maxAmount
-      ? Math.min(rawAmount, Number(grant.maxAmount))
-      : rawAmount;
-
-    grantsBreakdown.push({
+    breakdown.push({
       code:   grant.code,
       nameAr: grant.nameAr,
       amount,
+      reason: getGrantReason(grant.condition),
     });
   }
+  return breakdown;
+}
 
+function getGrantReason(condition) {
+  const reasons = {
+    'isOrphan':         'يوجد أيتام في الأسرة',
+    'hasStudents':      'يوجد طلاب مسجّلون',
+    'hasQuranStudents': 'يوجد سجل قرآن نشط',
+    'hasMerge':         'أسرة مدموجة',
+  };
+  return reasons[condition] ?? condition;
+}
+
+async function calcOneFamilyWithBoost(household, configs, grants, method, boostPct = 0) {
+  const cat = household.classificationTag;
+  if (cat === '6') return calcCat6Family(household);
+
+  const latestScore = household.scoreResults?.[0];
+  if (!latestScore) return null;
+
+  const score  = Number(latestScore.normalizedPercent) / 100;
+  const config = configs.find(c => c.code === cat && c.active);
+  if (!config) return null;
+
+  const boost    = 1 + boostPct / 100;
+  const deps     = countDependents(household.persons || []);
+  const orphans  = (household.persons || []).filter(p => p.isOrphan).length;
+  const isWidow  = checkWidowStatus(household);
+  const income   = (household.incomeSources || []).reduce((s, i) => s + Number(i.monthlyAmount), 0);
+
+  let base = 0;
+  switch (cat) {
+    case '1':
+    case 'كفالة أيتام':
+    case 'أيتام': {
+      const perOrphan = roundUp50(score * Number(config.maxPerChild ?? 700) * boost);
+      base = perOrphan * Math.max(orphans, 1);
+      if (isWidow) base += Number(config.widowBonus ?? 200);
+      break;
+    }
+    case '2':
+    case 'ملف إعاقة':
+    case 'إعاقة': {
+      base = roundUp50(score * Number(config.maxAmount ?? 700) * boost);
+      break;
+    }
+    case '3': case 'طالب علم': case 'طلاب علم':
+    case '4': case 'أسر سجناء':
+    case '9': case 'مطلقات': {
+      base = roundUp50(score * Number(config.baseMax ?? 400) * boost)
+           + roundUp50(score * Number(config.perDepMax ?? 200) * boost) * deps;
+      break;
+    }
+    case '5': case 'مساعدات': case 'مساعدات موسمية': {
+      const threshold = Number(config.poorScoreThreshold ?? 60) / 100;
+      const max = score >= threshold
+        ? Number(config.maxAmount ?? 700) * boost
+        : Number(config.maxAmount ?? 700) * boost * 0.7;
+      base = roundUp50(score * max);
+      break;
+    }
+    case '7': case 'منفردون':
+    case '10': case 'مساكين': case 'فقراء': case 'مسنون': case 'كبار سن': case 'علاج شهري': case 'أمراض مزمنة': case 'حالات هجر': {
+      base = roundUp50(score * Number(config.maxAmount ?? 500) * boost);
+      break;
+    }
+    default: return null;
+  }
+
+  const hasKids = deps > 0 || orphans > 0;
+  const cap     = (hasKids ? Number(config.capWithDeps) : Number(config.capNoDeps)) * boost;
+  const boostedCap = roundUp50(cap);
+
+  const grantsBreakdown = evaluateGrants(grants, household, cat, orphans, deps);
   const grantsTotal = grantsBreakdown.reduce((s, g) => s + g.amount, 0);
-  const mergeBonus  = 0; // sourced from GrantConfig (MERGE grant above)
+  const mergeBonus  = household.hasMerge ? 200 : 0;
 
-  // ── Hard cap ─────────────────────────────────────────────────────────────
-  const hasKids          = deps > 0 || orphans > 0;
-  const cap              = hasKids
-    ? Number(config.capWithDeps)
-    : Number(config.capNoDeps);
   const rawTotal         = base + grantsTotal + mergeBonus;
-  const calculatedAmount = Math.min(rawTotal, cap);
+  const calculatedAmount = Math.min(rawTotal, boostedCap);
 
-  // ── External contributions (deduct what others already give) ─────────────
-  const period = new Date(); // set by calling context
-  const externalContribs = await repo.getExternalContributions(
-    household.id,
-    period,
-  );
-  const externalTotal = externalContribs
-    .filter((c) => c.confirmed)
-    .reduce((s, c) => s + Number(c.amount), 0);
+  const externalContribs = await repo.getExternalContributions(household.id, new Date());
+  const externalTotal = externalContribs.filter(c => c.confirmed).reduce((s, c) => s + Number(c.amount), 0);
   const compensationAmount = Math.max(0, calculatedAmount - externalTotal);
-
-  // ── Payment split ─────────────────────────────────────────────────────────
   const finalAmount = compensationAmount;
   const meezaAmount = Math.round(finalAmount * 0.9);
   const cashAmount  = finalAmount - meezaAmount;
-
-  // ── Auto sub-category ─────────────────────────────────────────────────────
-  const autoSubCategory =
-    cat === '5'
-      ? score >= Number(config.poorScoreThreshold ?? 60) / 100
-        ? 'POOR'
-        : 'NEEDY'
-      : null;
 
   return {
     householdId:        household.id,
     householdSnapshot:  buildSnapshot(household),
     category:           cat,
-    autoSubCategory,
+    isDonorSponsored:   false,
+    autoSubCategory:    cat === '5' ? (score >= Number(config.poorScoreThreshold ?? 60) / 100 ? 'POOR' : 'NEEDY') : null,
     normalizedPercent:  new Decimal(latestScore.normalizedPercent),
     dependentCount:     deps,
     orphanCount:        orphans,
     totalIncome:        new Decimal(income),
-    isWidowNotRemarried,
+    isWidowNotRemarried: isWidow,
     externalTotal:      new Decimal(externalTotal),
     compensationAmount: new Decimal(compensationAmount),
     baseAmount:         new Decimal(base),
@@ -274,7 +329,7 @@ async function calcOneFamily(household, configs, grants, method, ratePerPoint) {
     grantsTotal:        new Decimal(grantsTotal),
     mergeBonus:         new Decimal(mergeBonus),
     rawTotal:           new Decimal(rawTotal),
-    appliedCap:         new Decimal(cap),
+    appliedCap:         new Decimal(boostedCap),
     calculatedAmount:   new Decimal(calculatedAmount),
     finalAmount:        new Decimal(finalAmount),
     meezaAmount:        new Decimal(meezaAmount),
@@ -345,38 +400,32 @@ const disbursementService = {
       throw new AppError('لا يمكن إعادة الحساب بعد الاعتماد', 400, 'MONTH_LOCKED');
     }
 
-    // Load config from DB — no hardcoded values
     const [configs, grants, households] = await Promise.all([
       repo.getCategoryConfigs(),
       repo.getGrantConfigs(),
       repo.findEligibleHouseholds(),
     ]);
 
-    // Calculate ratePerPoint for PROPORTIONAL method
-    let ratePerPoint = 0;
-    if (month.method === 'PROPORTIONAL' && month.totalBudget) {
-      const totalPercent = households.reduce(
-        (s, h) => s + Number(h.scoreResults?.[0]?.normalizedPercent ?? 0),
-        0,
+    let boostPct = 0;
+    if (month.method === 'PROPORTIONAL') {
+      const { boostPct: optimal } = findOptimalBoost(
+        households.filter(f => f.classificationTag !== '6'),
+        configs,
+        Number(month.totalBudget)
       );
-      ratePerPoint = totalPercent > 0
-        ? Number(month.totalBudget) / totalPercent
-        : 0;
+      boostPct = optimal;
     }
 
-    // Run calculation for each eligible household
-    const results = await Promise.all(
-      households.map((h) => calcOneFamily(h, configs, grants, month.method, ratePerPoint)),
-    );
-    const valid = results.filter(Boolean);
+    const results = [];
+    for (const household of households) {
+      const payment = await calcOneFamilyWithBoost(household, configs, grants, month.method, boostPct);
+      if (payment) results.push(payment);
+    }
 
-    // Persist inside a transaction
     await prisma.$transaction(async (tx) => {
-      // Delete previous calculations (only safe if not APPROVED)
       await repo.deleteMonthPayments(monthId, tx);
 
-      // Insert new payments + audit records
-      for (const paymentData of valid) {
+      for (const paymentData of results) {
         const payment = await tx.monthlyPayment.create({
           data: { monthId, ...paymentData },
         });
@@ -386,20 +435,16 @@ const disbursementService = {
             changedById: user.userId,
             triggerType: 'CALCULATE',
             newAmount:   paymentData.finalAmount,
-            meta:        { method: month.method },
+            meta:        { method: month.method, boostPct },
           },
         });
       }
 
-      // Update month status + persist scoreSum/ratePerPoint
       await tx.disbursementMonth.update({
         where: { id: monthId },
         data:  {
-          status:      'CALCULATED',
-          scoreSum:    month.method === 'PROPORTIONAL'
-            ? new Decimal(households.reduce((s, h) => s + Number(h.scoreResults?.[0]?.normalizedPercent ?? 0), 0))
-            : null,
-          ratePerPoint: month.method === 'PROPORTIONAL' ? new Decimal(ratePerPoint) : null,
+          status:       'CALCULATED',
+          boostPercent: new Decimal(boostPct),
         },
       });
     });
@@ -407,8 +452,8 @@ const disbursementService = {
     return {
       monthId,
       status:    'CALCULATED',
-      processed: valid.length,
-      skipped:   households.length - valid.length,
+      processed: results.length,
+      skipped:   households.length - results.length,
     };
   },
 
@@ -565,61 +610,52 @@ const disbursementService = {
 
   // ── Simulate (no DB writes) ────────────────────────────────────────────────
 
-  async simulateMonth({ method, totalBudget }) {
+  async simulateMonth({ method, totalBudget, boostPct: manualBoost }) {
     const [configs, grants, households] = await Promise.all([
       repo.getCategoryConfigs(),
       repo.getGrantConfigs(),
       repo.findEligibleHouseholds(),
     ]);
 
-    let ratePerPoint = 0;
-    if (method === 'PROPORTIONAL' && totalBudget) {
-      const totalPercent = households.reduce(
-        (s, h) => s + Number(h.scoreResults?.[0]?.normalizedPercent ?? 0),
-        0,
+    let finalBoost = manualBoost ?? 0;
+    if (method === 'PROPORTIONAL' && manualBoost === undefined && totalBudget) {
+      const { boostPct } = findOptimalBoost(
+        households.filter(f => f.classificationTag !== '6'),
+        configs,
+        Number(totalBudget)
       );
-      ratePerPoint = totalPercent > 0 ? Number(totalBudget) / totalPercent : 0;
+      finalBoost = boostPct;
     }
 
-    const results = await Promise.all(
-      households.map((h) =>
-        calcOneFamily(h, configs, grants, method || 'VULNERABILITY', ratePerPoint),
-      ),
-    );
-    const valid = results.filter(Boolean);
-
-    if (valid.length === 0) {
-      return {
-        eligibleCount: 0,
-        totalRequired: 0,
-        averagePayment: 0,
-        maxPayment: 0,
-        minPayment: 0,
-        surplus: 0,
-        byCategory: [],
-      };
+    const results = [];
+    for (const f of households) {
+      const r = await calcOneFamilyWithBoost(f, configs, grants, method, finalBoost);
+      if (r) results.push(r);
     }
 
-    const amounts = valid.map((v) => Number(v.finalAmount));
+    const amounts = results.map(r => Number(r.finalAmount));
     const total   = amounts.reduce((s, a) => s + a, 0);
+    const budget  = Number(totalBudget ?? 0);
 
-    // Group by category
-    const catMap = {};
-    for (const v of valid) {
-      const cat = v.category;
-      if (!catMap[cat]) catMap[cat] = { category: cat, count: 0, total: 0 };
-      catMap[cat].count++;
-      catMap[cat].total += Number(v.finalAmount);
-    }
+    const byCategory = Object.entries(
+      results.reduce((acc, r) => {
+        if (!acc[r.category]) acc[r.category] = { count: 0, total: 0 };
+        acc[r.category].count++;
+        acc[r.category].total += Number(r.finalAmount);
+        return acc;
+      }, {})
+    ).map(([category, v]) => ({ category, ...v }));
 
     return {
-      eligibleCount:  valid.length,
+      eligibleCount:  results.length,
       totalRequired:  total,
-      averagePayment: Math.round(total / valid.length),
-      maxPayment:     Math.max(...amounts),
-      minPayment:     Math.min(...amounts),
-      surplus:        totalBudget ? Number(totalBudget) - total : null,
-      byCategory:     Object.values(catMap),
+      averagePayment: results.length ? Math.round(total / results.length) : 0,
+      maxPayment:     Math.max(...amounts, 0),
+      minPayment:     Math.min(...amounts.filter(a => a > 0), 0),
+      surplus:        method === 'PROPORTIONAL' && budget > total ? budget - total : null,
+      deficit:        method === 'PROPORTIONAL' && budget < total ? total - budget : null,
+      appliedBoost:   finalBoost,
+      byCategory,
     };
   },
 

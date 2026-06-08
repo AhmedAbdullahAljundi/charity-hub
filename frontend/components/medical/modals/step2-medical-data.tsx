@@ -26,7 +26,7 @@ const CircularProgress = ({ percentage, color }: { percentage: number; color: st
           stroke="currentColor"
           strokeWidth="8"
           fill="transparent"
-          className="text-gray-200"
+          className="text-slate-100 dark:text-slate-800"
         />
         <circle
           cx="48"
@@ -42,7 +42,7 @@ const CircularProgress = ({ percentage, color }: { percentage: number; color: st
         />
       </svg>
       <div className="absolute flex flex-col items-center justify-center">
-        <span className="text-lg font-bold text-gray-800">{Math.round(percentage)}%</span>
+        <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{Math.round(percentage)}%</span>
       </div>
     </div>
   );
@@ -51,6 +51,7 @@ const CircularProgress = ({ percentage, color }: { percentage: number; color: st
 export function Step2MedicalData() {
   const {
     selectedPerson,
+    selectedHousehold,
     medicalCondition,
     setMedicalCondition,
     medicalNotes,
@@ -93,38 +94,53 @@ export function Step2MedicalData() {
   const severityColor = isCritical ? "text-red-600 bg-red-50 border-red-200" : "text-blue-600 bg-blue-50 border-blue-200";
 
   return (
-    <div className="space-y-6">
-      <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col md:flex-row items-center gap-6">
-        <CircularProgress percentage={percentage} color={progressColor} />
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-center gap-6">
+        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-full border border-slate-100 dark:border-slate-800">
+          <CircularProgress percentage={percentage} color={progressColor} />
+        </div>
         <div className="flex-1 text-center md:text-right">
-          <h3 className="text-lg font-bold text-slate-800 mb-1">تقييم شدة المرض</h3>
-          <p className="text-sm text-slate-500 mb-3">
-            يتم حساب التقييم بناءً على تكلفة العلاج وتأثير المرض على العمل ومدى الحاجة لمتابعة مستمرة.
+          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">تقييم شدة المرض</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+            يتم حساب التقييم بشكل آلي بناءً على التكلفة والتأثير والمتابعة لتحديد ما إذا كانت الحالة تستوجب الأولوية والاستثناءات.
           </p>
-          <div className={`inline-flex items-center px-3 py-1 rounded-full border text-sm font-semibold ${severityColor}`}>
-            {severityText}
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 mt-4">
+            <div className={`inline-flex items-center px-4 py-1.5 rounded-full border text-sm font-bold shadow-sm ${
+              isCritical 
+                ? "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-900/30 dark:border-rose-800/50 dark:text-rose-400" 
+                : "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800/50 dark:text-emerald-400"
+            }`}>
+              {severityText}
+            </div>
+
+            {selectedHousehold?.scoreResults?.[0]?.normalizedPercent !== undefined && (
+              <div className="inline-flex items-center px-4 py-1.5 rounded-full border text-sm font-bold shadow-sm bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800/50">
+                تقييم الأسرة الكلي: {Number(selectedHousehold.scoreResults[0].normalizedPercent).toFixed(1)}%
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold mb-2 text-slate-700">التشخيص أو الحالة الطبية</label>
-        <input
-          type="text"
-          value={medicalCondition}
-          onChange={(e) => setMedicalCondition(e.target.value)}
-          placeholder="مثال: السكري، ارتفاع ضغط الدم، فشل كلوي..."
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-right"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
         <div>
-          <label className="block text-sm font-semibold mb-2 text-slate-700">تكلفة العلاج الشهري</label>
+          <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-200">التشخيص أو الحالة الطبية <span className="text-rose-500">*</span></label>
+          <input
+            type="text"
+            value={medicalCondition}
+            onChange={(e) => setMedicalCondition(e.target.value)}
+            placeholder="مثال: السكري، ارتفاع ضغط الدم، فشل كلوي..."
+            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/30 text-slate-800 dark:text-slate-100 transition-all placeholder:text-slate-400"
+          />
+        </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div>
+          <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-200">تكلفة العلاج الشهري</label>
           <select
             value={treatmentCost}
             onChange={(e) => setTreatmentCost(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-right"
+            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/30 text-slate-800 dark:text-slate-100 transition-all"
           >
             <option value="NONE">لا يوجد / مجاني</option>
             <option value="PERIODIC_CHEAP">تكلفة بسيطة دورية</option>
@@ -134,11 +150,11 @@ export function Step2MedicalData() {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-2 text-slate-700">المتابعة الطبية</label>
+          <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-200">المتابعة الطبية</label>
           <select
             value={followup}
             onChange={(e) => setFollowup(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-right"
+            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/30 text-slate-800 dark:text-slate-100 transition-all"
           >
             <option value="NONE_OR_RARE">نادرة أو لا يوجد</option>
             <option value="REGULAR">متابعة دورية منتظمة</option>
@@ -147,11 +163,11 @@ export function Step2MedicalData() {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-2 text-slate-700">تأثيره على العمل</label>
+          <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-200">تأثيره على العمل</label>
           <select
             value={workImpact}
             onChange={(e) => setWorkImpact(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-right"
+            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/30 text-slate-800 dark:text-slate-100 transition-all"
           >
             <option value="NONE">لا تأثير مباشر</option>
             <option value="MINOR">تأثير طفيف (محدود)</option>
@@ -162,27 +178,28 @@ export function Step2MedicalData() {
       </div>
 
       <div>
-        <label className="block text-sm font-semibold mb-2 text-slate-700">ملاحظات إضافية (اختياري)</label>
+        <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-200">ملاحظات إضافية (اختياري)</label>
         <textarea
           value={medicalNotes}
           onChange={(e) => setMedicalNotes(e.target.value)}
           placeholder="أي معلومات إضافية عن الحالة الطبية..."
           rows={3}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-right resize-none"
+          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/30 text-slate-800 dark:text-slate-100 transition-all resize-none placeholder:text-slate-400"
         />
       </div>
+      </div>
 
-      <div className="flex gap-3 pt-4 border-t border-gray-100">
+      <div className="flex gap-4 pt-4">
         <button
           onClick={prevStep}
-          className="flex-1 bg-gray-100 text-gray-800 font-semibold py-3 rounded-xl hover:bg-gray-200 transition-colors"
+          className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-3.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
         >
           رجوع للأسرة
         </button>
         <button
           onClick={handleNextStep}
           disabled={!medicalCondition}
-          className="flex-[2] bg-emerald-600 text-white font-semibold py-3 rounded-xl hover:bg-emerald-700 disabled:bg-gray-300 transition-colors shadow-md"
+          className="flex-[2] bg-gradient-to-l from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-slate-300 disabled:to-slate-300 dark:disabled:from-slate-800 dark:disabled:to-slate-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-md disabled:shadow-none disabled:text-slate-500 dark:disabled:text-slate-600 disabled:cursor-not-allowed"
         >
           متابعة لتحديد الإجراء الطبي
         </button>
