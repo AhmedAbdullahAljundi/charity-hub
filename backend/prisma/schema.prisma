@@ -250,6 +250,36 @@ enum MedicalDisbursementStatus {
   REJECTED  // مرفوض
 }
 
+// ════ VOLUNTEERS MODULE ENUMS ════════════════════════════════════
+
+enum VolunteerStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum VolunteerSpecialty {
+  FIELD_RESEARCH
+  DATA_ENTRY
+  MEDICAL
+  EDUCATION
+  GENERAL
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 // ════ MODELS ═════════════════════════════════════════════════════
 
 model User {
@@ -284,6 +314,7 @@ model User {
   disbursementsLocked          DisbursementMonth[]    @relation("DisbursementLockedBy")
   disbursementsReopened        DisbursementMonth[]    @relation("DisbursementReopenedBy")
   paymentsAdjusted             MonthlyPayment[]       @relation("PaymentAdjustedBy")
+  createdVolunteerTasks        VolunteerTask[]        @relation("TaskCreatedBy")
 
   @@index([email])
   @@index([role])
@@ -379,6 +410,8 @@ model Household {
   medicalDisbursements MedicalDisbursement[]
   externalContributions ExternalContribution[]
   monthlyPayments      MonthlyPayment[]
+  assignedVolunteers   Volunteer[]
+  volunteerTasks       VolunteerTask[]
 
   @@index([governorate, district])
   @@index([isDraft])
@@ -905,3 +938,49 @@ model PaymentAudit {
   @@index([createdAt])
 }
 
+// ════ VOLUNTEERS MODULE ════════════════════════════════════════
+
+model Volunteer {
+  id               String               @id @default(cuid())
+  name             String
+  nationalId       String?              @unique
+  phone            String?
+  whatsapp         String?
+  address          String?
+  assignedArea     String?              // المنطقة المسؤول عنها
+  imageUrl         String?              // صورة المتطوع
+  status           VolunteerStatus      @default(ACTIVE)
+  specialties      VolunteerSpecialty[]
+  notes            String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  assignedHouseholds Household[]
+  tasks              VolunteerTask[]
+
+  @@index([status])
+  @@index([assignedArea])
+}
+
+model VolunteerTask {
+  id               String       @id @default(cuid())
+  volunteerId      String
+  volunteer        Volunteer    @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  householdId      String?
+  household        Household?   @relation(fields: [householdId], references: [id], onDelete: SetNull)
+  title            String
+  description      String?
+  status           TaskStatus   @default(PENDING)
+  priority         TaskPriority @default(MEDIUM)
+  dueDate          DateTime
+  completedAt      DateTime?
+  createdById      String?      // المشرف الذي أسند المهمة
+  createdBy        User?        @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([volunteerId])
+  @@index([householdId])
+  @@index([status])
+  @@index([dueDate])
+}

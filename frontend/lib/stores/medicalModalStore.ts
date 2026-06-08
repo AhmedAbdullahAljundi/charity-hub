@@ -39,6 +39,10 @@ interface MedicalModalState {
   setAidType: (type: AidType | null) => void;
   amount: number;
   setAmount: (amount: number) => void;
+  totalCost: number | undefined;
+  setTotalCost: (cost: number | undefined) => void;
+  isRetroactive: boolean;
+  setIsRetroactive: (v: boolean) => void;
   aidNotes: string;
   setAidNotes: (notes: string) => void;
 
@@ -65,6 +69,8 @@ export const useMedicalModalStore = create<MedicalModalState>((set) => ({
       workImpact: "NONE",
       aidType: null,
       amount: 0,
+      totalCost: undefined,
+      isRetroactive: false,
       aidNotes: "",
       calculatedEligibility: "pending",
     }),
@@ -104,6 +110,10 @@ export const useMedicalModalStore = create<MedicalModalState>((set) => ({
   setAidType: (type) => set({ aidType: type }),
   amount: 0,
   setAmount: (amount) => set({ amount }),
+  totalCost: undefined,
+  setTotalCost: (totalCost) => set({ totalCost }),
+  isRetroactive: false,
+  setIsRetroactive: (isRetroactive) => set({ isRetroactive }),
   aidNotes: "",
   setAidNotes: (notes) => set({ aidNotes: notes }),
 
@@ -122,6 +132,8 @@ export const useMedicalModalStore = create<MedicalModalState>((set) => ({
       workImpact: "NONE",
       aidType: null,
       amount: 0,
+      totalCost: undefined,
+      isRetroactive: false,
       aidNotes: "",
       calculatedEligibility: "pending",
     }),

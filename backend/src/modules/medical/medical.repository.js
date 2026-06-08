@@ -86,6 +86,43 @@ async function deleteCase(id) {
 
 // ─── MedicalDisbursement ──────────────────────────────────
 
+async function findAllDisbursements({ status, aidType, search, page = 1, limit = 20 } = {}) {
+  const skip = (Math.max(1, Number(page)) - 1) * Number(limit)
+  const where = {
+    AND: [
+      status ? { status } : {},
+      aidType ? { aidType } : {},
+      search ? {
+        OR: [
+          { person: { name: { contains: search, mode: 'insensitive' } } },
+          { household: { code: { contains: search, mode: 'insensitive' } } },
+        ]
+      } : {},
+    ]
+  }
+
+  const DISB_INCLUDE = {
+    person: { select: { id: true, name: true, gender: true } },
+    household: { select: { id: true, code: true } },
+    medicalCase: { select: { id: true, conditionName: true } },
+    approvedBy: { select: { id: true, name: true } },
+    createdBy: { select: { id: true, name: true } },
+  }
+
+  const [disbursements, total] = await Promise.all([
+    prisma.medicalDisbursement.findMany({
+      where,
+      include: DISB_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: Number(limit),
+    }),
+    prisma.medicalDisbursement.count({ where })
+  ])
+
+  return { disbursements, total, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / Number(limit)) }
+}
+
 async function findDisbursementsByHousehold(householdId) {
   return prisma.medicalDisbursement.findMany({
     where: { householdId },
@@ -201,7 +238,7 @@ async function getMedicalKpis() {
 module.exports = {
   findAllCases, findCaseById, findCasesByHousehold,
   createCase, updateCase, deleteCase,
-  findDisbursementsByHousehold, getLastDisbursementDate,
+  findAllDisbursements, findDisbursementsByHousehold, getLastDisbursementDate,
   hasMarriageAidForPerson, getPersonAidContext, createDisbursement, updateDisbursementStatus,
   getMedicalSummary, getMedicalKpis,
 }

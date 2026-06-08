@@ -36,7 +36,6 @@ const typeBadgeClass: Record<ReportTypeKey, string> = {
 const REPORT_META = [
   { id: 1, typeKey: "comprehensive" as const, icon: Users, lastGenerated: "2024/03/15" },
   { id: 2, typeKey: "financial" as const, icon: Wallet, lastGenerated: "2024/03/14" },
-  { id: 3, typeKey: "analytical" as const, icon: Activity, lastGenerated: "2024/03/13" },
   { id: 4, typeKey: "periodic" as const, icon: TrendingUp, lastGenerated: "2024/03/01" },
   { id: 5, typeKey: "operations" as const, icon: FileBarChart, lastGenerated: "2024/03/10" },
   { id: 6, typeKey: "educational" as const, icon: Calendar, lastGenerated: "2024/02/28" },
@@ -44,6 +43,10 @@ const REPORT_META = [
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImportSection } from "./ImportSection";
+import { CustomReportDialog } from "./CustomReportDialog";
+import { DateRangeFilterDialog } from "./DateRangeFilterDialog";
+import { useState } from "react";
+import api from "@/lib/api/client";
 
 export default function ReportsPage() {
   const t = useTranslations("reports");
@@ -57,6 +60,32 @@ export default function ReportsPage() {
       })),
     [t]
   );
+
+  const [dateDialogOpen, setDateDialogOpen] = useState(false);
+  const [activeReportType, setActiveReportType] = useState<"financial" | "periodic" | null>(null);
+  const [activeReportTitle, setActiveReportTitle] = useState("");
+
+  const handleDownload = async (typeKey: string, title: string) => {
+    if (typeKey === "financial" || typeKey === "periodic") {
+      setActiveReportType(typeKey as "financial" | "periodic");
+      setActiveReportTitle(title);
+      setDateDialogOpen(true);
+      return;
+    }
+
+    try {
+      const response = await api.get(`/analytics/export/${typeKey}`, { responseType: 'blob' });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.setAttribute("download", `${typeKey}_report.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (e) {
+      alert("حدث خطأ أثناء تصدير التقرير.");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -74,7 +103,8 @@ export default function ReportsPage() {
         </div>
 
         <TabsContent value="reports" className="space-y-6">
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            <CustomReportDialog />
             <Select defaultValue="all">
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder={t("filterPlaceholder")} />
@@ -83,7 +113,6 @@ export default function ReportsPage() {
                 <SelectItem value="all">{t("filterAll")}</SelectItem>
                 <SelectItem value="comprehensive">{t("types.comprehensive")}</SelectItem>
                 <SelectItem value="financial">{t("types.financial")}</SelectItem>
-                <SelectItem value="analytical">{t("types.analytical")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -110,9 +139,9 @@ export default function ReportsPage() {
                       <span className="text-xs text-muted-foreground">
                         {t("lastGenerated", { date: report.lastGenerated })}
                       </span>
-                      <Button variant="outline" size="sm" className="gap-1.5">
+                      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleDownload(report.typeKey, report.title)}>
                         <Download className="h-3.5 w-3.5" />
-                        {t("exportExcel")}
+                        تصدير Excel
                       </Button>
                     </div>
                   </CardContent>
@@ -123,9 +152,22 @@ export default function ReportsPage() {
         </TabsContent>
 
         <TabsContent value="import">
-          <ImportSection />
+          <Card>
+            <CardContent className="pt-6">
+              <ImportSection />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
+
+      {activeReportType && (
+        <DateRangeFilterDialog
+          open={dateDialogOpen}
+          onOpenChange={setDateDialogOpen}
+          reportType={activeReportType}
+          title={activeReportTitle}
+        />
+      )}
     </div>
   );
 }

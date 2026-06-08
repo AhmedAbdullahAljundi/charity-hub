@@ -6,6 +6,9 @@ const COOLDOWN_DAYS = {
 const CAPS = {
   MONTHLY_MEDICAL_TREATMENT: 800,
   DEFAULT_TREATMENT: 400,
+  CONSULTATION: 200,
+  TESTS_AND_SCANS: 400,
+  FINANCIAL_AID: 400,
   MARRIAGE_AID_ORPHAN: 70000,
   MARRIAGE_AID_NON_ORPHAN: 30000,
   PERCENTAGE_WARNING_AMOUNT: 2000,
@@ -24,10 +27,25 @@ function getMarriageAidCap(isOrphan) {
   return isOrphan ? CAPS.MARRIAGE_AID_ORPHAN : CAPS.MARRIAGE_AID_NON_ORPHAN
 }
 
-function getTreatmentCap(assistanceType) {
-  return assistanceType === 'MONTHLY_MEDICAL'
-    ? CAPS.MONTHLY_MEDICAL_TREATMENT
-    : CAPS.DEFAULT_TREATMENT
+function getAidCap(aidType, assistanceType) {
+  switch (aidType) {
+    case 'CONSULTATION':
+      return CAPS.CONSULTATION;
+    case 'LAB_TEST':
+    case 'IMAGING':
+      return CAPS.TESTS_AND_SCANS;
+    case 'FINANCIAL_AID':
+      return CAPS.FINANCIAL_AID;
+    case 'TREATMENT':
+    case 'MEDICATION':
+      return assistanceType === 'MONTHLY_MEDICAL'
+        ? CAPS.MONTHLY_MEDICAL_TREATMENT
+        : CAPS.DEFAULT_TREATMENT;
+    case 'SURGERY':
+      return null; // Percentage based
+    default:
+      return CAPS.DEFAULT_TREATMENT;
+  }
 }
 
 function buildPercentageWarning({ aidType, amount, totalCost, normalizedPercent }) {
@@ -97,7 +115,7 @@ function checkEligibility({
     ? COOLDOWN_DAYS.MONTHLY_MEDICAL
     : COOLDOWN_DAYS.DEFAULT
 
-  let appliedCap = aidType === 'TREATMENT' ? getTreatmentCap(assistanceType) : null
+  let appliedCap = getAidCap(aidType, assistanceType)
   const isCriticalOverride = Boolean(isCritical) && aidType === 'TREATMENT'
   if (isCriticalOverride) appliedCap = null
 

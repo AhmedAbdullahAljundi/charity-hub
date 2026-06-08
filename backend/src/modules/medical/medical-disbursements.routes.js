@@ -5,6 +5,9 @@ const { requireAnyRole } = require('../../middleware/rbac')
 
 router.use(requireAuth)
 
+// GET /api/medical-disbursements?status=PENDING&aidType=SURGERY&page=1
+router.get('/', ctrl.listDisbursements)
+
 // POST /api/medical-disbursements
 router.post('/', requireAnyRole(['WORKER', 'SUPERVISOR', 'ADMIN']), ctrl.createDisbursement)
 

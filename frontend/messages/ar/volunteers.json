@@ -1,19 +1,58 @@
 {
   "title": "المتطوعين",
-  "subtitle": "إدارة فريق المتطوعين والمهام",
+  "subtitle": "إدارة فريق المتطوعين والمهام الميدانية",
   "addVolunteer": "إضافة متطوع",
-  "toastComingSoon": "ميزة إضافة متطوع قيد التطوير",
-  "searchPlaceholder": "بحث بالاسم أو المنطقة أو الهاتف…",
+  "editVolunteer": "تعديل المتطوع",
+  "toastComingSoon": "هذه الميزة قيد التطوير",
+  "searchPlaceholder": "بحث بالاسم أو المنطقة أو الرقم القومي…",
   "tasksCount": "{count} مهمة",
+  "name": "اسم المتطوع",
+  "nationalId": "الرقم القومي",
+  "phone": "رقم الهاتف",
+  "whatsapp": "رقم الواتساب",
+  "address": "العنوان",
+  "assignedArea": "المنطقة التابع لها",
+  "notes": "ملاحظات",
+  "statusLabel": "الحالة",
+  "specialties": "التخصصات",
+  "actions": "إجراءات",
+  "viewProfile": "عرض الملف الشخصي",
+  "assignTask": "إسناد مهمة",
   "status": {
-    "active": "نشط",
-    "inactive": "غير نشط"
+    "ACTIVE": "نشط",
+    "INACTIVE": "غير نشط",
+    "SUSPENDED": "موقوف"
   },
   "specialty": {
-    "field": "أبحاث ميدانية",
-    "data": "إدخال بيانات",
-    "medical": "صرف علاج",
-    "education": "متابعة تعليمية"
+    "FIELD_RESEARCH": "أبحاث ميدانية",
+    "DATA_ENTRY": "إدخال بيانات",
+    "MEDICAL": "دعم طبي",
+    "EDUCATION": "متابعة تعليمية",
+    "GENERAL": "تطوع عام"
+  },
+  "tasks": {
+    "title": "المهام الموكلة",
+    "assignNew": "إسناد مهمة جديدة",
+    "taskTitle": "عنوان المهمة",
+    "description": "الوصف",
+    "priority": "الأولوية",
+    "status": "حالة المهمة",
+    "dueDate": "تاريخ الاستحقاق",
+    "householdId": "كود الأسرة (اختياري)",
+    "save": "حفظ المهمة",
+    "cancel": "إلغاء",
+    "priorityLevels": {
+      "LOW": "منخفضة",
+      "MEDIUM": "متوسطة",
+      "HIGH": "عالية",
+      "URGENT": "عاجلة جداً"
+    },
+    "statusLevels": {
+      "PENDING": "قيد الانتظار",
+      "IN_PROGRESS": "جاري التنفيذ",
+      "COMPLETED": "مكتملة",
+      "CANCELLED": "ملغاة"
+    }
   },
   "demo": {
     "v5_name": "محمد إبراهيم علي",

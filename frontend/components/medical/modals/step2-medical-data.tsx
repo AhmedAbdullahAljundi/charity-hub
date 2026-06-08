@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMedicalModalStore } from "../../../lib/stores/medicalModalStore";
 
 const DISEASE_WEIGHTS = {
@@ -68,10 +68,11 @@ export function Step2MedicalData() {
   } = useMedicalModalStore();
 
   const handleNextStep = () => {
-    if (selectedPerson && medicalCondition) {
-      nextStep();
-    }
+    // البيانات الطبية اختيارية — يمكن الانتقال مباشرة لطلب الإعانة
+    nextStep();
   };
+
+  const [manualOverride, setManualOverride] = useState(false);
 
   // Calculate score based on weights
   const score = useMemo(() => {
@@ -82,7 +83,8 @@ export function Step2MedicalData() {
   }, [treatmentCost, followup, workImpact]);
 
   const percentage = Math.min(100, Math.max(0, (score / MAX_SCORE) * 100));
-  const isCritical = percentage >= 50;
+  const isCalculatedCritical = percentage >= 50;
+  const isCritical = manualOverride || isCalculatedCritical;
 
   useEffect(() => {
     setSeverity(isCritical ? "severe" : "mild");
@@ -110,7 +112,7 @@ export function Step2MedicalData() {
                 ? "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-900/30 dark:border-rose-800/50 dark:text-rose-400" 
                 : "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800/50 dark:text-emerald-400"
             }`}>
-              {severityText}
+              {severityText} {manualOverride && "(يدوي)"}
             </div>
 
             {selectedHousehold?.scoreResults?.[0]?.normalizedPercent !== undefined && (
@@ -123,8 +125,20 @@ export function Step2MedicalData() {
       </div>
 
       <div className="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <div>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">تسجيل حالة طبية (اختياري)</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">إذا كان طلب الإعانة لمرض مزمن أو حالة متابعة، سجّلها هنا لحفظ التاريخ الطبي. أما طلبات الكشف والتحاليل والأدوية فلا تحتاج لتسجيل حالة.</p>
+          </div>
+          <button
+            onClick={nextStep}
+            className="shrink-0 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 underline underline-offset-2 transition-colors whitespace-nowrap"
+          >
+            تخطي ←
+          </button>
+        </div>
         <div>
-          <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-200">التشخيص أو الحالة الطبية <span className="text-rose-500">*</span></label>
+          <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-200">التشخيص أو الحالة الطبية <span className="text-slate-400 font-normal text-xs">(اختياري)</span></label>
           <input
             type="text"
             value={medicalCondition}
@@ -187,6 +201,23 @@ export function Step2MedicalData() {
           className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/30 text-slate-800 dark:text-slate-100 transition-all resize-none placeholder:text-slate-400"
         />
       </div>
+
+      <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
+        <label className="flex items-center gap-3 cursor-pointer p-4 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors">
+          <input
+            type="checkbox"
+            checked={manualOverride}
+            onChange={(e) => setManualOverride(e.target.checked)}
+            className="w-5 h-5 rounded border-rose-300 text-rose-600 focus:ring-rose-500 dark:border-rose-700 dark:bg-slate-900"
+          />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-rose-800 dark:text-rose-400">تجاوز التقييم الآلي (حالة حرجة يدوياً)</p>
+            <p className="text-xs text-rose-600 dark:text-rose-500/80 mt-1">
+              تفعيل هذا الخيار سيجعل النظام يصنف الحالة كحرجة فوراً (مما يلغي السقف المالي للعلاج ويُفعّل الأولوية) بغض النظر عن أسئلة التقييم المذكورة أعلاه.
+            </p>
+          </div>
+        </label>
+      </div>
       </div>
 
       <div className="flex gap-4 pt-4">
@@ -198,8 +229,7 @@ export function Step2MedicalData() {
         </button>
         <button
           onClick={handleNextStep}
-          disabled={!medicalCondition}
-          className="flex-[2] bg-gradient-to-l from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-slate-300 disabled:to-slate-300 dark:disabled:from-slate-800 dark:disabled:to-slate-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-md disabled:shadow-none disabled:text-slate-500 dark:disabled:text-slate-600 disabled:cursor-not-allowed"
+          className="flex-[2] bg-gradient-to-l from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
         >
           متابعة لتحديد الإجراء الطبي
         </button>

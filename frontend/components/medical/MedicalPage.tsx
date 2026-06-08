@@ -9,25 +9,37 @@ import {
   Activity,
   AlertTriangle,
   Banknote,
+  CheckCircle,
   FileText,
   History,
   LayoutDashboard,
   PieChart,
   Plus,
+  ShieldCheck,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DisbursementsReviewTab } from "./dashboard/disbursements-review-tab";
+import { useAuthStore } from "@/lib/stores/authStore";
 
 export function MedicalPage() {
   const { loadCases, loadKpis, isLoading, error, kpis, cases } = useMedicalStore();
   const openModal = useMedicalModalStore((state) => state.openModal);
+  const user = useAuthStore((state) => state.user);
 
   const [filterCritical, setFilterCritical] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     loadKpis();
     loadCases();
+    // Load pending count for supervisor badge
+    import("../../lib/api/medical-api").then(({ medicalApi }) => {
+      medicalApi.listDisbursements({ status: "PENDING", limit: 1 })
+        .then(r => setPendingCount(r.total))
+        .catch(() => {});
+    });
   }, []);
 
   const handleSearch = (q: string) => {
@@ -146,16 +158,16 @@ export function MedicalPage() {
             </CardContent>
           </Card>
 
-          {/* Card 4: Active Treatments */}
+          {/* Card 4: Pending Disbursements */}
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-slate-200/60 dark:border-slate-800 shadow-lg shadow-slate-200/40 dark:shadow-none hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">إجراءات قيد التنفيذ</p>
-                  <p className="text-3xl font-bold text-amber-600 dark:text-amber-500">0</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">إعانات قيد الانتظار</p>
+                  <p className="text-3xl font-bold text-amber-600 dark:text-amber-500">{pendingCount}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-900/50 shadow-inner">
-                  <Activity className="w-6 h-6" />
+                  <CheckCircle className="w-6 h-6" />
                 </div>
               </div>
             </CardContent>
@@ -164,27 +176,41 @@ export function MedicalPage() {
 
         {/* MAIN CONTENT TABS */}
         <Tabs defaultValue="active-cases" className="space-y-6">
-          <TabsList className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-1 rounded-xl shadow-sm inline-flex">
+          <TabsList className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-1 rounded-xl shadow-sm inline-flex flex-wrap gap-1">
             <TabsTrigger 
               value="active-cases" 
-              className="rounded-lg px-6 py-2.5 text-slate-600 dark:text-slate-400 data-[state=active]:bg-emerald-50 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm transition-all"
+              className="rounded-lg px-5 py-2.5 text-slate-600 dark:text-slate-400 data-[state=active]:bg-emerald-50 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm transition-all"
             >
               <LayoutDashboard className="w-4 h-4 ml-2 inline-block" />
               السجلات النشطة
             </TabsTrigger>
             <TabsTrigger 
               value="history" 
-              className="rounded-lg px-6 py-2.5 text-slate-600 dark:text-slate-400 data-[state=active]:bg-emerald-50 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm transition-all"
+              className="rounded-lg px-5 py-2.5 text-slate-600 dark:text-slate-400 data-[state=active]:bg-emerald-50 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm transition-all"
             >
               <History className="w-4 h-4 ml-2 inline-block" />
               تاريخ الصرف الطبي
             </TabsTrigger>
+            {(user?.role === 'SUPERVISOR' || user?.role === 'ADMIN') && (
+              <TabsTrigger 
+                value="review" 
+                className="rounded-lg px-5 py-2.5 text-slate-600 dark:text-slate-400 data-[state=active]:bg-amber-50 dark:data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-400 data-[state=active]:shadow-sm transition-all relative"
+              >
+                <ShieldCheck className="w-4 h-4 ml-2 inline-block" />
+                مراجعة الإعانات
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {pendingCount > 9 ? "9+" : pendingCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
             <TabsTrigger 
               value="analytics" 
-              className="rounded-lg px-6 py-2.5 text-slate-600 dark:text-slate-400 data-[state=active]:bg-emerald-50 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm transition-all"
+              className="rounded-lg px-5 py-2.5 text-slate-600 dark:text-slate-400 data-[state=active]:bg-emerald-50 dark:data-[state=active]:bg-emerald-900/30 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm transition-all"
             >
               <PieChart className="w-4 h-4 ml-2 inline-block" />
-              تحليلات وإحصائيات
+              تحليلات
             </TabsTrigger>
           </TabsList>
 
@@ -226,23 +252,47 @@ export function MedicalPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <MedicalRecordsTable records={cases} />
+                <MedicalRecordsTable />
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* TAB 2: DISBURSEMENT HISTORY */}
           <TabsContent value="history" className="outline-none">
-            <Card className="border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-none rounded-2xl bg-white/95 dark:bg-slate-900/95 p-12 text-center">
-              <History className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
-              <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200 mb-2">سجل الصرف الطبي</h3>
-              <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                هذه الشاشة ستعرض جميع عمليات الصرف والمساعدات الطبية السابقة التي تم تقديمها. سيتم تفعيلها قريباً.
-              </p>
+            <Card className="border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-none rounded-2xl overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
+              <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
+                <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">سجل الصرف الطبي الكامل</CardTitle>
+                <CardDescription className="text-slate-500 dark:text-slate-400 mt-1">
+                  جميع الإعانات الطبية المسجلة مرتبة من الأحدث للأقدم.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4">
+                <DisbursementsReviewTab userRole={user?.role} />
+              </CardContent>
             </Card>
           </TabsContent>
 
-          {/* TAB 3: ANALYTICS */}
+          {/* TAB 3: SUPERVISOR REVIEW */}
+          {(user?.role === 'SUPERVISOR' || user?.role === 'ADMIN') && (
+            <TabsContent value="review" className="outline-none">
+              <Card className="border border-amber-200 dark:border-amber-900/50 shadow-xl shadow-amber-100/40 dark:shadow-none rounded-2xl overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
+                <CardHeader className="bg-amber-50/50 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-900/50">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-amber-600" />
+                    <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">مراجعة واعتماد الإعانات الطبية</CardTitle>
+                  </div>
+                  <CardDescription className="text-slate-500 dark:text-slate-400 mt-1">
+                    الإعانات قيد الانتظار تحتاج موافقة المشرف قبل الصرف النهائي.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <DisbursementsReviewTab userRole={user?.role} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* TAB 4: ANALYTICS */}
           <TabsContent value="analytics" className="outline-none">
             <Card className="border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-none rounded-2xl bg-white/95 dark:bg-slate-900/95 p-12 text-center">
               <PieChart className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />

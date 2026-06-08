@@ -182,6 +182,10 @@ async function rejectDisbursement(id, approverId) {
   return repo.updateDisbursementStatus(id, 'REJECTED', approverId)
 }
 
+async function listDisbursements(query = {}) {
+  return repo.findAllDisbursements(query)
+}
+
 async function getDisbursementsByHousehold(householdId) {
   return repo.findDisbursementsByHousehold(householdId)
 }
@@ -198,7 +202,7 @@ module.exports = {
   listCases, getCaseById, getCasesByHousehold,
   createCase, updateCase, deleteCase,
   getEligibility,
-  createDisbursement, approveDisbursement, payDisbursement,
+  createDisbursement, listDisbursements, approveDisbursement, payDisbursement,
   rejectDisbursement, getDisbursementsByHousehold,
   getMedicalSummary, getMedicalKpis,
 }

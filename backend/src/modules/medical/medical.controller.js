@@ -51,6 +51,11 @@ const createDisbursement = asyncHandler(async (req, res) => {
   res.status(status).json({ success: true, data: result })
 })
 
+const listDisbursements = asyncHandler(async (req, res) => {
+  const data = await svc.listDisbursements(req.query)
+  res.json({ success: true, data })
+})
+
 const getDisbursementsByHousehold = asyncHandler(async (req, res) => {
   const data = await svc.getDisbursementsByHousehold(req.params.householdId)
   res.json({ success: true, data })
@@ -87,7 +92,7 @@ module.exports = {
   listCases, getCaseById, getCasesByHousehold,
   createCase, updateCase, deleteCase,
   checkEligibility,
-  createDisbursement, getDisbursementsByHousehold,
+  createDisbursement, listDisbursements, getDisbursementsByHousehold,
   approveDisbursement, payDisbursement, rejectDisbursement,
   getMedicalSummary, getMedicalKpis,
 }

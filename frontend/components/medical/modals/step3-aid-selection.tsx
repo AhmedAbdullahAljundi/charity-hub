@@ -22,6 +22,10 @@ export function Step3AidSelection() {
     setAmount,
     aidNotes,
     setAidNotes,
+    totalCost,
+    setTotalCost,
+    isRetroactive,
+    setIsRetroactive,
     prevStep,
     closeModal,
   } = useMedicalModalStore();
@@ -29,6 +33,8 @@ export function Step3AidSelection() {
   const [eligibility, setEligibility] = useState<any>(null);
   const [summary, setSummary] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showWarningConfirm, setShowWarningConfirm] = useState(false);
+  const [overrideReason, setOverrideReason] = useState("");
 
   useEffect(() => {
     if (selectedHousehold) {
@@ -43,7 +49,18 @@ export function Step3AidSelection() {
       .catch(() => {});
   }, [selectedHousehold?.id, aidType, selectedPerson?.id]);
 
-  const handleSubmit = async () => {
+  const handleInitialSubmit = () => {
+    const hasAmountWarning = eligibility?.appliedCap && amount > eligibility.appliedCap;
+    const hasEligibilityWarning = eligibility?.warningLevel === 'WARNING';
+    
+    if ((hasAmountWarning || hasEligibilityWarning) && !showWarningConfirm) {
+      setShowWarningConfirm(true);
+      return;
+    }
+    executeSubmit();
+  };
+
+  const executeSubmit = async () => {
     try {
       setSubmitting(true);
       
@@ -66,8 +83,10 @@ export function Step3AidSelection() {
         medicalCaseId: caseId,
         aidType: aidType!,
         amount,
+        totalCost: aidType === 'SURGERY' ? totalCost : undefined,
+        isRetroactive,
         disbursementDate: new Date().toISOString(),
-        notes: aidNotes,
+        notes: aidNotes + (overrideReason ? `\n\nسبب الاستثناء: ${overrideReason}` : ''),
       });
 
       if (result.amountWarning) {
@@ -114,7 +133,7 @@ export function Step3AidSelection() {
         </div>
 
         <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
-          <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-100">التكلفة التقديرية (ج.م) <span className="text-rose-500">*</span></label>
+          <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-100">المبلغ المطلوب من المؤسسة (ج.م) <span className="text-rose-500">*</span></label>
           <div className="relative">
             <input
               type="number"
@@ -125,11 +144,41 @@ export function Step3AidSelection() {
             />
             {amount > 0 && (
               <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800 rounded-xl text-right text-sm text-emerald-800 dark:text-emerald-300 font-bold flex items-center justify-between">
-                <span>المبلغ الإجمالي المقدر:</span>
+                <span>المبلغ المطلوب:</span>
                 <span className="text-lg">{formatCurrency(amount)}</span>
               </div>
             )}
           </div>
+        </div>
+
+        {aidType === 'SURGERY' && (
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+            <label className="block text-sm font-bold mb-2 text-slate-800 dark:text-slate-100">التكلفة الكلية للعملية الجراحية (ج.م) <span className="text-rose-500">*</span></label>
+            <input
+              type="number"
+              value={totalCost || ""}
+              onChange={(e) => setTotalCost(Number(e.target.value))}
+              placeholder="التكلفة الإجمالية المطلوبة للعملية..."
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/30 text-slate-800 dark:text-slate-100 transition-all text-right font-mono text-lg"
+            />
+          </div>
+        )}
+
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+          <label className="flex items-center gap-3 cursor-pointer p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <input
+              type="checkbox"
+              checked={isRetroactive}
+              onChange={(e) => setIsRetroactive(e.target.checked)}
+              className="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-900"
+            />
+            <div className="flex-1">
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">تسجيل مساعدة بأثر رجعي</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                تفعيل هذا الخيار يعني أن المساعدة صُرفت بالفعل في الماضي وسيتم تسجيلها للأرشفة فقط دون انتظار موافقة المشرف للتنفيذ.
+              </p>
+            </div>
+          </label>
         </div>
 
         <div className="pt-4">
@@ -144,6 +193,24 @@ export function Step3AidSelection() {
         </div>
       </div>
 
+      {showWarningConfirm && (
+        <div className="p-5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl animate-in fade-in slide-in-from-bottom-2">
+          <h4 className="font-bold text-amber-800 dark:text-amber-500 mb-2 flex items-center gap-2">
+            ⚠️ تنبيه: تجاوز قواعد الصرف
+          </h4>
+          <p className="text-sm text-amber-700 dark:text-amber-400/80 mb-4">
+            هذا السجل يتجاوز السقف المالي أو فترة الانتظار (Cooldown). لحفظ هذا السجل كاستثناء (سيتم تعليقه لحين موافقة المشرف)، يرجى كتابة سبب الاستثناء:
+          </p>
+          <textarea
+            value={overrideReason}
+            onChange={(e) => setOverrideReason(e.target.value)}
+            placeholder="سبب الاستثناء للصرف (مثال: حالة طارئة بأمر المدير)..."
+            rows={2}
+            className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-slate-800 dark:text-slate-100 transition-all resize-none placeholder:text-amber-700/50"
+          />
+        </div>
+      )}
+
       <div className="flex gap-4 pt-4">
         <button
           onClick={prevStep}
@@ -152,8 +219,8 @@ export function Step3AidSelection() {
           رجوع
         </button>
         <button
-          onClick={handleSubmit}
-          disabled={!aidType || amount <= 0 || submitting}
+          onClick={handleInitialSubmit}
+          disabled={!aidType || amount <= 0 || submitting || (showWarningConfirm && !overrideReason.trim())}
           className="flex-[2] bg-gradient-to-l from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-slate-300 disabled:to-slate-300 dark:disabled:from-slate-800 dark:disabled:to-slate-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-md disabled:shadow-none disabled:text-slate-500 dark:disabled:text-slate-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {submitting ? (

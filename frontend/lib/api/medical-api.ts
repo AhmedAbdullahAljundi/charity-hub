@@ -178,6 +178,25 @@ export const medicalApi = {
     }
   },
 
+  // List all disbursements globally (for supervisor review)
+  async listDisbursements(params?: {
+    status?: string
+    aidType?: string
+    search?: string
+    page?: number
+    limit?: number
+  }): Promise<{ disbursements: any[]; total: number; totalPages: number }> {
+    const res = await client.get('/medical-disbursements', { params })
+    return {
+      ...res.data.data,
+      disbursements: res.data.data.disbursements.map((d: any) => ({
+        ...normalizeDisbursementFromApi(d),
+        householdCode: d.household?.code ?? '',
+        createdByName: d.createdBy?.name ?? '',
+      }))
+    }
+  },
+
   // Get disbursements by household
   async getDisbursementsByHousehold(householdId: string): Promise<MedicalDisbursement[]> {
     const res = await client.get(`/medical-disbursements/household/${householdId}`)
