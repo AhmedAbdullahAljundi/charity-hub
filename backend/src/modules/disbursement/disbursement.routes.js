@@ -115,7 +115,7 @@ router.get(
     const take   = parseInt(req.query.take)  || 20;
     const status = req.query.status          || undefined;
     const result = await service.listMonths({ skip, take, status });
-    res.json({ success: true, ...result });
+    res.json({ success: true, data: result });
   }),
 );
 
@@ -210,6 +210,26 @@ router.patch(
   asyncHandler(async (req, res) => {
     const payment = await service.updatePaymentStatus(req.user, req.params.id, req.body);
     res.json({ success: true, data: payment });
+  }),
+);
+
+// POST /api/disbursement/:monthId/payments
+router.post(
+  '/:monthId/payments',
+  requirePermission(PERMISSIONS.SCORE_DECIDE),
+  asyncHandler(async (req, res) => {
+    const payment = await service.addPayment(req.user, req.params.monthId, req.body.householdId);
+    res.status(201).json({ success: true, data: payment });
+  }),
+);
+
+// DELETE /api/disbursement/:monthId/payments/:id
+router.delete(
+  '/:monthId/payments/:id',
+  requirePermission(PERMISSIONS.SCORE_DECIDE),
+  asyncHandler(async (req, res) => {
+    await service.removePayment(req.user, req.params.monthId, req.params.id);
+    res.json({ success: true });
   }),
 );
 

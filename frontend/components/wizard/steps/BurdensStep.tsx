@@ -14,13 +14,7 @@ import {
  SelectTrigger,
  SelectValue,
 } from "@/components/ui/select";
-import {
- Accordion,
- AccordionContent,
- AccordionItem,
- AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, AlertCircle, Home, HeartPulse, Accessibility, Stethoscope } from "lucide-react";
 import {
  createBurden,
  createDisease,
@@ -330,17 +324,15 @@ export function BurdensStep() {
  const labelClass = "text-sm font-medium";
 
  return (
- <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" >
- <Accordion type="multiple" defaultValue={["section-1", "section-2", "section-3"]} className="space-y-4">
- 
- {/* SECTION 1: السكن والأعباء الأساسية */}
- <AccordionItem value="section-1" className="bg-white border rounded-xl shadow-sm overflow-hidden">
- <AccordionTrigger className="text-sm font-semibold hover:no-underline hover:bg-slate-50 px-4 py-3 transition-colors uppercase tracking-wider text-slate-600">
- {t("wizard.burdens.housing.title")}
- </AccordionTrigger>
- <AccordionContent className="space-y-6 pt-2 pb-6 px-4">
- 
- <div className="grid gap-6 sm:grid-cols-2">
+  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" >
+  
+  {/* SECTION 1: السكن والأعباء الأساسية */}
+  <section className="bg-card text-card-foreground border rounded-xl p-6 shadow-sm">
+    <div className="flex items-center gap-2 mb-6">
+      <Home className="h-5 w-5 text-indigo-500" />
+      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">{t("wizard.burdens.housing.title")}</h3>
+    </div>
+    <div className="grid gap-6 sm:grid-cols-2">
  <div className="space-y-1.5">
  <Label className={labelClass}>{t("wizard.burdens.housing.type")}</Label>
  <Select value={fd.housingType ?? "OWNED"} onValueChange={(v) => setField("housingType", v)}>
@@ -354,22 +346,22 @@ export function BurdensStep() {
  </Select>
  </div>
 
- <div className="flex items-center justify-between border border-slate-200 rounded-lg p-3 bg-slate-50">
- <Label className="cursor-pointer text-sm font-medium text-slate-700">{t("wizard.burdens.housing.rationCard")}</Label>
+ <div className="flex items-center justify-between border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-slate-50 dark:bg-slate-900">
+ <Label className="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300">{t("wizard.burdens.housing.rationCard")}</Label>
  <Switch checked={!(fd.hasRationCard ?? true)} onCheckedChange={(v) => setField("hasRationCard", !v)} />
  </div>
  </div>
 
- <div className="grid gap-6 sm:grid-cols-3 border-t border-slate-100 pt-4">
+ <div className="grid gap-6 sm:grid-cols-3 border-t border-slate-100 dark:border-slate-800 pt-4 mt-4">
  {/* الديون */}
- <div className="space-y-3 bg-slate-50 border border-slate-200 p-4 rounded-xl">
+ <div className="space-y-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl">
  <div className="flex items-center justify-between">
- <Label className="font-semibold text-slate-800">{t("wizard.burdens.debt.title")}</Label>
+ <Label className="font-semibold text-slate-800 dark:text-slate-200">{t("wizard.burdens.debt.title")}</Label>
  <Switch checked={burdens.hasDebt ?? false} onCheckedChange={(v) => void persistBurdenToggle("DEBT", v)} />
  </div>
  {burdens.hasDebt && (
- <div className="space-y-1.5 pt-2 border-t border-slate-200">
- <Label className="text-xs text-slate-500">{t("wizard.burdens.debt.grade")}</Label>
+ <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
+ <Label className="text-xs text-slate-500 dark:text-slate-400">{t("wizard.burdens.debt.grade")}</Label>
  <Select value={burdens.debtGrade ?? "A"} onValueChange={(v) => void persistBurdenGrade("DEBT", v)}>
  <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
  <SelectContent>
@@ -384,14 +376,14 @@ export function BurdensStep() {
  </div>
 
  {/* الإصابات */}
- <div className="space-y-3 bg-slate-50 border border-slate-200 p-4 rounded-xl">
+ <div className="space-y-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl">
  <div className="flex items-center justify-between">
- <Label className="font-semibold text-slate-800">{t("wizard.burdens.injury.title")}</Label>
+ <Label className="font-semibold text-slate-800 dark:text-slate-200">{t("wizard.burdens.injury.title")}</Label>
  <Switch checked={burdens.hasInjury ?? false} onCheckedChange={(v) => void persistBurdenToggle("INJURY", v)} />
  </div>
  {burdens.hasInjury && (
- <div className="space-y-1.5 pt-2 border-t border-slate-200">
- <Label className="text-xs text-slate-500">{t("wizard.burdens.injury.grade")}</Label>
+ <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
+ <Label className="text-xs text-slate-500 dark:text-slate-400">{t("wizard.burdens.injury.grade")}</Label>
  <Select value={burdens.injuryGrade ?? "A"} onValueChange={(v) => void persistBurdenGrade("INJURY", v)}>
  <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
  <SelectContent>
@@ -406,14 +398,14 @@ export function BurdensStep() {
  </div>
 
  {/* العمليات الجراحية */}
- <div className="space-y-3 bg-slate-50 border border-slate-200 p-4 rounded-xl">
+ <div className="space-y-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl">
  <div className="flex items-center justify-between">
- <Label className="font-semibold text-slate-800">{t("wizard.burdens.surgery.title")}</Label>
+ <Label className="font-semibold text-slate-800 dark:text-slate-200">{t("wizard.burdens.surgery.title")}</Label>
  <Switch checked={burdens.hasSurgery ?? false} onCheckedChange={(v) => void persistBurdenToggle("SURGERY", v)} />
  </div>
  {burdens.hasSurgery && (
- <div className="space-y-1.5 pt-2 border-t border-slate-200">
- <Label className="text-xs text-slate-500">{t("wizard.burdens.surgery.grade")}</Label>
+ <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
+ <Label className="text-xs text-slate-500 dark:text-slate-400">{t("wizard.burdens.surgery.grade")}</Label>
  <Select value={burdens.surgeryGrade ?? "A"} onValueChange={(v) => void persistBurdenGrade("SURGERY", v)}>
  <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
  <SelectContent>
@@ -429,20 +421,17 @@ export function BurdensStep() {
  </div>
 
  </div>
+  </section>
 
- </AccordionContent>
- </AccordionItem>
-
- {/* SECTION 2: الأمراض المزمنة */}
- <AccordionItem value="section-2" className="bg-white border rounded-xl shadow-sm overflow-hidden">
- <AccordionTrigger className="text-sm font-semibold hover:no-underline hover:bg-slate-50 px-4 py-3 transition-colors uppercase tracking-wider text-rose-700">
- {t("wizard.burdens.disease.title")}
- </AccordionTrigger>
- <AccordionContent className="space-y-6 pt-2 pb-6 px-4">
- 
+  {/* SECTION 2: الأمراض المزمنة */}
+  <section className="bg-card text-card-foreground border rounded-xl p-6 shadow-sm">
+    <div className="flex items-center gap-2 mb-6">
+      <HeartPulse className="h-5 w-5 text-rose-500" />
+      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">{t("wizard.burdens.disease.title")}</h3>
+    </div>
  {diseases.map((d, idx) => (
- <div key={d.id ?? d._localKey} className="bg-rose-50/50 border border-rose-100 rounded-xl p-5 relative group transition-colors hover:border-rose-200">
- <Button variant="ghost" size="icon" className="absolute top-3 left-3 text-rose-500 hover:text-rose-700 hover:bg-rose-100 opacity-50 group-hover:opacity-100 transition-opacity" onClick={() => void removeDisease(idx)}>
+ <div key={d.id ?? d._localKey} className="bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900 rounded-xl p-5 relative group transition-colors hover:border-rose-200">
+ <Button variant="ghost" size="icon" className="absolute top-3 left-3 text-rose-500 hover:text-rose-700 hover:bg-rose-100 dark:hover:bg-rose-900 opacity-50 group-hover:opacity-100 transition-opacity" onClick={() => void removeDisease(idx)}>
  <Trash2 className="h-4 w-4" />
  </Button>
  
@@ -506,29 +495,26 @@ export function BurdensStep() {
  ))}
 
  {diseases.length >= 3 && (
- <div className="bg-amber-50 text-amber-700 text-sm p-3 rounded-lg flex items-center gap-2 border border-amber-200">
+ <div className="bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-500 text-sm p-3 rounded-lg flex items-center gap-2 border border-amber-200 dark:border-amber-900">
  <AlertCircle className="w-4 h-4 shrink-0" />
  {t("wizard.burdens.disease.limitWarning")}
  </div>
  )}
 
- <Button variant="outline" className="w-full border-dashed hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200" onClick={() => void addDisease()}>
- <Plus className="w-4 h-4 me-2" /> {t("wizard.burdens.disease.add")}
- </Button>
- 
- </AccordionContent>
- </AccordionItem>
+  <Button variant="outline" className="w-full border-dashed hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/30 dark:hover:border-rose-800/60" onClick={() => void addDisease()}>
+    <Plus className="w-4 h-4 me-2" /> {t("wizard.burdens.disease.add")}
+  </Button>
+  </section>
 
- {/* SECTION 3: الإعاقات */}
- <AccordionItem value="section-3" className="bg-white border rounded-xl shadow-sm overflow-hidden">
- <AccordionTrigger className="text-sm font-semibold hover:no-underline hover:bg-slate-50 px-4 py-3 transition-colors uppercase tracking-wider text-orange-700">
- {t("wizard.burdens.disability.title")}
- </AccordionTrigger>
- <AccordionContent className="space-y-6 pt-2 pb-6 px-4">
- 
+  {/* SECTION 3: الإعاقات */}
+  <section className="bg-card text-card-foreground border rounded-xl p-6 shadow-sm">
+    <div className="flex items-center gap-2 mb-6">
+      <Accessibility className="h-5 w-5 text-orange-500" />
+      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">{t("wizard.burdens.disability.title")}</h3>
+    </div>
  {disabilities.map((d, idx) => (
- <div key={d.id ?? d._localKey} className="bg-orange-50/50 border border-orange-100 rounded-xl p-5 relative group transition-colors hover:border-orange-200">
- <Button variant="ghost" size="icon" className="absolute top-3 left-3 text-orange-500 hover:text-orange-700 hover:bg-orange-100 opacity-50 group-hover:opacity-100 transition-opacity" onClick={() => void removeDisability(idx)}>
+ <div key={d.id ?? d._localKey} className="bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900 rounded-xl p-5 relative group transition-colors hover:border-orange-200">
+ <Button variant="ghost" size="icon" className="absolute top-3 left-3 text-orange-500 hover:text-orange-700 hover:bg-orange-100 dark:hover:bg-orange-900 opacity-50 group-hover:opacity-100 transition-opacity" onClick={() => void removeDisability(idx)}>
  <Trash2 className="h-4 w-4" />
  </Button>
  
@@ -591,14 +577,10 @@ export function BurdensStep() {
  </div>
  ))}
 
- <Button variant="outline" className="w-full border-dashed hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200" onClick={() => void addDisability()}>
- <Plus className="w-4 h-4 me-2" /> {t("wizard.burdens.disability.add")}
- </Button>
- 
- </AccordionContent>
- </AccordionItem>
-
- </Accordion>
- </div>
+  <Button variant="outline" className="w-full border-dashed hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 dark:hover:bg-orange-950/30 dark:hover:border-orange-800/60" onClick={() => void addDisability()}>
+    <Plus className="w-4 h-4 me-2" /> {t("wizard.burdens.disability.add")}
+  </Button>
+  </section>
+  </div>
  );
 }

@@ -308,8 +308,9 @@ async function calcOneFamilyWithBoost(household, configs, grants, method, boostP
   const externalTotal = externalContribs.filter(c => c.confirmed).reduce((s, c) => s + Number(c.amount), 0);
   const compensationAmount = Math.max(0, calculatedAmount - externalTotal);
   const finalAmount = compensationAmount;
-  const meezaAmount = Math.round(finalAmount * 0.9);
-  const cashAmount  = finalAmount - meezaAmount;
+  const isMeeza = !!household.meezaCardNumber;
+  const meezaAmount = isMeeza ? finalAmount : 0;
+  const cashAmount  = isMeeza ? 0 : finalAmount;
 
   return {
     householdId:        household.id,
@@ -547,7 +548,7 @@ const disbursementService = {
 
   // ── Manual adjustment ──────────────────────────────────────────────────────
 
-  async adjustPayment(user, paymentId, { manualAdjustment, adjustmentReason, fundSource }) {
+  async adjustPayment(user, paymentId, { manualAdjustment, adjustmentReason, fundSource, meezaCardNumber }) {
     if (!adjustmentReason?.trim()) {
       throw new ValidationError('سبب التعديل مطلوب');
     }
@@ -561,22 +562,39 @@ const disbursementService = {
     const oldAmount    = Number(payment.finalAmount);
     const adjustment   = Number(manualAdjustment);
     const newFinal     = Number(payment.calculatedAmount) + adjustment;
-    const newMeeza     = Math.round(newFinal * 0.9);
-    const newCash      = newFinal - newMeeza;
+    
+    let finalCardNumber = payment.meezaCardNumber;
+    if (meezaCardNumber !== undefined) {
+      finalCardNumber = meezaCardNumber;
+    }
+    
+    const isMeeza = !!finalCardNumber;
+    const newMeeza  = isMeeza ? newFinal : 0;
+    const newCash   = isMeeza ? 0 : newFinal;
 
     const updated = await prisma.$transaction(async (tx) => {
+      const updateData = {
+        manualAdjustment: new Decimal(adjustment),
+        adjustmentReason: adjustmentReason.trim(),
+        adjustedById:     user.userId,
+        adjustedAt:       new Date(),
+        finalAmount:      new Decimal(newFinal),
+        meezaAmount:      new Decimal(newMeeza),
+        cashAmount:       new Decimal(newCash),
+        fundSource:       fundSource || payment.fundSource,
+      };
+
+      if (meezaCardNumber !== undefined) {
+        updateData.meezaCardNumber = meezaCardNumber;
+        await tx.household.update({
+          where: { id: payment.householdId },
+          data: { meezaCardNumber },
+        });
+      }
+
       const p = await tx.monthlyPayment.update({
         where: { id: paymentId },
-        data: {
-          manualAdjustment: new Decimal(adjustment),
-          adjustmentReason: adjustmentReason.trim(),
-          adjustedById:     user.userId,
-          adjustedAt:       new Date(),
-          finalAmount:      new Decimal(newFinal),
-          meezaAmount:      new Decimal(newMeeza),
-          cashAmount:       new Decimal(newCash),
-          fundSource:       fundSource || payment.fundSource,
-        },
+        data: updateData,
       });
       await tx.paymentAudit.create({
         data: {
@@ -606,6 +624,68 @@ const disbursementService = {
       user.userId,
     );
     return serializePayment(updated);
+  },
+
+  // ── Add Payment (Manual) ───────────────────────────────────────────────────
+
+  async addPayment(user, monthId, householdId) {
+    const month = await repo.findMonth(monthId);
+    if (!month) throw new NotFoundError('DisbursementMonth');
+    if (month.status === 'APPROVED' || month.status === 'PAID') {
+      throw new AppError('الشهر معتمد — لا يمكن إضافة أسر', 400, 'MONTH_LOCKED');
+    }
+
+    const existing = await prisma.monthlyPayment.findFirst({ where: { monthId, householdId } });
+    if (existing) throw new AppError('الأسرة موجودة بالفعل في هذا الشهر', 400, 'ALREADY_EXISTS');
+
+    const household = await prisma.household.findUnique({
+      where: { id: householdId },
+      include: {
+        persons: { include: { diseases: true, disabilities: true } },
+        incomes: true,
+        burdens: true,
+      },
+    });
+    if (!household) throw new NotFoundError('Household');
+
+    const [configs, grants] = await Promise.all([
+      repo.getCategoryConfigs(),
+      repo.getGrantConfigs(),
+    ]);
+
+    const paymentData = await calcOneFamilyWithBoost(household, configs, grants, month.method, month.boostPercent ? Number(month.boostPercent) : 0);
+    if (!paymentData) throw new AppError('الأسرة غير مستحقة', 400, 'NOT_ELIGIBLE');
+
+    const payment = await prisma.$transaction(async (tx) => {
+      const p = await tx.monthlyPayment.create({
+        data: { monthId, ...paymentData },
+      });
+      await tx.paymentAudit.create({
+        data: {
+          paymentId:   p.id,
+          changedById: user.userId,
+          triggerType: 'MANUAL_EDIT',
+          newAmount:   p.finalAmount,
+          reason:      'إضافة يدوية للأسرة',
+        },
+      });
+      return p;
+    });
+
+    return serializePayment(payment);
+  },
+
+  // ── Remove Payment (Manual) ────────────────────────────────────────────────
+
+  async removePayment(user, monthId, paymentId) {
+    const payment = await repo.findPayment(paymentId);
+    if (!payment) throw new NotFoundError('MonthlyPayment');
+    if (payment.monthId !== monthId) throw new NotFoundError('MonthlyPayment');
+    if (payment.month.status === 'APPROVED' || payment.month.status === 'PAID') {
+      throw new AppError('الشهر معتمد — لا يمكن حذف سجل', 400, 'MONTH_LOCKED');
+    }
+
+    await prisma.monthlyPayment.delete({ where: { id: paymentId } });
   },
 
   // ── Simulate (no DB writes) ────────────────────────────────────────────────

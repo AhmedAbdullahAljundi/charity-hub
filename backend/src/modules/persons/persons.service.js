@@ -23,7 +23,7 @@ const personsService = {
 
     if (sanitizedBody.nationalId) {
       const existingPerson = await prisma.person.findFirst({
-        where: { nationalId: sanitizedBody.nationalId },
+        where: { nationalId: sanitizedBody.nationalId || null },
       });
       if (existingPerson) {
         if (existingPerson.householdId === householdId) {
@@ -49,7 +49,7 @@ const personsService = {
     }
 
     const row = await prisma.person.create({
-      data: { ...sanitizedBody, nationalId: sanitizedBody.nationalId, householdId, birthDate: sanitizedBody.birthDate ? new Date(sanitizedBody.birthDate) : undefined },
+      data: { ...sanitizedBody, nationalId: sanitizedBody.nationalId || null, householdId, birthDate: sanitizedBody.birthDate ? new Date(sanitizedBody.birthDate) : undefined },
       include: { diseases: true, disabilities: true },
     });
     return serializePerson(row);
@@ -66,7 +66,7 @@ const personsService = {
 
     if (sanitizedBody.nationalId) {
       const existingPerson = await prisma.person.findFirst({
-        where: { nationalId: sanitizedBody.nationalId },
+        where: { nationalId: sanitizedBody.nationalId || null },
       });
       if (existingPerson && existingPerson.id !== personId) {
         const { AppError } = require('../../utils/errors');
@@ -90,7 +90,7 @@ const personsService = {
       where: { id: personId },
       data: {
         ...sanitizedBody,
-        nationalId: sanitizedBody.nationalId,
+        nationalId: sanitizedBody.nationalId || null,
         birthDate: sanitizedBody.birthDate ? new Date(sanitizedBody.birthDate) : undefined,
       },
       include: { diseases: true, disabilities: true },

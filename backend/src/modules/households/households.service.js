@@ -112,6 +112,7 @@ const householdsService = {
         notes: body.notes,
         pdfUrl: body.pdfUrl,
         pastSpouses: body.pastSpouses,
+        meezaCardNumber: body.meezaCardNumber,
         isDraft: true,
         lastDraftSavedAt: new Date(),
         createdById: user.userId,
@@ -182,6 +183,7 @@ const householdsService = {
       notes: body.notes,
       pdfUrl: body.pdfUrl,
       pastSpouses: body.pastSpouses,
+      meezaCardNumber: body.meezaCardNumber !== undefined ? body.meezaCardNumber : undefined,
       isDraft: body.isDraft,
       lastDraftSavedAt: new Date(),
     });

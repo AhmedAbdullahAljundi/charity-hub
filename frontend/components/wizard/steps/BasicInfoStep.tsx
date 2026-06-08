@@ -254,6 +254,7 @@ export function BasicInfoStep() {
         />
       </div>
     </div>
+
   </div>
   </section>
 

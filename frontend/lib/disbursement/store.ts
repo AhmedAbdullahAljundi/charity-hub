@@ -60,7 +60,9 @@ interface DisbursementActions {
   reopenMonth:         (monthId: string, reason: string) => Promise<void>
   adjustPayment:       (monthId: string, paymentId: string, body: { manualAdjustment: number; adjustmentReason: string; fundSource?: string }) => Promise<void>
   updatePaymentStatus: (monthId: string, paymentId: string, body: { meezaStatus?: string; cashStatus?: string }) => Promise<void>
-  simulate:            (body: { method: string; totalBudget?: number }) => Promise<void>
+  addPayment: (monthId: string, householdId: string) => Promise<void>
+  removePayment: (monthId: string, paymentId: string) => Promise<void>
+  simulate:            (body: { method: string; totalBudget?: number; boostPct?: number }) => Promise<void>
   fetchCategories:     () => Promise<void>
   updateCategory:      (code: string, body: Partial<CategoryConfig>) => Promise<void>
   fetchGrants:         () => Promise<void>
@@ -184,6 +186,26 @@ export const useDisbursementStore = create<DisbursementState & DisbursementActio
     updatePaymentStatus: async (monthId, paymentId, body) => {
       try {
         await updatePaymentStatus(monthId, paymentId, body)
+        await get().fetchMonth(monthId)
+      } catch (e) {
+        set({ error: (e as Error).message })
+        throw e
+      }
+    },
+
+    addPayment: async (monthId, householdId) => {
+      try {
+        await addPayment(monthId, householdId)
+        await get().fetchMonth(monthId)
+      } catch (e) {
+        set({ error: (e as Error).message })
+        throw e
+      }
+    },
+
+    removePayment: async (monthId, paymentId) => {
+      try {
+        await removePayment(monthId, paymentId)
         await get().fetchMonth(monthId)
       } catch (e) {
         set({ error: (e as Error).message })

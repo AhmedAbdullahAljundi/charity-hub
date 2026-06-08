@@ -42,6 +42,9 @@ const REPORT_META = [
   { id: 6, typeKey: "educational" as const, icon: Calendar, lastGenerated: "2024/02/28" },
 ];
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImportSection } from "./ImportSection";
+
 export default function ReportsPage() {
   const t = useTranslations("reports");
 
@@ -57,56 +60,72 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">{t("title")}</h2>
-          <p className="text-muted-foreground text-sm mt-1">{t("subtitle")}</p>
+      <Tabs defaultValue="reports" className="w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">{t("title")}</h2>
+            <p className="text-muted-foreground text-sm mt-1">{t("subtitle")}</p>
+          </div>
+          
+          <TabsList className="grid w-full sm:w-[300px] grid-cols-2">
+            <TabsTrigger value="reports">التقارير</TabsTrigger>
+            <TabsTrigger value="import">استيراد البيانات</TabsTrigger>
+          </TabsList>
         </div>
-        <Select defaultValue="all">
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder={t("filterPlaceholder")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("filterAll")}</SelectItem>
-            <SelectItem value="comprehensive">{t("types.comprehensive")}</SelectItem>
-            <SelectItem value="financial">{t("types.financial")}</SelectItem>
-            <SelectItem value="analytical">{t("types.analytical")}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {reports.map((report) => {
-          const Icon = report.icon;
-          return (
-            <Card key={report.id} className="border-0 shadow-sm hover:shadow-md transition-shadow group">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="p-2.5 rounded-xl bg-primary/10 group-hover:scale-110 transition-transform">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <Badge variant="outline" className={typeBadgeClass[report.typeKey]}>
-                    {t(`types.${report.typeKey}`)}
-                  </Badge>
-                </div>
-                <CardTitle className="text-base mt-3">{report.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground leading-relaxed">{report.description}</p>
-                <div className="flex items-center justify-between pt-3 border-t border-border">
-                  <span className="text-xs text-muted-foreground">
-                    {t("lastGenerated", { date: report.lastGenerated })}
-                  </span>
-                  <Button variant="outline" size="sm" className="gap-1.5">
-                    <Download className="h-3.5 w-3.5" />
-                    {t("exportExcel")}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+        <TabsContent value="reports" className="space-y-6">
+          <div className="flex justify-end">
+            <Select defaultValue="all">
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder={t("filterPlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("filterAll")}</SelectItem>
+                <SelectItem value="comprehensive">{t("types.comprehensive")}</SelectItem>
+                <SelectItem value="financial">{t("types.financial")}</SelectItem>
+                <SelectItem value="analytical">{t("types.analytical")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {reports.map((report) => {
+              const Icon = report.icon;
+              return (
+                <Card key={report.id} className="border-0 shadow-sm hover:shadow-md transition-shadow group">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="p-2.5 rounded-xl bg-primary/10 group-hover:scale-110 transition-transform">
+                        <Icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <Badge variant="outline" className={typeBadgeClass[report.typeKey]}>
+                        {t(`types.${report.typeKey}`)}
+                      </Badge>
+                    </div>
+                    <CardTitle className="text-base mt-3">{report.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground leading-relaxed">{report.description}</p>
+                    <div className="flex items-center justify-between pt-3 border-t border-border">
+                      <span className="text-xs text-muted-foreground">
+                        {t("lastGenerated", { date: report.lastGenerated })}
+                      </span>
+                      <Button variant="outline" size="sm" className="gap-1.5">
+                        <Download className="h-3.5 w-3.5" />
+                        {t("exportExcel")}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="import">
+          <ImportSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

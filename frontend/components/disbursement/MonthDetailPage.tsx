@@ -6,7 +6,7 @@ import { useLocale } from 'next-intl'
 import { toast } from 'sonner'
 import {
   ArrowLeft, Lock, Download, FileText, RefreshCw,
-  CheckCircle, Unlock, AlertTriangle, Search, X, Building2,
+  CheckCircle, Unlock, AlertTriangle, Search, X, Building2, Plus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,13 +34,16 @@ export function MonthDetailPage({ params }: MonthDetailPageProps) {
     fetchMonth, calculateMonth, approveMonth, reopenMonth, clearError,
   } = useDisbursementStore()
 
-  // Dialog states
   const [showApproveDialog, setShowApproveDialog] = useState(false)
   const [showReopenDialog,  setShowReopenDialog]  = useState(false)
+  const [showAddFamilyDialog, setShowAddFamilyDialog] = useState(false)
   const [approveNotes,      setApproveNotes]       = useState('')
   const [reopenReason,      setReopenReason]       = useState('')
+  const [addHouseholdId,    setAddHouseholdId]     = useState('')
   const [approving,         setApproving]          = useState(false)
   const [reopening,         setReopening]          = useState(false)
+  const [addingFamily,      setAddingFamily]       = useState(false)
+  const { addPayment } = useDisbursementStore()
 
   // Filter states
   const [search,          setSearch]          = useState('')
@@ -83,6 +86,18 @@ export function MonthDetailPage({ params }: MonthDetailPageProps) {
       setReopenReason('')
     } catch { /* error already in store */ }
     finally { setReopening(false) }
+  }
+
+  const handleAddFamily = async () => {
+    if (!addHouseholdId.trim()) { toast.error('رقم المعرف مطلوب'); return }
+    setAddingFamily(true)
+    try {
+      await addPayment(id, addHouseholdId)
+      toast.success('تمت إضافة الأسرة بنجاح')
+      setShowAddFamilyDialog(false)
+      setAddHouseholdId('')
+    } catch { /* error handled by store */ }
+    finally { setAddingFamily(false) }
   }
 
   // ── Loading state ──────────────────────────────────────────────────────────
@@ -161,6 +176,18 @@ export function MonthDetailPage({ params }: MonthDetailPageProps) {
 
           {/* Action buttons */}
           <div className="flex flex-wrap gap-2">
+            {/* Add Family */}
+            {(currentMonth.status === 'DRAFT' || currentMonth.status === 'CALCULATED') && (
+              <Button
+                variant="outline" size="sm"
+                className="gap-1.5 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300"
+                onClick={() => setShowAddFamilyDialog(true)}
+              >
+                <Plus className="h-4 w-4" />
+                إضافة أسرة يدوياً
+              </Button>
+            )}
+
             {/* Calculate / Recalculate */}
             {(currentMonth.status === 'DRAFT' || currentMonth.status === 'CALCULATED') && (
               <Button
@@ -378,6 +405,38 @@ export function MonthDetailPage({ params }: MonthDetailPageProps) {
             >
               <Unlock className="h-4 w-4" />
               {reopening ? 'جاري...' : 'إعادة الفتح'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Add Family Dialog */}
+      <Dialog open={showAddFamilyDialog} onOpenChange={setShowAddFamilyDialog}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle>إضافة أسرة يدوياً</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>معرف الأسرة (ID) <span className="text-red-400">*</span></Label>
+              <Input
+                placeholder="أدخل الـ ID الخاص بالأسرة..."
+                value={addHouseholdId}
+                onChange={(e) => setAddHouseholdId(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+              />
+              <p className="text-xs text-slate-500">
+                ملاحظة: يمكنك إيجاد المعرف في صفحة الأسرة. إعادة الحساب الشاملة قد تزيل الأسر المضافة يدوياً إذا كانت غير مستحقة.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800" onClick={() => setShowAddFamilyDialog(false)}>إلغاء</Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={handleAddFamily}
+              disabled={addingFamily}
+            >
+              إضافة
             </Button>
           </DialogFooter>
         </DialogContent>

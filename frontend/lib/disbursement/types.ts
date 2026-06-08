@@ -114,11 +114,8 @@ export interface SimulateResult {
 
 export const CATEGORY_LABELS: Record<string, string> = {
   'كفالة أيتام': 'كفالة أيتام',
-  'أيتام': 'أيتام',
   'ملف إعاقة': 'ملف إعاقة',
-  'إعاقة': 'إعاقة',
   'طلاب علم': 'طلاب علم',
-  'طالب علم': 'طالب علم',
   'أسر سجناء': 'أسر سجناء',
   'مساعدات': 'مساعدات',
   'مساعدات موسمية': 'مساعدات موسمية',
@@ -126,21 +123,16 @@ export const CATEGORY_LABELS: Record<string, string> = {
   'منفردون': 'منفردون',
   'مطلقات': 'مطلقات',
   'مساكين': 'مساكين',
-  'فقراء': 'فقراء',
   'مسنون': 'مسنون',
   'علاج شهري': 'علاج شهري',
   'أمراض مزمنة': 'أمراض مزمنة',
-  'حالات هجر': 'حالات هجر',
-  'كبار سن': 'كبار سن'
+  'حالات هجر': 'حالات هجر'
 }
 
 export const CATEGORY_COLORS: Record<string, string> = {
   'كفالة أيتام':  'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-  'أيتام':  'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
   'ملف إعاقة':  'bg-blue-100   text-blue-800   dark:bg-blue-900/30   dark:text-blue-300',
-  'إعاقة':  'bg-blue-100   text-blue-800   dark:bg-blue-900/30   dark:text-blue-300',
   'طلاب علم':  'bg-sky-100    text-sky-800    dark:bg-sky-900/30    dark:text-sky-300',
-  'طالب علم':  'bg-sky-100    text-sky-800    dark:bg-sky-900/30    dark:text-sky-300',
   'أسر سجناء':  'bg-slate-100  text-slate-700  dark:bg-slate-700     dark:text-slate-300',
   'مساعدات':  'bg-amber-100  text-amber-800  dark:bg-amber-900/30  dark:text-amber-300',
   'مساعدات موسمية': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
@@ -148,12 +140,10 @@ export const CATEGORY_COLORS: Record<string, string> = {
   'منفردون':  'bg-rose-100   text-rose-800   dark:bg-rose-900/30   dark:text-rose-300',
   'مطلقات':  'bg-pink-100   text-pink-800   dark:bg-pink-900/30   dark:text-pink-300',
   'مساكين': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-  'فقراء': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
   'مسنون': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
   'علاج شهري': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
   'أمراض مزمنة': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  'حالات هجر': 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
-  'كبار سن': 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300'
+  'حالات هجر': 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300'
 }
 
 export const MONTH_STATUS_CONFIG: Record<MonthStatus, { label: string; color: string }> = {

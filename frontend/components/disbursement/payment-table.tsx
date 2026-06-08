@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil, Building2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Pencil, Building2, ChevronDown, ChevronUp, Trash2, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -43,6 +44,23 @@ interface PaymentTableProps {
   monthId: string
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function isValidLuhn(value: string) {
+  if (!/^\d+$/.test(value)) return false;
+  let sum = 0;
+  let shouldDouble = false;
+  for (let i = value.length - 1; i >= 0; i--) {
+    let digit = parseInt(value.charAt(i), 10);
+    if (shouldDouble) {
+      if ((digit *= 2) > 9) digit -= 9;
+    }
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+  return sum % 10 === 0;
+}
+
 // ─── Adjustment Dialog ────────────────────────────────────────────────────────
 
 function AdjustmentDialog({
@@ -61,17 +79,37 @@ function AdjustmentDialog({
   const [adjustment, setAdjustment] = useState(payment.manualAdjustment || '0')
   const [reason, setReason] = useState(payment.adjustmentReason || '')
   const [fundSource, setFundSource] = useState<FundSource>(payment.fundSource || 'GENERAL')
+  const [meezaCardNumber, setMeezaCardNumber] = useState(payment.meezaCardNumber || '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { adjustPayment } = useDisbursementStore()
 
   const handleSave = async () => {
     if (!reason.trim()) { toast.error('الرجاء إدخال سبب التعديل'); return }
+    
+    const cardNum = meezaCardNumber.replace(/\s/g, '');
+    if (cardNum) {
+      if (!/^\d{16}$/.test(cardNum)) {
+        toast.error('رقم الكارت يجب أن يتكون من 16 رقماً فقط');
+        return;
+      }
+      if (!isValidLuhn(cardNum)) {
+        toast.error('رقم الكارت غير صالح (تأكد من كتابة الأرقام بشكل صحيح)');
+        return;
+      }
+      const familiarPrefixes = ['5078', '4', '51', '52', '53', '54', '55'];
+      if (!familiarPrefixes.some(prefix => cardNum.startsWith(prefix))) {
+        toast.error('رقم الكارت غير مدعوم أو غير صحيح. يجب أن يبدأ الكارت بأرقام البنوك المتعارف عليها (ميزة، فيزا، أو ماستركارد)');
+        return;
+      }
+    }
+
     setIsSubmitting(true)
     try {
-      await adjustPayment(monthId, payment.householdId, {
+      await adjustPayment(monthId, payment.id, {
         manualAdjustment: Number(adjustment),
         adjustmentReason: reason,
         fundSource,
+        meezaCardNumber: cardNum || null,
       })
       toast.success('تم حفظ التعديل')
       onOpenChange(false)
@@ -153,6 +191,19 @@ function AdjustmentDialog({
                 onChange={(e) => setReason(e.target.value)}
                 className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 resize-none"
               />
+            </div>
+
+            {/* Meeza Card */}
+            <div className="space-y-1.5">
+              <Label className="text-white text-sm">رقم كارت ميزة / البنك</Label>
+              <Input
+                value={meezaCardNumber}
+                onChange={(e) => setMeezaCardNumber(e.target.value)}
+                placeholder="مثال: 507803..."
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 font-mono text-left"
+                dir="ltr"
+              />
+              <p className="text-xs text-slate-500">بداية الكارت المألوفة للبنوك: بنك مصر، البنك الأهلي...</p>
             </div>
 
             {/* Fund source */}
@@ -258,6 +309,17 @@ function ExternalContribRow({ payment }: { payment: MonthlyPayment }) {
 
 export function PaymentTable({ families, isApproved, monthId }: PaymentTableProps) {
   const [adjustPayment, setAdjustPayment] = useState<MonthlyPayment | null>(null)
+  const [deletePayment, setDeletePayment] = useState<MonthlyPayment | null>(null)
+  const { removePayment } = useDisbursementStore()
+
+  const handleDelete = async () => {
+    if (!deletePayment) return
+    try {
+      await removePayment(monthId, deletePayment.id)
+      toast.success('تم حذف الأسرة من هذا الشهر')
+    } catch { /* error handled by store */ }
+    finally { setDeletePayment(null) }
+  }
 
   if (families.length === 0) {
     return (
@@ -277,12 +339,42 @@ export function PaymentTable({ families, isApproved, monthId }: PaymentTableProp
               <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">اسم الأسرة</th>
               <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">الفئة</th>
               <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">الهشاشة%</th>
-              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">القبض الأساسي</th>
-              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">الحوافز</th>
-              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">المستحق</th>
-              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide hidden md:table-cell">مساهمة خارجية</th>
-              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide hidden md:table-cell">التعويض</th>
-              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">الإجمالي</th>
+              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">
+                <div className="flex items-center gap-1">
+                  القبض الأساسي
+                  <Tooltip><TooltipTrigger><Info className="h-3 w-3 text-slate-400" /></TooltipTrigger><TooltipContent>المبلغ الافتراضي المحدد لهذه الفئة</TooltipContent></Tooltip>
+                </div>
+              </th>
+              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">
+                <div className="flex items-center gap-1">
+                  الحوافز
+                  <Tooltip><TooltipTrigger><Info className="h-3 w-3 text-slate-400" /></TooltipTrigger><TooltipContent>إجمالي المنح (أيتام، أمراض، دمج) المضافة للقبض</TooltipContent></Tooltip>
+                </div>
+              </th>
+              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">
+                <div className="flex items-center gap-1">
+                  المستحق
+                  <Tooltip><TooltipTrigger><Info className="h-3 w-3 text-slate-400" /></TooltipTrigger><TooltipContent>المبلغ المحسوب (الأساسي + الحوافز) مقيداً بالحد الأقصى المسموح</TooltipContent></Tooltip>
+                </div>
+              </th>
+              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide hidden md:table-cell">
+                <div className="flex items-center gap-1">
+                  مساهمة خارجية
+                  <Tooltip><TooltipTrigger><Info className="h-3 w-3 text-slate-400" /></TooltipTrigger><TooltipContent>المبالغ التي تتلقاها الأسرة من مؤسسات خيرية أخرى</TooltipContent></Tooltip>
+                </div>
+              </th>
+              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide hidden md:table-cell">
+                <div className="flex items-center gap-1">
+                  التعويض
+                  <Tooltip><TooltipTrigger><Info className="h-3 w-3 text-slate-400" /></TooltipTrigger><TooltipContent>ما ندفعه نحن (المستحق ناقص أي مساهمات خارجية تتلقاها الأسرة)</TooltipContent></Tooltip>
+                </div>
+              </th>
+              <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">
+                <div className="flex items-center gap-1">
+                  الإجمالي
+                  <Tooltip><TooltipTrigger><Info className="h-3 w-3 text-slate-400" /></TooltipTrigger><TooltipContent>المبلغ النهائي الفعلي (بعد أي تعديلات يدوية)</TooltipContent></Tooltip>
+                </div>
+              </th>
               <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">ميزة</th>
               <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wide">نقدي</th>
               <th className="px-4 py-3.5 text-center text-xs font-semibold tracking-wide">⚙</th>
@@ -387,22 +479,40 @@ export function PaymentTable({ families, isApproved, monthId }: PaymentTableProp
                     <PaymentStatusCell amount={payment.cashAmount} status={payment.cashStatus} />
                   </td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30"
-                          disabled={isApproved}
-                          onClick={() => setAdjustPayment(payment)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {isApproved ? 'الشهر معتمد — لا يمكن التعديل' : 'تعديل يدوي'}
-                      </TooltipContent>
-                    </Tooltip>
+                    <div className="flex items-center justify-center gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30"
+                            disabled={isApproved}
+                            onClick={() => setAdjustPayment(payment)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {isApproved ? 'الشهر معتمد — لا يمكن التعديل' : 'تعديل يدوي'}
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 disabled:opacity-30"
+                            disabled={isApproved}
+                            onClick={() => setDeletePayment(payment)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {isApproved ? 'الشهر معتمد — لا يمكن الحذف' : 'حذف من الشهر'}
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                   </td>
                 </tr>
               )
@@ -421,6 +531,23 @@ export function PaymentTable({ families, isApproved, monthId }: PaymentTableProp
           monthId={monthId}
         />
       )}
+
+      {/* Delete Dialog */}
+      <AlertDialog open={!!deletePayment} onOpenChange={(v) => !v && setDeletePayment(null)}>
+        <AlertDialogContent className="bg-slate-900 border-slate-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              هل أنت متأكد من حذف الأسرة (رقم القيد: {deletePayment?.household?.code}) من هذا الشهر؟
+              ملاحظة: إذا قمت بإعادة الحساب الشاملة، قد تعود الأسرة إذا كانت مستحقة.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-slate-700 text-white hover:bg-slate-800">إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">حذف</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
   )
 }

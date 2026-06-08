@@ -18,17 +18,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
- Accordion,
- AccordionContent,
- AccordionItem,
- AccordionTrigger,
-} from "@/components/ui/accordion";
 import { CheckCircle2, AlertTriangle, Play, RefreshCw, Calculator, ShieldAlert, Activity, TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { MedicalSummaryWidget } from "../../medical/MedicalSummaryWidget";
 import { CATEGORY_LABELS } from "@/lib/disbursement/types";
+
+export const getCategoryColorClass = (label: string) => {
+  if (!label) return "";
+  if (label.includes("أيتام")) return "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 font-semibold focus:text-purple-700 dark:focus:text-purple-300 focus:bg-purple-100 dark:focus:bg-purple-900/40";
+  if (label.includes("مطلقات")) return "bg-pink-50 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 font-semibold focus:text-pink-700 dark:focus:text-pink-300 focus:bg-pink-100 dark:focus:bg-pink-900/40";
+  if (label.includes("علم")) return "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 font-semibold focus:text-sky-700 dark:focus:text-sky-300 focus:bg-sky-100 dark:focus:bg-sky-900/40";
+  if (label.includes("علاج") || label.includes("مرض") || label.includes("طبية")) return "bg-yellow-50 text-yellow-700 dark:bg-yellow-950/60 dark:text-yellow-300 font-semibold focus:text-yellow-700 dark:focus:text-yellow-300 focus:bg-yellow-100 dark:focus:bg-yellow-900/40";
+  if (label.includes("إعاق")) return "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-semibold focus:text-indigo-700 dark:focus:text-indigo-300 focus:bg-indigo-100 dark:focus:bg-indigo-900/40";
+  if (label.includes("دعم خارجي")) return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-semibold focus:text-emerald-700 dark:focus:text-emerald-300 focus:bg-emerald-100 dark:focus:bg-emerald-900/40";
+  if (label.includes("موسمية")) return "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 font-semibold focus:text-teal-700 dark:focus:text-teal-300 focus:bg-teal-100 dark:focus:bg-teal-900/40";
+  if (label.includes("مساكين") || label.includes("فقراء")) return "bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300 font-semibold focus:text-orange-700 dark:focus:text-orange-300 focus:bg-orange-100 dark:focus:bg-orange-900/40";
+  if (label.includes("منفردون")) return "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 font-semibold focus:text-rose-700 dark:focus:text-rose-300 focus:bg-rose-100 dark:focus:bg-rose-900/40";
+  if (label.includes("سجناء")) return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-semibold focus:text-slate-700 dark:focus:text-slate-300 focus:bg-slate-200 dark:focus:bg-slate-700";
+  if (label.includes("مساعدات")) return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 font-semibold focus:text-amber-800 dark:focus:text-amber-300 focus:bg-amber-200 dark:focus:bg-amber-900/40";
+  if (label.includes("مسنون")) return "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300 font-semibold focus:text-teal-800 dark:focus:text-teal-300 focus:bg-teal-200 dark:focus:bg-teal-900/40";
+  if (label.includes("هجر")) return "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300 font-semibold focus:text-pink-800 dark:focus:text-pink-300 focus:bg-pink-200 dark:focus:bg-pink-900/40";
+  
+  return "bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-semibold focus:bg-slate-100 dark:focus:bg-slate-700";
+};
 
 /* ─────────── Arabic Labels ─────────── */
 
@@ -346,9 +359,9 @@ export function EvaluationStep() {
  {/* ══════════════════════════════════════════════════
  القسم 1: التقييم التلقائي
  ══════════════════════════════════════════════════ */}
- <section className="bg-card border rounded-xl shadow-sm overflow-hidden">
- <div className="flex items-center justify-between p-4 border-b bg-slate-50/50">
- <h3 className="text-base font-bold flex items-center gap-2">
+ <section className="bg-card text-card-foreground border rounded-xl shadow-sm overflow-hidden">
+ <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+ <h3 className="text-base font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
  <BarChart3 className="w-5 h-5 text-primary" /> {t("wizard.evaluation.autoEvaluation")}
  </h3>
  <Button onClick={handleCalculate} disabled={!householdId || isCalculating} variant="outline" size="sm">
@@ -404,13 +417,13 @@ export function EvaluationStep() {
 
  {/* Warnings (compact) */}
  {liveScore.warnings && liveScore.warnings.length > 0 && (
- <div className="mr-auto bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-sm">
- <h4 className="text-xs font-bold text-amber-800 flex items-center gap-1 mb-1">
+ <div className="mr-auto bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-lg px-3 py-2 max-w-sm">
+ <h4 className="text-xs font-bold text-amber-800 dark:text-amber-500 flex items-center gap-1 mb-1">
  <AlertTriangle className="w-3 h-3" /> تنبيهات ({liveScore.warnings.length})
  </h4>
  <ul className="space-y-0.5">
  {liveScore.warnings.map((w: string, i: number) => (
- <li key={i} className="text-xs text-amber-700">{translateWarning(w, t)}</li>
+ <li key={i} className="text-xs text-amber-700 dark:text-amber-400/80">{translateWarning(w, t)}</li>
  ))}
  </ul>
  </div>
@@ -418,11 +431,11 @@ export function EvaluationStep() {
  </div>
 
   {/* Layer Breakdown Table */}
-  <div className="space-y-3">
+  <div className="space-y-2.5">
   <div className="flex items-center justify-between">
     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("wizard.evaluation.layerBreakdown")}</h4>
   </div>
-  <div className="bg-slate-50/30 border rounded-2xl p-3 max-h-72 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 shadow-inner">
+  <div className="bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 max-h-64 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-2 shadow-inner">
   {liveScore.layerBreakdown?.map((layer: any, index: number) => {
   const score = Number(layer.score);
   const capVal = Number(layer.cap);
@@ -434,14 +447,14 @@ export function EvaluationStep() {
   const isLastOdd = index === liveScore.layerBreakdown.length - 1 && liveScore.layerBreakdown.length % 2 !== 0;
 
   return (
-  <div key={layer.layerId} className={cn("group flex flex-col gap-2.5 p-3.5 bg-white hover:bg-slate-50/80 transition-all duration-200 rounded-xl border border-slate-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]", isLastOdd ? "md:col-span-2" : "")}>
+  <div key={layer.layerId} className={cn("group flex flex-col gap-2 p-2.5 bg-white dark:bg-slate-950 hover:bg-slate-50/80 dark:hover:bg-slate-900/80 transition-all duration-200 rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm", isLastOdd ? "md:col-span-2" : "")}>
   <div className="flex justify-between items-center">
-  <span className="font-bold text-slate-700 text-sm truncate" title={getLayerLabel(layer.layerId, t)}>{getLayerLabel(layer.layerId, t)}</span>
-  <span className={cn("text-xs font-bold px-2.5 py-1 rounded-md tracking-wide", isNeg ? "bg-rose-50 text-rose-600" : "bg-slate-100 text-slate-700")}>
+  <span className="font-bold text-slate-700 dark:text-slate-300 text-xs truncate" title={getLayerLabel(layer.layerId, t)}>{getLayerLabel(layer.layerId, t)}</span>
+  <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide", isNeg ? "bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300")}>
   {Math.round(pct)}%
   </span>
   </div>
-  <div className="w-full bg-slate-100/80 rounded-full h-2 overflow-hidden flex shadow-inner">
+  <div className="w-full bg-slate-100/80 dark:bg-slate-800/80 rounded-full h-1.5 overflow-hidden flex shadow-inner">
   <div className={cn("h-full rounded-full transition-all duration-1000 ease-out", barColor)} style={{ width: `${pct}%` }} />
   </div>
   </div>
@@ -457,17 +470,17 @@ export function EvaluationStep() {
  القسم 2: المؤشرات والتوصيات
  ══════════════════════════════════════════════════ */}
  {liveScore && (
- <section className="bg-card border rounded-xl shadow-sm overflow-hidden">
- <div className="p-4 border-b bg-slate-50/50">
- <h3 className="text-base font-bold flex items-center gap-2">
+ <section className="bg-card text-card-foreground border rounded-xl shadow-sm overflow-hidden mt-6">
+ <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+ <h3 className="text-base font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
  <Activity className="w-5 h-5 text-indigo-500" /> {t("wizard.evaluation.indicatorsAndRecommendations")}
  </h3>
  </div>
  <div className="p-4">
  <div className="grid md:grid-cols-2 gap-4">
  {/* Positive Factors */}
- <div className="bg-emerald-50/60 rounded-xl border border-emerald-100 p-4">
- <h4 className="text-sm font-bold text-emerald-800 flex items-center gap-1.5 mb-3">
+ <div className="bg-emerald-50/60 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/50 p-4">
+ <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-500 flex items-center gap-1.5 mb-3">
  <TrendingUp className="w-4 h-4" /> {t("wizard.evaluation.positiveFactors")}
  </h4>
  {liveScore.topPositiveFactors && liveScore.topPositiveFactors.length > 0 ? (
@@ -475,10 +488,10 @@ export function EvaluationStep() {
  {liveScore.topPositiveFactors.map((f: any, i: number) => {
  const val = getFactorValue(f);
  return (
- <div key={i} className="flex justify-between items-center bg-white/70 rounded-lg px-3 py-1.5 border border-emerald-100/50">
- <span className="text-sm text-emerald-900">{getFactorLabel(f, t, tRules)}</span>
+ <div key={i} className="flex justify-between items-center bg-white/70 dark:bg-slate-950/50 rounded-lg px-3 py-1.5 border border-emerald-100/50 dark:border-emerald-900/30">
+ <span className="text-sm text-emerald-900 dark:text-emerald-100/80">{getFactorLabel(f, t, tRules)}</span>
  {val !== null && (
- <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+ <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full">
  +{Math.abs(val).toFixed(2)}
  </span>
  )}
@@ -487,13 +500,13 @@ export function EvaluationStep() {
  })}
  </div>
  ) : (
- <p className="text-sm text-emerald-600/70 italic">{t("wizard.evaluation.noPositiveFactors")}</p>
+ <p className="text-sm text-emerald-600/70 dark:text-emerald-400/70 italic">{t("wizard.evaluation.noPositiveFactors")}</p>
  )}
  </div>
 
  {/* Negative Factors */}
- <div className="bg-rose-50/60 rounded-xl border border-rose-100 p-4">
- <h4 className="text-sm font-bold text-rose-800 flex items-center gap-1.5 mb-3">
+ <div className="bg-rose-50/60 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900/50 p-4">
+ <h4 className="text-sm font-bold text-rose-800 dark:text-rose-500 flex items-center gap-1.5 mb-3">
  <TrendingDown className="w-4 h-4" /> {t("wizard.evaluation.negativeFactors")}
  </h4>
  {liveScore.topNegativeFactors && liveScore.topNegativeFactors.length > 0 ? (
@@ -501,10 +514,10 @@ export function EvaluationStep() {
  {liveScore.topNegativeFactors.map((f: any, i: number) => {
  const val = getFactorValue(f);
  return (
- <div key={i} className="flex justify-between items-center bg-white/70 rounded-lg px-3 py-1.5 border border-rose-100/50">
- <span className="text-sm text-rose-900">{getFactorLabel(f, t, tRules)}</span>
+ <div key={i} className="flex justify-between items-center bg-white/70 dark:bg-slate-950/50 rounded-lg px-3 py-1.5 border border-rose-100/50 dark:border-rose-900/30">
+ <span className="text-sm text-rose-900 dark:text-rose-100/80">{getFactorLabel(f, t, tRules)}</span>
  {val !== null && (
- <span className="text-xs font-mono font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">
+ <span className="text-xs font-mono font-bold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/50 px-2 py-0.5 rounded-full">
  {val.toFixed(2)}
  </span>
  )}
@@ -513,20 +526,20 @@ export function EvaluationStep() {
  })}
  </div>
  ) : (
- <p className="text-sm text-rose-600/70 italic">{t("wizard.evaluation.noNegativeFactors")}</p>
+ <p className="text-sm text-rose-600/70 dark:text-rose-400/70 italic">{t("wizard.evaluation.noNegativeFactors")}</p>
  )}
  </div>
  </div>
 
  {/* Recommendations */}
  {liveScore.recommendations && liveScore.recommendations.length > 0 && (
- <div className="mt-4 bg-blue-50/50 rounded-xl border border-blue-100 p-4">
- <h4 className="text-sm font-bold text-blue-800 flex items-center gap-1.5 mb-2">
+ <div className="mt-4 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-100 dark:border-blue-900/50 p-4">
+ <h4 className="text-sm font-bold text-blue-800 dark:text-blue-500 flex items-center gap-1.5 mb-2">
  <CheckCircle2 className="w-4 h-4" /> {t("wizard.evaluation.systemRecommendations")}
  </h4>
  <ul className="space-y-1">
  {liveScore.recommendations.map((r: string, i: number) => (
- <li key={i} className="text-sm text-blue-800 flex items-start gap-2">
+ <li key={i} className="text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2">
  <span className="text-blue-400 mt-0.5">•</span>
  <span>{r}</span>
  </li>
@@ -549,24 +562,24 @@ export function EvaluationStep() {
  القسم 3: قرار اللجنة
  ══════════════════════════════════════════════════ */}
  {liveScore && (
- <section className="bg-card border rounded-xl shadow-sm overflow-hidden">
- <div className="p-4 border-b bg-indigo-50/30">
- <h3 className="text-base font-bold flex items-center gap-2">
- <ShieldAlert className="w-5 h-5 text-indigo-600" /> {t("wizard.evaluation.committeeDecision")}
+ <section className="bg-card text-card-foreground border rounded-xl shadow-sm overflow-hidden mt-6">
+ <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-indigo-50/30 dark:bg-indigo-950/20">
+ <h3 className="text-base font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+ <ShieldAlert className="w-5 h-5 text-indigo-600 dark:text-indigo-500" /> {t("wizard.evaluation.committeeDecision")}
  </h3>
  </div>
 
  <div className="p-4">
  {isDecisionSaved ? (
- <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-center gap-3 text-emerald-700">
+ <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-lg p-4 flex items-center gap-3 text-emerald-700 dark:text-emerald-500">
  <CheckCircle2 className="w-5 h-5 shrink-0" />
  <div>
  <p className="font-bold">✓ {t("wizard.evaluation.decisionSaved")}</p>
- <p className="text-sm opacity-90 mt-1">{t("wizard.evaluation.decisionSavedDesc")}</p>
+ <p className="text-sm opacity-90 mt-1 dark:text-emerald-400/80">{t("wizard.evaluation.decisionSavedDesc")}</p>
  </div>
  </div>
  ) : (
- <div className="grid gap-5 sm:grid-cols-2">
+ <div className="grid gap-5 md:grid-cols-3 sm:grid-cols-2">
  <div className="space-y-2">
  <Label className="text-sm font-semibold">{t("wizard.evaluation.decisionType")}</Label>
  <Select value={decision.humanDecision} onValueChange={(v) => setDecision({ ...decision, humanDecision: v })}>
@@ -584,14 +597,21 @@ export function EvaluationStep() {
  <div className="space-y-2">
  <Label className="text-sm font-semibold">{t("wizard.evaluation.categoryClass")}</Label>
  <Select value={decision.categoryClass} onValueChange={(v) => setDecision({ ...decision, categoryClass: v })}>
- <SelectTrigger><SelectValue placeholder="" /></SelectTrigger>
- <SelectContent>
- {Object.entries(CATEGORY_LABELS).map(([code, label]) => (
-   <SelectItem key={code} value={code}>
-     {label}
-   </SelectItem>
- ))}
- <SelectItem value="لا يستحق المساعدة" className="text-rose-600 font-bold">لا يستحق المساعدة</SelectItem>
+ <SelectTrigger className={cn(getCategoryColorClass(CATEGORY_LABELS[decision.categoryClass as keyof typeof CATEGORY_LABELS] || decision.categoryClass))}>
+   <SelectValue placeholder="" />
+ </SelectTrigger>
+ <SelectContent className="w-[500px]">
+  <div className="grid grid-cols-3 gap-2 p-1">
+  {Object.entries(CATEGORY_LABELS).map(([code, label]) => {
+    const colorClass = getCategoryColorClass(label);
+    return (
+      <SelectItem key={code} value={code} className={cn("cursor-pointer font-medium border border-transparent shadow-sm", colorClass)}>
+        {label}
+      </SelectItem>
+    );
+  })}
+  <SelectItem value="لا يستحق المساعدة" className="text-rose-600 dark:text-rose-400 font-bold focus:text-rose-700 dark:focus:text-rose-300 col-span-3 mt-2 border-t border-slate-100 dark:border-slate-800 pt-2">لا يستحق المساعدة</SelectItem>
+  </div>
  </SelectContent>
  </Select>
  </div>
@@ -609,7 +629,7 @@ export function EvaluationStep() {
  </Select>
  </div>
 
- <div className="space-y-2 sm:col-span-2">
+ <div className="space-y-2 md:col-span-3 sm:col-span-2">
  <Label className="text-sm font-semibold">{t("wizard.evaluation.decisionNote")}</Label>
  <Textarea
  className="resize-none min-h-[80px]"
@@ -619,7 +639,7 @@ export function EvaluationStep() {
  />
  </div>
 
- <div className="sm:col-span-2 flex justify-end pt-2 border-t">
+ <div className="sm:col-span-2 flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
  <Button onClick={submitDecision} disabled={!decision.humanDecision || !decision.categoryClass} className="min-w-[200px]">
  {t("wizard.evaluation.submitDecision")}
  </Button>
@@ -634,19 +654,17 @@ export function EvaluationStep() {
  المحاكاة (ماذا لو)
  ══════════════════════════════════════════════════ */}
  {liveScore && user?.role === 'ADMIN' && (
- <section>
- <Accordion type="single" collapsible className="bg-card border rounded-xl">
- <AccordionItem value="sim" className="border-none">
- <AccordionTrigger className="text-sm font-semibold hover:no-underline px-4 py-3 flex gap-2">
- <div className="flex items-center gap-2">
- <Play className="w-4 h-4 text-indigo-500" />
- {t("wizard.evaluation.simulation.title")}
- </div>
- <Badge variant="outline" className="text-[10px] mr-auto bg-indigo-50 text-indigo-600 border-indigo-200 font-normal">
- ميزة لمدير النظام فقط
- </Badge>
- </AccordionTrigger>
- <AccordionContent className="space-y-4 pt-1 pb-4 px-4">
+  <section className="bg-card text-card-foreground border rounded-xl shadow-sm overflow-hidden mt-6">
+  <div className="flex items-center justify-between p-4 border-b bg-indigo-50/30 dark:bg-indigo-950/20">
+    <div className="flex items-center gap-2">
+      <Play className="w-5 h-5 text-indigo-500" />
+      <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{t("wizard.evaluation.simulation.title")}</h3>
+    </div>
+    <Badge variant="outline" className="text-xs bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 font-medium">
+    ميزة لمدير النظام فقط
+    </Badge>
+  </div>
+  <div className="p-4 space-y-4">
 
  <p className="text-xs text-muted-foreground">{t("wizard.evaluation.simulation.disclaimer")}</p>
 
@@ -673,14 +691,14 @@ export function EvaluationStep() {
  </div>
 
  {localSimResult && (
- <div className="p-4 border-2 border-indigo-200 bg-indigo-50/30 rounded-xl space-y-3 max-h-48 overflow-y-auto">
- <h4 className="font-bold text-sm text-indigo-800">{t("wizard.evaluation.simulation.results")}</h4>
+ <div className="p-4 border-2 border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-indigo-950/20 rounded-xl space-y-3 max-h-48 overflow-y-auto">
+ <h4 className="font-bold text-sm text-indigo-800 dark:text-indigo-400">{t("wizard.evaluation.simulation.results")}</h4>
 
  <div className="flex items-center gap-3">
- <div className="flex-1 bg-white p-2.5 rounded-lg border text-center relative">
+ <div className="flex-1 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-center relative">
  <p className="text-[10px] text-muted-foreground mb-0.5">{t("wizard.evaluation.simulation.original")}</p>
- <p className="text-lg font-bold mb-1">{Math.round(localSimResult.originalPct)}%</p>
- <Badge className={cn("text-[10px] px-2 py-0 font-normal", ELIGIBILITY_COLORS[localSimResult.origEligibility] || "bg-slate-100 text-slate-800")}>
+ <p className="text-lg font-bold mb-1 dark:text-slate-200">{Math.round(localSimResult.originalPct)}%</p>
+ <Badge className={cn("text-[10px] px-2 py-0 font-normal", ELIGIBILITY_COLORS[localSimResult.origEligibility] || "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300")}>
  {t(`wizard.evaluation.eligibility.${localSimResult.origEligibility}`) || localSimResult.origEligibility}
  </Badge>
  </div>
@@ -702,9 +720,7 @@ export function EvaluationStep() {
  </div>
  )}
 
- </AccordionContent>
- </AccordionItem>
- </Accordion>
+ </div>
  </section>
  )}
 

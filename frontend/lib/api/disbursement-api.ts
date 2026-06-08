@@ -85,6 +85,21 @@ export async function updatePaymentStatus(
   return data.data!
 }
 
+export async function addPayment(monthId: string, householdId: string) {
+  const { data } = await api.post<ApiResponse<MonthlyPayment>>(
+    `/disbursement/${monthId}/payments`,
+    { householdId },
+  )
+  return data.data!
+}
+
+export async function removePayment(monthId: string, paymentId: string) {
+  const { data } = await api.delete<ApiResponse<{ success: boolean }>>(
+    `/disbursement/${monthId}/payments/${paymentId}`,
+  )
+  return data.success
+}
+
 // ─── Simulate ─────────────────────────────────────────────────────────────────
 
 export async function simulateMonth(body: { method: string; totalBudget?: number }) {
