@@ -90,7 +90,9 @@ export function RegionalCompactTable({ regions, loading }: RegionalCompactTableP
           <TableBody>
             {sorted.map((r, idx) => {
               const regionLabel =
-                r.region === "__UNSPECIFIED" ? t("regions.unknown_region") : r.region;
+                r.region === "__UNSPECIFIED" || r.region === "غير محدد"
+                  ? t("regions.unknown_region")
+                  : r.region;
               const loadPct = Math.round((r.familiesCount / maxFam) * 100);
               return (
                 <TableRow

@@ -15,7 +15,6 @@ import { AlertsFeed } from "@/components/dashboard/alerts-feed";
 import { MainChartsGrid } from "@/components/dashboard/main-charts-grid";
 import type { RegionDatum } from "@/components/dashboard/region-overview-card";
 import type { PredictionPayload } from "@/components/dashboard/financial-forecast-strip";
-import type { WorkflowQueueRow } from "@/components/dashboard/workflow-queue-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
@@ -53,24 +52,42 @@ export default function DashboardPage() {
     fetchDashboardBundle();
   }, [fetchDashboardBundle]);
 
-  const queueRows: WorkflowQueueRow[] = Array.isArray((workflow as Record<string, unknown> | null)?.queueRows)
-    ? (workflow as { queueRows: WorkflowQueueRow[] }).queueRows
-    : [];
+  // ── mapping workflow data لـ props الصحيحة ──────────────────────
+  const wf = workflow as Record<string, unknown> | null;
+
+  const recentRows: RecentFamilyRow[] = useMemo(() => {
+    const arr = Array.isArray(wf?.recentFamilies) ? (wf!.recentFamilies as any[]) : [];
+    return arr.map((h) => ({
+      id: h.id,
+      registration_number: h.code || null,
+      region: h.region || null,
+      classification: h.classificationTag || h.humanDecision || null,
+      vulnerabilityIndex: null,
+      social_status: null,
+    }));
+  }, [wf]);
+
+  const priorityRows: PriorityFamilyRow[] = useMemo(() => {
+    const arr = Array.isArray(wf?.priorityFamilies) ? (wf!.priorityFamilies as any[]) : [];
+    return arr.map((s) => ({
+      id: s.id,
+      registration_number: s.code || null,
+      region: s.region || null,
+      classification: s.classificationTag || s.level || null,
+      vulnerabilityIndex: Number(s.score ?? 0),
+    }));
+  }, [wf]);
+
+  const queueRows = Array.isArray(wf?.queueRows) ? (wf!.queueRows as any[]) : [];
+  const backlog = Number(wf?.registrationBacklogFamilies ?? 0);
+  const overdueMedical = Number(wf?.overdueMedicalReviews ?? 0);
+
+  const regionData: RegionDatum[] = useMemo(
+    () => (Array.isArray(regionsOverview) ? (regionsOverview as RegionDatum[]) : []),
+    [regionsOverview]
+  );
 
   const predictionPayload = prediction as PredictionPayload | null;
-
-  const regionData: RegionDatum[] = useMemo(() => Array.isArray(regionsOverview) ? regionsOverview : [], [regionsOverview]);
-
-  const recentRows: RecentFamilyRow[] = Array.isArray((workflow as Record<string, unknown> | null)?.recentFamilies)
-    ? (workflow as { recentFamilies: RecentFamilyRow[] }).recentFamilies
-    : [];
-
-  const priorityRows: PriorityFamilyRow[] = Array.isArray((workflow as Record<string, unknown> | null)?.priorityFamilies)
-    ? (workflow as { priorityFamilies: PriorityFamilyRow[] }).priorityFamilies
-    : [];
-
-  const backlog = Number((workflow as Record<string, unknown> | null)?.registrationBacklogFamilies ?? 0);
-  const overdueMedical = Number((workflow as Record<string, unknown> | null)?.overdueMedicalReviews ?? 0);
 
   const pendingFieldResearchSum = useMemo(
     () => regionData.reduce((s, r) => s + (r.pendingResearch ?? 0), 0),
@@ -88,14 +105,16 @@ export default function DashboardPage() {
   );
 
   const workflowFailed = !!dashboardErrors.workflow;
-
   const statsLoading = loadingDashboard && !dashboardErrors.stats;
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4 px-1 pb-12">
+      {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-0.5">
-          <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">{t("header.title")}</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">
+            {t("header.title")}
+          </h1>
           <p className="text-xs text-muted-foreground md:text-sm">{t("header.subtitle")}</p>
         </div>
         <Button
@@ -110,6 +129,7 @@ export default function DashboardPage() {
         </Button>
       </div>
 
+      {/* Global error */}
       {dashboardError ? (
         <Alert variant="destructive" className="rounded-lg">
           <AlertTitle>{t("common.error")}</AlertTitle>
@@ -117,6 +137,7 @@ export default function DashboardPage() {
         </Alert>
       ) : null}
 
+      {/* Partial failure banner */}
       {partialFailure && !dashboardError ? (
         <Alert className="rounded-lg border-warning/35 bg-warning/8">
           <AlertTitle className="text-xs font-semibold">{t("common.partial_banner")}</AlertTitle>
@@ -133,6 +154,7 @@ export default function DashboardPage() {
         </Alert>
       ) : null}
 
+      {/* ROW 1 — Operational Strip */}
       <OperationalStrip
         submittedNotEvaluated={backlog}
         criticalNotEvaluated={Number(stats?.criticalFamilies ?? 0)}
@@ -143,6 +165,7 @@ export default function DashboardPage() {
         loading={loadingDashboard}
       />
 
+      {/* ROW 2 — Financial Intelligence */}
       <FinancialIntelligenceRow
         monthlySeries={monthlySeries ?? []}
         prediction={predictionPayload}
@@ -150,6 +173,7 @@ export default function DashboardPage() {
         predictionFailed={!!dashboardErrors.prediction}
       />
 
+      {/* ROW 3 — Family Stats */}
       <FamilyStatsStrip
         totalFamilies={Number(stats?.totalFamilies ?? 0)}
         familyClassification={familyClassification ?? []}
@@ -157,6 +181,7 @@ export default function DashboardPage() {
         loading={statsLoading}
       />
 
+      {/* ROW 4 — Analytics Donuts & Charts */}
       <DashboardAnalytics
         familyClassification={familyClassification ?? []}
         classificationExpenses={classificationExpenses ?? []}
@@ -164,16 +189,22 @@ export default function DashboardPage() {
         loading={statsLoading}
       />
 
+      {/* ROW 5 — Performance Charts */}
       <section className="space-y-4 pt-4 border-t">
         <div className="space-y-1">
-          <h2 className="text-xl font-bold text-foreground">تحليلات الأداء الشاملة</h2>
-          <p className="text-sm text-muted-foreground">التوزيع الجغرافي واتجاهات الاستحقاق</p>
+          <h2 className="text-xl font-bold text-foreground">{t("sections.performance_analysis") || "تحليلات الأداء الشاملة"}</h2>
+          <p className="text-sm text-muted-foreground">{t("sections.performance_subtitle") || "التوزيع الجغرافي واتجاهات الاستحقاق"}</p>
         </div>
         <MainChartsGrid />
       </section>
 
-      <RegionalCompactTable regions={regionData} loading={loadingDashboard && !dashboardErrors.regions} />
+      {/* ROW 6 — Regional Table */}
+      <RegionalCompactTable
+        regions={regionData}
+        loading={loadingDashboard && !dashboardErrors.regions}
+      />
 
+      {/* ROW 7 — Action Center */}
       <section className="space-y-2">
         <h2 className="text-sm font-bold text-foreground">{t("sections.action_center")}</h2>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

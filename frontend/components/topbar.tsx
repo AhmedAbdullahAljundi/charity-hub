@@ -8,7 +8,8 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter, usePathname } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { MobileSidebar } from "@/components/app-sidebar";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -40,6 +41,8 @@ function formatRelativeDate(dateStr: string | null | undefined, isRtl: boolean):
 export function Topbar() {
   const t = useTranslations("common");
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const locale = useLocale();
   const isRtl = locale === "ar";
 
@@ -60,7 +63,31 @@ export function Topbar() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const role = user?.role ?? "";
-  const [searchValue, setSearchValue] = useState("");
+
+  const currentSearch = searchParams?.get("search") || "";
+  const [searchValue, setSearchValue] = useState(currentSearch);
+
+  useEffect(() => {
+    setSearchValue(currentSearch);
+  }, [currentSearch]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      if (searchValue !== currentSearch) {
+        if (pathname === "/dashboard/households" || pathname === "/ar/dashboard/households" || pathname === "/en/dashboard/households") {
+          const params = new URLSearchParams(searchParams?.toString() || "");
+          if (searchValue) params.set("search", searchValue);
+          else params.delete("search");
+          params.delete("page");
+          router.replace(`/dashboard/households?${params.toString()}`);
+        } else if (searchValue) {
+          router.push(`/dashboard/households?search=${encodeURIComponent(searchValue.trim())}`);
+        }
+      }
+    }, 400);
+    return () => window.clearTimeout(timeout);
+  }, [searchValue, currentSearch, pathname, router, searchParams]);
+
   const [userPopoverOpen, setUserPopoverOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const unreadCount = notifications.filter((n) => n.unread).length;
@@ -78,15 +105,6 @@ export function Topbar() {
             placeholder={t("topbar.search_placeholder")}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                router.push(
-                  searchValue.trim()
-                    ? `/dashboard/households?search=${encodeURIComponent(searchValue.trim())}`
-                    : `/dashboard/households`
-                );
-              }
-            }}
             className="w-64 lg:w-80 pe-10 bg-secondary border-0 placeholder:text-muted-foreground/60"
           />
         </div>

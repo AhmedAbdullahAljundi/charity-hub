@@ -8,6 +8,7 @@ import Link from "next/link";
 import {
   Users, BarChart3, Target, CheckCircle2, ArrowLeft, ArrowRight,
   Zap, Shield, TrendingUp, Menu, X, LogIn, LogOut, Heart,
+  HeartPulse, ShieldCheck, Settings
 } from "lucide-react";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -205,7 +206,114 @@ export default function HomePage() {
     document.querySelector('#features')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-
+  const bentoFeatures = [
+    {
+      icon: HeartPulse,
+      title: isRtl ? "السجلات الطبية والإعانات" : "Medical Records",
+      desc: isRtl ? "متابعة دقيقة للحالات الطبية المزمنة والحرجة، مع إدارة الاستقطاعات الطبية بشكل دوري." : "Detailed tracking of medical cases and disbursements.",
+      colSpan: "md:col-span-2 lg:col-span-2",
+      mockup: <div className="h-32 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex flex-col gap-3 overflow-hidden relative">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <HeartPulse className="w-5 h-5 text-rose-500" />
+            <div className="h-3 w-20 bg-slate-200 dark:bg-slate-700 rounded"></div>
+          </div>
+          <div className="px-2 py-1 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded text-[10px]">حرج</div>
+        </div>
+        <div className="flex gap-2">
+           <div className="flex-1 h-12 bg-white dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 p-2">
+             <div className="h-2 w-10 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
+             <div className="h-3 w-16 bg-emerald-200 dark:bg-emerald-700 rounded"></div>
+           </div>
+           <div className="flex-1 h-12 bg-white dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 p-2">
+             <div className="h-2 w-12 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
+             <div className="h-3 w-14 bg-blue-200 dark:bg-blue-700 rounded"></div>
+           </div>
+        </div>
+      </div>
+    },
+    {
+      icon: Users,
+      title: isRtl ? "إدارة الأسر والمستفيدين" : "Households",
+      desc: isRtl ? "قاعدة بيانات متكاملة بملفات رقمية لكل أسرة." : "Integrated database with digital profiles.",
+      colSpan: "md:col-span-1 lg:col-span-1",
+      mockup: <div className="h-32 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-blue-500/5"></div>
+        <Users className="w-16 h-16 text-blue-500/20" />
+        <div className="absolute inset-x-4 bottom-4 h-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-slate-200 dark:border-slate-700 rounded flex items-center px-2 gap-2 shadow-sm">
+          <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-[10px] text-blue-600 font-bold">ع</div>
+          <div className="flex flex-col gap-1">
+            <div className="h-2 w-16 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            <div className="h-1.5 w-10 bg-slate-200 dark:bg-slate-700 rounded"></div>
+          </div>
+        </div>
+      </div>
+    },
+    {
+      icon: ShieldCheck,
+      title: isRtl ? "مركز التوثيق" : "Verification",
+      desc: isRtl ? "نظام مراجعة وتوثيق لضمان صحة البيانات الميدانية وتقييم الأولويات." : "A verification system to ensure data accuracy.",
+      colSpan: "md:col-span-1 lg:col-span-1",
+      mockup: <div className="h-32 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex flex-col gap-3 relative overflow-hidden">
+         <div className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded shadow-sm">
+           <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-amber-500" /><div className="h-2 w-12 bg-amber-200 dark:bg-amber-700/50 rounded"></div></div>
+           <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+         </div>
+         <div className="flex items-center justify-between p-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded shadow-sm">
+           <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /><div className="h-2 w-16 bg-emerald-200 dark:bg-emerald-700/50 rounded"></div></div>
+         </div>
+      </div>
+    },
+    {
+      icon: Target,
+      title: isRtl ? "تقييم ذكي متعدد الطبقات" : "Smart Multi-Layer Evaluation",
+      desc: isRtl ? "نظام تقييم يمر عبر 9 طبقات دقيقة لضمان استهداف عادل للأسر، مع محرك قواعد ديناميكي مرن." : "A 9-layer evaluation system ensuring fair targeting, with a dynamic rule editor.",
+      colSpan: "md:col-span-2 lg:col-span-2",
+      mockup: <div className="h-32 bg-slate-900 rounded-lg border border-slate-800 p-4 flex gap-4 overflow-hidden relative shadow-inner">
+        <div className="flex-1 font-mono text-[11px] text-green-400">
+          <div><span className="text-pink-400">if</span> (household.score &lt; <span className="text-purple-400">50</span>) {'{'}</div>
+          <div className="pl-4"><span className="text-blue-400">layerCheck</span>(<span className="text-yellow-300">"MEDICAL"</span>);</div>
+          <div>{'}'}</div>
+          <div className="mt-2 text-slate-500 border-t border-slate-800 pt-2 flex items-center gap-2">
+             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+             {isRtl ? "// جاري تقييم الطبقة 4 من 9..." : "// Evaluating layer 4 of 9..."}
+          </div>
+        </div>
+        <div className="w-16 border-s border-slate-700/50 rtl:border-r rtl:border-s-0 ps-4 rtl:pr-4 flex flex-col justify-center gap-1.5 opacity-80">
+          {[1,2,3,4,5].map(i => (
+             <div key={i} className={`h-2 rounded-full w-full ${i === 4 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-slate-700'}`}></div>
+          ))}
+        </div>
+      </div>
+    },
+    {
+      icon: Heart,
+      title: isRtl ? "إدارة المتطوعين" : "Volunteers",
+      desc: isRtl ? "تتبع المهام وتوجيه المتطوعين الميدانيين لجمع البيانات." : "Track tasks and guide field volunteers.",
+      colSpan: "md:col-span-1 lg:col-span-1",
+      mockup: <div className="h-32 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex flex-col gap-2 justify-center items-center relative">
+         <Heart className="w-8 h-8 text-rose-500 mb-2" />
+         <div className="flex -space-x-2 rtl:space-x-reverse">
+           {["👨🏽", "👩🏽", "👨🏻", "👩🏻"].map((e, i) => (
+             <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[12px]">{e}</div>
+           ))}
+         </div>
+      </div>
+    },
+    {
+      icon: BarChart3,
+      title: isRtl ? "التحليلات المتقدمة" : "Advanced Analytics",
+      desc: isRtl ? "لوحات قياس ذكية تعرض إحصائيات التوزيع والميزانيات." : "Smart dashboards for distribution statistics.",
+      colSpan: "md:col-span-2 lg:col-span-2",
+      mockup: <div className="h-32 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex items-end justify-between gap-3">
+        {[40, 70, 45, 90, 65, 80, 50, 85].map((h, i) => (
+          <div key={i} className="w-full bg-green-200 dark:bg-green-900/50 rounded-t-md relative group transition-all duration-300 hover:bg-green-300 dark:hover:bg-green-800" style={{ height: `${h}%` }}>
+             <div className="absolute bottom-0 w-full bg-green-500 rounded-t-md transition-all duration-500" style={{ height: `max(10%, ${h - 20}%)` }}></div>
+          </div>
+        ))}
+      </div>
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
@@ -274,16 +382,51 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Image */}
-            <div className="relative h-96 lg:h-full min-h-96">
+            {/* Right Image (Live Mockup instead of Image) */}
+            <div className="relative h-96 lg:h-[500px] w-full mt-10 lg:mt-0">
               <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-blue-400/20 rounded-2xl blur-3xl"></div>
-              <Image
-                src="/images/hero-dashboard.png"
-                alt="CharityHub Dashboard"
-                fill
-                className="object-cover rounded-2xl shadow-2xl"
-                priority
-              />
+              <div className="relative h-full w-full rounded-2xl border border-slate-200/50 dark:border-slate-700/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col">
+                <div className="h-10 border-b border-slate-200 dark:border-slate-800 flex items-center px-4 gap-2 bg-slate-50/50 dark:bg-slate-950/50">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                  </div>
+                  <div className="mx-auto w-1/2 h-5 bg-white dark:bg-slate-800 rounded-md shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center">
+                    <span className="text-[10px] text-slate-400">charityhub.app</span>
+                  </div>
+                </div>
+                <div className="flex flex-1 overflow-hidden p-4 gap-4">
+                  <div className="w-32 hidden sm:flex flex-col gap-2 border-e border-slate-200 dark:border-slate-800 pe-4">
+                    {[1,2,3,4].map(i => (
+                      <div key={i} className="h-6 rounded-md bg-slate-100 dark:bg-slate-800/50 w-full animate-pulse flex items-center px-2 gap-2">
+                        <div className="w-3 h-3 rounded bg-slate-200 dark:bg-slate-700"></div>
+                        <div className="h-1.5 rounded bg-slate-200 dark:bg-slate-700 w-12"></div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex-1 flex flex-col gap-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      {[1,2,3].map(i => (
+                        <div key={i} className="h-20 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm p-3 flex flex-col gap-2 justify-center">
+                          <div className="h-2 w-8 bg-slate-100 dark:bg-slate-700 rounded animate-pulse"></div>
+                          <div className="h-4 w-16 bg-slate-200 dark:bg-slate-600 rounded animate-pulse"></div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm p-3 flex flex-col gap-2">
+                      <div className="h-3 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mb-1"></div>
+                      {[1,2,3].map(i => (
+                        <div key={i} className="h-8 w-full bg-slate-50 dark:bg-slate-800/80 rounded border border-slate-100 dark:border-slate-700/50 flex items-center px-2 gap-3">
+                          <div className="h-3 w-3 rounded-full bg-green-200 dark:bg-green-900/50"></div>
+                          <div className="h-1.5 w-20 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                          <div className="h-1.5 w-12 bg-slate-200 dark:bg-slate-700 rounded ms-auto"></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -307,48 +450,30 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Users,
-                title: isRtl ? "إدارة الأسر" : "Household Management",
-                description: isRtl ? "قاعدة بيانات شاملة لجميع الأسر المستفيدة مع تتبع كامل للمعلومات" : "Comprehensive database for all beneficiary households with full tracking",
-                image: '/images/features-households.png',
-              },
-              {
-                icon: Target,
-                title: isRtl ? "تقييم ذكي" : "Smart Evaluation",
-                description: isRtl ? "نظام تقييم متعدد الطبقات لضمان استهداف دقيق وعادل" : "Multi-layer evaluation system ensuring precise and fair targeting",
-                image: '/images/features-targeting.png',
-              },
-              {
-                icon: BarChart3,
-                title: isRtl ? "تحليلات متقدمة" : "Advanced Analytics",
-                description: isRtl ? "رؤى عميقة وتقارير شاملة لاتخاذ قرارات مدروسة" : "Deep insights and comprehensive reports for informed decision-making",
-                image: '/images/features-analytics.png',
-              },
-            ].map((feature) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {bentoFeatures.map((feature) => {
               const Icon = feature.icon;
               return (
                 <div
                   key={feature.title}
-                  className="group bg-slate-50 dark:bg-slate-800 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                  className={`group bg-white dark:bg-slate-800 rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-700 flex flex-col gap-4 ${feature.colSpan}`}
                 >
-                  <div className="relative h-48 mb-6 overflow-hidden rounded-lg">
-                    <Image
-                      src={feature.image}
-                      alt={feature.title}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300 border border-slate-200 dark:border-slate-700"
-                    />
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-green-100 dark:bg-green-950/30 rounded-xl flex items-center justify-center group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
+                      <Icon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                        {feature.title}
+                      </h3>
+                    </div>
                   </div>
-                  <div className="w-12 h-12 bg-green-100 dark:bg-green-950/30 rounded-lg flex items-center justify-center mb-4 group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
-                    <Icon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {feature.desc}
+                  </p>
+                  <div className="mt-auto pt-4">
+                    {feature.mockup}
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-300">{feature.description}</p>
                 </div>
               );
             })}
@@ -499,10 +624,10 @@ export default function HomePage() {
               : "Join us today and start managing social assistance efficiently and transparently"}
           </p>
           <button 
-            onClick={() => setShowLoginModal(true)}
+            onClick={() => setShowContactModal(true)}
             className="px-8 py-4 bg-white hover:bg-green-50 text-green-600 font-bold rounded-lg transition-colors duration-200 inline-flex items-center gap-2"
           >
-            {isRtl ? "ابدأ الآن" : "Start Now"}
+            {isRtl ? "تواصل معنا" : "Contact Us"}
             {isRtl ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
           </button>
         </div>

@@ -1,196 +1,191 @@
 "use client";
 
 import { create } from "zustand";
-import api from "@/lib/api/client";
+import { getDashboardSummary } from "@/lib/api/analytics-api";
 
 /* ─────────── Dashboard Store ─────────── */
-type DashboardEndpointKey = "stats" | "prediction" | "regions" | "workflow" | "expenses" | "financialTrend";
+type DashboardEndpointKey = "summary";
 
 interface DashboardState {
-  stats: any;
-  familyClassification: any;
-  classificationExpenses: any;
-  monthlyIncome: any;
-  monthlyRegistrations: any;
+  stats: {
+    totalFamilies: number;
+    totalNeed: number;
+    criticalFamilies: number;
+    criticalMedical: number;
+    incompleteFamilies: number;
+    pendingDecision: number;
+    fieldVisitRequired: number;
+  };
+  familyClassification: any[];
+  classificationExpenses: any[];
   monthlySeries: any[];
-  financialTrendMonthly: any[];
   prediction: Record<string, unknown> | null;
   regionsOverview: any[];
   workflow: Record<string, unknown> | null;
   loadingDashboard: boolean;
-  /** Set only when every dashboard endpoint failed */
+  /** Set only when the dashboard endpoint failed */
   dashboardError: string | null;
-  /** Per-widget failures; UI can show inline without blocking the page */
-  dashboardErrors: Record<DashboardEndpointKey, string | null>;
+  /** Per-widget failures */
+  dashboardErrors: Record<DashboardEndpointKey, string | null> & {
+    stats: string | null;
+    prediction: string | null;
+    regions: string | null;
+    workflow: string | null;
+    expenses: string | null;
+    financialTrend: string | null;
+  };
   setStats: (stats: any) => void;
   fetchStats: () => Promise<void>;
   fetchDashboardBundle: (force?: boolean) => Promise<void>;
 }
 
-/** Module-level cache: timestamp of the last successful dashboard bundle fetch */
+/** Module-level cache timestamp */
 let _dashboardFetchedAt = 0;
 const DASHBOARD_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+const EMPTY_ERRORS = {
+  summary: null,
+  stats: null,
+  prediction: null,
+  regions: null,
+  workflow: null,
+  expenses: null,
+  financialTrend: null,
+};
 
 export const useDashboardStore = create<DashboardState>()((set, get) => ({
   stats: {
     totalFamilies: 0,
     totalNeed: 0,
-    totalIncome: 0,
-    vulnerabilityIndex: 0,
+    criticalFamilies: 0,
     criticalMedical: 0,
     incompleteFamilies: 0,
-    criticalFamilies: 0,
+    pendingDecision: 0,
+    fieldVisitRequired: 0,
   },
   familyClassification: [],
   classificationExpenses: [],
-  monthlyIncome: [],
-  monthlyRegistrations: [],
   monthlySeries: [],
-  financialTrendMonthly: [],
   prediction: null,
   regionsOverview: [],
   workflow: null,
   loadingDashboard: false,
   dashboardError: null,
-  dashboardErrors: { stats: null, prediction: null, regions: null, workflow: null, expenses: null, financialTrend: null },
+  dashboardErrors: { ...EMPTY_ERRORS },
+
   setStats: (stats) => set({ stats }),
+
   fetchStats: async () => {
     await get().fetchDashboardBundle();
   },
+
   fetchDashboardBundle: async (force = false) => {
     const now = Date.now();
-    // Skip fetch if data is fresh and not forced (e.g. user presses Refresh)
-    if (!force && now - _dashboardFetchedAt < DASHBOARD_TTL_MS && get().stats.totalFamilies > 0) {
+    // Skip fetch if data is fresh and not forced
+    if (
+      !force &&
+      now - _dashboardFetchedAt < DASHBOARD_TTL_MS &&
+      get().stats.totalFamilies > 0
+    ) {
       return;
     }
-    const prev = get();
+
     set({
       loadingDashboard: true,
       dashboardError: null,
-      dashboardErrors: { stats: null, prediction: null, regions: null, workflow: null, expenses: null, financialTrend: null },
+      dashboardErrors: { ...EMPTY_ERRORS },
     });
 
-    const results = await Promise.allSettled([
-      api.get("/analytics/distribution"),
-      api.get("/analytics/regional"),
-      api.get("/analytics/score-trends"),
-      api.get("/analytics/verification-stats"),
-      api.get("/analytics/expense-distribution"),
-      api.get("/analytics/financial-trend"),
-    ]);
+    try {
+      const data = await getDashboardSummary();
 
-    const errors: Record<DashboardEndpointKey, string | null> = {
-      stats: null,
-      prediction: null,
-      regions: null,
-      workflow: null,
-      expenses: null,
-      financialTrend: null,
-    };
+      if (!data) throw new Error("EMPTY_RESPONSE");
 
-    let statsPayload = prev.stats;
-    let familyClassification = prev.familyClassification;
-    let classificationExpenses = prev.classificationExpenses;
-    let monthlySeries = prev.monthlySeries;
-    let financialTrendMonthly = prev.financialTrendMonthly;
-    let monthlyRegistrations = prev.monthlyRegistrations;
-    let monthlyIncome = prev.monthlyIncome;
-    let prediction = prev.prediction;
-    let regionsOverview = prev.regionsOverview;
-    let workflow = prev.workflow;
-
-    const parseOk = (idx: number) => {
-      const r = results[idx];
-      if (r.status !== "fulfilled") return { ok: false as const, reason: "NETWORK" };
-      const body = r.value.data as {
-        success?: boolean;
-        data?: unknown;
-        error?: { code?: string; message?: string };
+      // ── تعيين الـ stats ────────────────────────────────────────────
+      const stats = {
+        totalFamilies: Number(data.stats?.totalFamilies ?? 0),
+        totalNeed: Number(data.stats?.totalNeed ?? data.stats?.pendingDecision ?? 0),
+        criticalFamilies: Number(data.stats?.criticalFamilies ?? 0),
+        criticalMedical: Number(data.stats?.criticalMedical ?? 0),
+        incompleteFamilies: Number(data.stats?.incompleteFamilies ?? 0),
+        pendingDecision: Number(data.stats?.pendingDecision ?? 0),
+        fieldVisitRequired: Number(data.stats?.fieldVisitRequired ?? 0),
       };
-      if (body?.success && body.data !== undefined && body.data !== null)
-        return { ok: true as const, data: body.data };
-      return {
-        ok: false as const,
-        reason: body?.error?.code || body?.error?.message || "API_ERROR",
+
+      // ── تعيين monthlySeries (صيغة صحيحة لـ FinancialIntelligenceRow) ──
+      const monthlySeries = Array.isArray(data.monthlySeries)
+        ? data.monthlySeries.map((row: any) => ({
+            month: String(row.month ?? ""),
+            monthLabelShort: String(row.monthLabelShort ?? row.month ?? ""),
+            householdIncome: Number(row.householdIncome ?? 0),
+            householdExpenses: Number(row.householdExpenses ?? 0),
+            medicalSpend: Number(row.medicalSpend ?? 0),
+          }))
+        : [];
+
+      // ── تعيين prediction ────────────────────────────────────────────
+      const prediction = data.prediction ?? null;
+
+      // ── تعيين regionsOverview (صيغة صحيحة لـ RegionalCompactTable) ──
+      const regionsOverview = Array.isArray(data.regionsOverview)
+        ? data.regionsOverview.map((r: any) => ({
+            region: String(r.region ?? r.governorate ?? "__UNSPECIFIED"),
+            regionKey: String(r.regionKey ?? r.region ?? ""),
+            familiesCount: Number(r.familiesCount ?? r.count ?? 0),
+            pendingResearch: Number(r.pendingResearch ?? 0),
+            criticalCases: Number(r.criticalCases ?? 0),
+            supervisorsCount: Number(r.supervisorsCount ?? 0),
+            averageVulnerability: Number(r.averageVulnerability ?? r.avgPercent ?? 0),
+          }))
+        : [];
+
+      // ── تعيين workflow ──────────────────────────────────────────────
+      const workflow = data.workflow ?? {
+        recentFamilies: [],
+        priorityFamilies: [],
+        queueRows: [],
+        registrationBacklogFamilies: 0,
+        overdueMedicalReviews: 0,
       };
-    };
 
-    const s = parseOk(0);
-    if (s.ok) {
-      familyClassification = Array.isArray((s.data as any)?.byLevel) ? (s.data as any).byLevel : [];
-      // Calculate basic stats from distribution
-      const totalFam = (s.data as any)?.totalHouseholds || familyClassification.reduce((acc, curr: any) => acc + (curr.count || 0), 0);
-      statsPayload = { ...prev.stats, totalFamilies: totalFam };
-    } else {
-      errors.stats = s.reason;
+      // ── تعيين التصنيفات ────────────────────────────────────────────
+      const familyClassification = Array.isArray(data.familyClassification)
+        ? data.familyClassification
+        : [];
+
+      const classificationExpenses = Array.isArray(data.classificationExpenses)
+        ? data.classificationExpenses
+        : [];
+
+      _dashboardFetchedAt = Date.now();
+
+      set({
+        stats,
+        monthlySeries,
+        prediction,
+        regionsOverview,
+        workflow,
+        familyClassification,
+        classificationExpenses,
+        dashboardError: null,
+        dashboardErrors: { ...EMPTY_ERRORS },
+        loadingDashboard: false,
+      });
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.error?.message || err?.message || "LOAD_FAILED";
+      console.error("Dashboard bundle failed:", errMsg);
+      set({
+        dashboardError: errMsg,
+        dashboardErrors: {
+          ...EMPTY_ERRORS,
+          summary: errMsg,
+          stats: errMsg,
+          prediction: errMsg,
+          regions: errMsg,
+          workflow: errMsg,
+        },
+        loadingDashboard: false,
+      });
     }
-
-    const p = parseOk(1);
-    if (p.ok) {
-      regionsOverview = Array.isArray(p.data) ? p.data : [];
-    } else {
-      errors.regions = p.reason;
-    }
-
-    const g = parseOk(2);
-    if (g.ok) {
-      monthlySeries = Array.isArray(g.data) ? g.data : [];
-      // Format trends for dashboard
-      monthlyRegistrations = monthlySeries.map((row: any) => ({
-        month: String(row.month ?? ""),
-        families: Number(row.count ?? 0),
-      }));
-      monthlyIncome = monthlySeries.map((row: any) => ({
-        label: String(row.month ?? ""),
-        amt: Number(row.avg_score ?? 0),
-      }));
-    } else {
-      errors.prediction = g.reason;
-    }
-
-    const w = parseOk(3);
-    if (w.ok) {
-      // For now, map verification stats or keep workflow empty
-      workflow = prev.workflow;
-    } else {
-      errors.workflow = w.reason;
-    }
-
-    const e = parseOk(4);
-    if (e.ok) {
-      classificationExpenses = Array.isArray(e.data) ? e.data : [];
-    } else {
-      errors.expenses = e.reason;
-    }
-
-    const f = parseOk(5);
-    if (f.ok) {
-      financialTrendMonthly = Array.isArray(f.data) ? f.data : [];
-    } else {
-      errors.financialTrend = f.reason;
-    }
-
-    const anyOk = s.ok || p.ok || g.ok || w.ok || e.ok || f.ok;
-    if (!anyOk) {
-      console.error("Dashboard bundle: all endpoints failed", errors);
-    } else {
-      _dashboardFetchedAt = Date.now(); // stamp cache only on partial/full success
-    }
-
-    set({
-      stats: statsPayload,
-      familyClassification,
-      classificationExpenses,
-      monthlySeries,
-      financialTrendMonthly,
-      monthlyRegistrations,
-      monthlyIncome,
-      prediction,
-      regionsOverview,
-      workflow,
-      dashboardErrors: errors,
-      dashboardError: anyOk ? null : "LOAD_FAILED",
-      loadingDashboard: false,
-    });
   },
 }));

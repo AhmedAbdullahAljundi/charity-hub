@@ -133,19 +133,7 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
         </nav>
       </ScrollArea>
 
-      {user && !collapsed && (
-        <div className="border-t border-slate-700 px-4 py-3 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-600 text-white font-semibold text-sm">
-            {user.name.charAt(0)}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm text-white">{user.name}</p>
-            <Badge className="mt-0.5 border-0 bg-slate-700 text-[10px] text-slate-300 hover:bg-slate-700">
-              {user.role}
-            </Badge>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

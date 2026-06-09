@@ -15,3 +15,9 @@ export async function getScoreTrends() {
   const { data } = await api.get<ApiResponse<any>>("/analytics/score-trends");
   return data.data;
 }
+
+export async function getDashboardSummary() {
+  const { data } = await api.get<ApiResponse<any>>("/analytics/dashboard-summary");
+  return data.data;
+}
+

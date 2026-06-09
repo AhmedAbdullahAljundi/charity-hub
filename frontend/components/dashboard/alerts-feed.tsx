@@ -134,7 +134,7 @@ export function AlertsFeed({
       </ul>
       <div className="mt-auto border-t border-border/35 px-3 py-2">
         <Link
-          href="/dashboard/families"
+          href="/dashboard/households"
           className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
         >
           {t("common.view_all")}

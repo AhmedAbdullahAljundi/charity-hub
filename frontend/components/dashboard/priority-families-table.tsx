@@ -75,7 +75,7 @@ export function PriorityFamiliesTable({ rows, loading }: PriorityFamiliesTablePr
                     </TableCell>
                     <TableCell className="py-1.5">
                       <Button asChild size="sm" variant="secondary" className="h-7 rounded-md px-2 text-[10px]">
-                        <Link href={`/dashboard/families/${row.id}`}>{t("tables.action_open")}</Link>
+                        <Link href={`/dashboard/households/${row.id}/view`}>{t("tables.action_open")}</Link>
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -86,7 +86,7 @@ export function PriorityFamiliesTable({ rows, loading }: PriorityFamiliesTablePr
         </div>
         <div className="border-t border-border/35 px-3 py-2">
           <Link
-            href="/dashboard/families"
+            href="/dashboard/households"
             className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
           >
             {t("common.view_all")}

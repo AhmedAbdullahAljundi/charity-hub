@@ -180,7 +180,7 @@ export default function StudentRecordModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editingId ? "تعديل سجل تعليمي حالي" : "إضافة سجل تعليمي جديد"}</DialogTitle>
         </DialogHeader>
@@ -201,18 +201,20 @@ export default function StudentRecordModal({
             {openSection1 && (
               <div className="space-y-4 p-4">
             {!prefillHouseholdId && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                 <div className="space-y-2">
                   <Label>البحث عن الأسرة (باسم الأب، الأم، أو رقم القيد)</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" role="combobox" className="w-full justify-between">
-                        {selectedHousehold ? selectedHousehold.code : "ابحث عن الأسرة..."}
-                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <span className="truncate text-right">
+                          {selectedHousehold ? `${selectedHousehold.code} - ${selectedHousehold.headName || 'بدون اسم'}` : "ابحث عن الأسرة..."}
+                        </span>
+                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0">
-                      <Command>
+                    <PopoverContent className="w-[500px] p-0">
+                      <Command shouldFilter={false}>
                         <CommandInput placeholder="اكتب للبحث..." value={householdQuery} onValueChange={setHouseholdQuery} />
                         <CommandList>
                           <CommandEmpty>لم يتم العثور على أسر.</CommandEmpty>
@@ -244,10 +246,18 @@ export default function StudentRecordModal({
                 <div className="space-y-2">
                   <Label>اسم الطالب</Label>
                   <Select value={formData.personId} onValueChange={(v) => setFormData({...formData, personId: v})}>
-                    <SelectTrigger><SelectValue placeholder="اختر الطالب" /></SelectTrigger>
-                    <SelectContent>
+                    <SelectTrigger className="w-full">
+                      <span className="truncate text-right w-full pr-1">
+                        <SelectValue placeholder="اختر الطالب" />
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent className="w-[400px]">
                       {persons.map(p => (
-                        <SelectItem key={p.id} value={p.id}>{p.name} (السن: {p.age})</SelectItem>
+                        <SelectItem key={p.id} value={p.id}>
+                          <span className="truncate text-right w-full block pr-1">
+                            {p.name} (السن: {p.age})
+                          </span>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

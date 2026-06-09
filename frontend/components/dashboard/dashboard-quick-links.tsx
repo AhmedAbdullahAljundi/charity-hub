@@ -9,10 +9,10 @@ export function DashboardQuickLinks() {
   const t = useTranslations("dashboard");
 
   const links = [
-    { href: "/dashboard/families", label: t("action.register_family"), icon: ClipboardPlus },
-    { href: "/dashboard/families", label: t("action.families_board"), icon: Users },
-    { href: "/dashboard/medical", label: t("action.medical_dashboard"), icon: Activity },
-    { href: "/dashboard/reports", label: t("action.reports_placeholder"), icon: FileBarChart },
+    { href: "/dashboard/households/new", label: t("action.register_family"), icon: ClipboardPlus },
+    { href: "/dashboard/households",     label: t("action.families_board"),   icon: Users },
+    { href: "/dashboard/medical",        label: t("action.medical_dashboard"), icon: Activity },
+    { href: "/dashboard/reports",        label: t("action.reports_placeholder"), icon: FileBarChart },
   ];
 
   return (

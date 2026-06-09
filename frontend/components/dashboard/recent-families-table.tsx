@@ -71,7 +71,7 @@ export function RecentFamiliesTable({ rows, loading }: RecentFamiliesTableProps)
                     </TableCell>
                     <TableCell className="py-1.5">
                       <Button asChild size="sm" variant="ghost" className="h-7 rounded-md px-2 text-[10px]">
-                        <Link href={`/dashboard/families/${row.id}`}>{t("workflow.view_family")}</Link>
+                        <Link href={`/dashboard/households/${row.id}/view`}>{t("workflow.view_family")}</Link>
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -82,7 +82,7 @@ export function RecentFamiliesTable({ rows, loading }: RecentFamiliesTableProps)
         </div>
         <div className="border-t border-border/35 px-3 py-2">
           <Link
-            href="/dashboard/families"
+            href="/dashboard/households"
             className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
           >
             {t("common.view_all")}

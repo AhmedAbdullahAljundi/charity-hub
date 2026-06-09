@@ -50,4 +50,11 @@ module.exports = {
       next(e);
     }
   },
+  dashboardSummary: async (req, res, next) => {
+    try {
+      res.json({ success: true, data: await analyticsService.dashboardSummary() });
+    } catch (e) {
+      next(e);
+    }
+  },
 };

@@ -17,6 +17,7 @@ router.get('/score-trends', controller.scoreTrends);
 router.get('/verification-stats', controller.verificationStats);
 router.get('/expense-distribution', controller.expenseDistribution);
 router.get('/financial-trend', controller.financialTrend);
+router.get('/dashboard-summary', controller.dashboardSummary);
 
 // Export feature
 router.get('/export/:type', exportController.downloadPreset);

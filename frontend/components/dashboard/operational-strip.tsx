@@ -32,7 +32,7 @@ function StripCard({
   label,
   value,
   tone = "default",
-  href = "/dashboard/families",
+  href = "/dashboard/households",
 }: {
   icon: React.ElementType;
   label: string;

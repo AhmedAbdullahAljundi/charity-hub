@@ -85,22 +85,34 @@ function AnalyticsGridInner({
   const t = useTranslations("dashboard");
   const gradId = React.useId().replace(/:/g, "");
 
+  const getClassLabel = React.useCallback(
+    (key: string | undefined) => {
+      if (!key) return "?";
+      try {
+        return t(`classification.${key}` as any);
+      } catch {
+        return key;
+      }
+    },
+    [t]
+  );
+
   const pieClass = React.useMemo(
     () =>
       (familyClassification || []).map((c) => ({
         ...c,
-        name: c.classificationKey ? t(`classification.${c.classificationKey}` as const) : "?",
+        name: getClassLabel(c.classificationKey),
       })),
-    [familyClassification, t]
+    [familyClassification, getClassLabel]
   );
 
   const pieExpense = React.useMemo(
     () =>
       (classificationExpenses || []).map((c) => ({
         ...c,
-        name: c.classificationKey ? t(`classification.${c.classificationKey}` as const) : "?",
+        name: getClassLabel(c.classificationKey),
       })),
-    [classificationExpenses, t]
+    [classificationExpenses, getClassLabel]
   );
 
   const trendPayload = React.useMemo(() => monthlySeries ?? [], [monthlySeries]);

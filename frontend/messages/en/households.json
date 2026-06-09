@@ -605,6 +605,12 @@
         "personSelect": "Select member",
         "noName": "No name",
         "treatmentCost": "Treatment Cost",
+        "treatmentOptions": {
+          "none": "None / Minimal",
+          "cheap": "Periodic and inexpensive",
+          "expensive": "Periodic and expensive",
+          "veryExpensive": "Periodic and very expensive"
+        },
         "treatmentCostOptions": {
           "none": "None/Minimal",
           "periodicCheap": "Periodic and inexpensive",
@@ -613,14 +619,15 @@
         },
         "followup": "Medical Follow-up",
         "followupOptions": {
-          "noneOrRare": "None/Rare",
-          "periodicRegular": "Regular periodic visits",
-          "periodicExpensive": "Expensive periodic visits"
+          "none": "None / Rare",
+          "regular": "Regular periodic visits",
+          "expensive": "Expensive periodic visits"
         },
         "workImpact": "Impact on Work",
         "workImpactOptions": {
           "none": "No impact",
           "slight": "Slightly limiting",
+          "severe": "Greatly affects but can work",
           "severeButWorking": "Greatly affects but can work",
           "cannotWork": "Cannot work"
         },
@@ -629,6 +636,7 @@
       },
       "disability": {
         "description": "Disability Description",
+        "desc": "Disability Description",
         "person": "Disabled Person",
         "personSelect": "Select member",
         "noName": "No name",
@@ -636,13 +644,16 @@
         "workImpactOptions": {
           "none": "No hindrance",
           "slight": "Slightly limiting",
+          "special": "Requires special work",
           "requiresSpecial": "Requires special work",
           "cannotWork": "Completely unable"
         },
         "companion": "Need for Companion",
         "companionOptions": {
           "none": "Not needed",
+          "outside": "Companion outside home only",
           "outsideOnly": "Companion outside home only",
+          "full": "Fully dependent on companion",
           "fullDependence": "Fully dependent on companion"
         },
         "treatmentCost": "Treatment Cost (Devices/Treatment)",

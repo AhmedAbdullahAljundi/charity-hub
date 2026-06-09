@@ -9,13 +9,15 @@
     "financial_kpis_monthly": "Monthly financial indicators",
     "family_stats": "Family statistics",
     "analytics": "Analytics & charts",
-    "regions": "Regional monitoring",
+    "regions": "Field monitoring",
     "action_center": "Action center",
     "smart_alerts": "Smart alerts panel",
     "command_strip": "Operations",
     "financial_intel": "Financial intelligence",
     "core_analytics": "Core analytics",
-    "activity_feed": "Latest alerts"
+    "activity_feed": "Latest alerts",
+    "performance_analysis": "Comprehensive performance analytics",
+    "performance_subtitle": "Geographic distribution and vulnerability trends by area"
   },
   "strip": {
     "pending_evaluations": "Pending evaluations",
@@ -108,7 +110,17 @@
     "FRAGILE": "Fragile",
     "WEAK": "Weak",
     "MODERATE": "Moderate",
-    "OUT_OF_PRIORITY": "Out of prioritisation"
+    "OUT_OF_PRIORITY": "Out of prioritisation",
+    "CRITICAL": "Critical",
+    "HIGH_NEED": "High need",
+    "MODERATE_NEED": "Moderate need",
+    "LOW_NEED": "Low need",
+    "NOT_ELIGIBLE": "Not eligible",
+    "PENDING": "Pending review",
+    "NEEDS_REVIEW": "Needs review",
+    "ESCALATED": "Escalated",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected"
   },
   "regions": {
     "title_hint": "Field density & coordinators derived from relational truth",

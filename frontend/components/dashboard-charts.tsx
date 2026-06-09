@@ -36,8 +36,14 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 }
 
 export function DashboardCharts() {
-  const { familyClassification, classificationExpenses, monthlyRegistrations } = useDashboardStore();
+  const { familyClassification, classificationExpenses, monthlySeries } = useDashboardStore();
   const tCharts = useTranslations("dashboard.charts");
+
+  // بناء monthlyRegistrations من monthlySeries
+  const monthlyRegistrations = (monthlySeries ?? []).map((row: any) => ({
+    month: row.monthLabelShort || row.month || "",
+    families: Number(row.householdIncome ?? 0),
+  }));
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

@@ -20,7 +20,7 @@ export function ActionCenter() {
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 pb-8">
         <Button asChild className="h-auto rounded-2xl text-start px-6 py-5 flex-col items-start shadow-sm gap-4 bg-background hover:bg-background/92 border hover:border-primary/40 transition-colors">
-          <Link href="/dashboard/families">
+          <Link href="/dashboard/households/new">
             <div className="flex items-start gap-3 w-full justify-between">
               <div className="space-y-1 text-start rtl:text-start">
                 <p className="text-xs uppercase font-bold text-muted-foreground tracking-wider">{t("action.open_intake_route")}</p>
@@ -31,7 +31,7 @@ export function ActionCenter() {
           </Link>
         </Button>
         <Button asChild variant="secondary" className="h-auto rounded-2xl px-6 py-5 flex-col shadow-sm hover:shadow-lg transition-all">
-          <Link href="/dashboard/families">
+          <Link href="/dashboard/households">
             <div className="flex gap-4 items-start rtl:flex-row-reverse w-full">
               <Users className="h-8 w-8 text-muted-foreground" />
               <div className="text-start rtl:text-start space-y-1">

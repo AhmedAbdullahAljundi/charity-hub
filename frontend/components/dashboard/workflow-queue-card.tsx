@@ -71,7 +71,7 @@ export function WorkflowQueueCard({ rows = [], loading }: WorkflowQueueCardProps
                 </div>
               </div>
               <Button asChild variant="outline" size="sm" className="shrink-0 rounded-xl">
-                <Link href={`/dashboard/families/${r.id}`}>{t("workflow.view_family")}</Link>
+                <Link href={`/dashboard/households/${r.id}/view`}>{t("workflow.view_family")}</Link>
               </Button>
             </div>
           ))

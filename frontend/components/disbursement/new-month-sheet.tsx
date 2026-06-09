@@ -498,11 +498,12 @@ function MetricTile({
   value,
   accent,
   suffix,
-  icon
+  icon,
+  description
 }: {
   label: string
   value: string
-  accent?: 'emerald' | 'amber' | 'rose'
+  accent?: 'emerald' | 'amber' | 'rose' | 'indigo'
   suffix?: string
   icon?: 'users' | 'wallet' | 'average' | 'trending-up'
   description?: string

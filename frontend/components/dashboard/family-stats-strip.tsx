@@ -31,13 +31,17 @@ export function FamilyStatsStrip({
   const t = useTranslations("dashboard");
   const slices = familyClassification ?? [];
 
-  const outPriority = countForKey(slices, "OUT_OF_PRIORITY");
-  const veryFragile = countForKey(slices, "VERY_FRAGILE");
-  const fragile = countForKey(slices, "FRAGILE");
+  // دعم مفتاحَي التصنيف: القديم (OUT_OF_PRIORITY/VERY_FRAGILE) والجديد (CRITICAL/HIGH_NEED)
+  const getVal = (keys: string[]) =>
+    keys.reduce((sum, k) => sum + (slices.find((s) => s.classificationKey === k)?.value ?? 0), 0);
+
+  const outPriority = getVal(["OUT_OF_PRIORITY", "NOT_ELIGIBLE"]);
+  const veryFragile = getVal(["VERY_FRAGILE", "CRITICAL"]);
+  const fragile = getVal(["FRAGILE", "HIGH_NEED"]);
   const criticalBand = veryFragile + fragile;
   const extremelyNeedy = veryFragile;
-  const moderate = countForKey(slices, "MODERATE");
-  const weak = countForKey(slices, "WEAK");
+  const moderate = getVal(["MODERATE", "MODERATE_NEED"]);
+  const weak = getVal(["WEAK", "LOW_NEED"]);
   const averageBand = moderate + weak;
 
   const pct = (n: number) => (totalFamilies > 0 ? ((n / totalFamilies) * 100).toFixed(1) : "0");

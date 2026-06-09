@@ -9,13 +9,15 @@
     "financial_kpis_monthly": "المؤشرات المالية الشهرية",
     "family_stats": "إحصائيات الأسر",
     "analytics": "تحليلات وبيانات",
-    "regions": "المراقبة الإقليمية",
+    "regions": "المراقبة الميدانية",
     "action_center": "مركز الإجراءات",
     "smart_alerts": "لوحة التنبيهات الذكية",
     "command_strip": "التشغيل",
     "financial_intel": "ذكاء مالي",
     "core_analytics": "التحليلات الأساسية",
-    "activity_feed": "آخر التنبيهات"
+    "activity_feed": "آخر التنبيهات",
+    "performance_analysis": "تحليلات الأداء الشاملة",
+    "performance_subtitle": "التوزيع الجغرافي واتجاهات الاستحقاق حسب المنطقة"
   },
   "strip": {
     "pending_evaluations": "تقييمات معلّقة",
@@ -108,7 +110,17 @@
     "FRAGILE": "هشّ",
     "WEAK": "ضعيف",
     "MODERATE": "متوسط",
-    "OUT_OF_PRIORITY": "خارج الأولوية النسبية"
+    "OUT_OF_PRIORITY": "خارج الأولوية النسبية",
+    "CRITICAL": "حرجة جداً",
+    "HIGH_NEED": "احتياج عالي",
+    "MODERATE_NEED": "احتياج متوسط",
+    "LOW_NEED": "احتياج منخفض",
+    "NOT_ELIGIBLE": "غير مستحق",
+    "PENDING": "قيد المراجعة",
+    "NEEDS_REVIEW": "يحتاج مراجعة",
+    "ESCALATED": "مُصعَّد",
+    "APPROVED": "مقبول",
+    "REJECTED": "مرفوض"
   },
   "regions": {
     "title_hint": "مقاييس حقولية ومشرفين حسب عنوان المنطقة",
