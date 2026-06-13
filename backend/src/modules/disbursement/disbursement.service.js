@@ -774,6 +774,17 @@ const disbursementService = {
     return repo.getAllGrantConfigs();
   },
 
+  async createGrantConfig(user, data) {
+    if (!data.code || !data.nameAr) {
+      throw new ValidationError('Missing required fields: code and nameAr are required');
+    }
+    const existing = await prisma.grantConfig.findUnique({ where: { code: data.code } });
+    if (existing) {
+      throw new ConflictError(`Grant with code ${data.code} already exists`);
+    }
+    return repo.upsertGrantConfig(data);
+  },
+
   async updateGrantConfig(user, code, data) {
     const cfg = await prisma.grantConfig.findUnique({ where: { code } });
     if (!cfg) throw new NotFoundError('GrantConfig');

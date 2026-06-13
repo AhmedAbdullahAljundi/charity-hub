@@ -141,6 +141,11 @@ export async function getGrantConfigs() {
   return data.data ?? []
 }
 
+export async function createGrantConfig(body: Partial<GrantConfig>) {
+  const { data } = await api.post<ApiResponse<GrantConfig>>('/disbursement/config/grants', body)
+  return data.data!
+}
+
 export async function updateGrantConfig(code: string, body: Partial<GrantConfig>) {
   const { data } = await api.put<ApiResponse<GrantConfig>>(
     `/disbursement/config/grants/${code}`,

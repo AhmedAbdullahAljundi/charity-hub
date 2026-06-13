@@ -33,7 +33,7 @@ function LandingNavbar({
 
   const navLinks = [
     { href: "#features", label: isRtl ? "المميزات" : "Features" },
-    { href: "#about",    label: isRtl ? "حول النظام" : "About" },
+    { href: "#about", label: isRtl ? "حول النظام" : "About" },
     { href: "#how-it-works", label: isRtl ? "كيفية الاستخدام" : "How It Works" },
     { action: "contact", label: isRtl ? "تواصل معنا" : "Contact" },
   ];
@@ -53,7 +53,7 @@ function LandingNavbar({
               <Heart className="w-5 h-5 text-white" fill="white" />
             </div>
             <div>
-              <div className="flex items-baseline gap-0.5">
+              <div className="flex items-baseline gap-0.5" dir="ltr">
                 <span className="text-base font-bold text-slate-900 dark:text-white">Charity</span>
                 <span className="text-base font-bold text-green-500">Hub</span>
               </div>
@@ -221,14 +221,14 @@ export default function HomePage() {
           <div className="px-2 py-1 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded text-[10px]">حرج</div>
         </div>
         <div className="flex gap-2">
-           <div className="flex-1 h-12 bg-white dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 p-2">
-             <div className="h-2 w-10 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
-             <div className="h-3 w-16 bg-emerald-200 dark:bg-emerald-700 rounded"></div>
-           </div>
-           <div className="flex-1 h-12 bg-white dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 p-2">
-             <div className="h-2 w-12 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
-             <div className="h-3 w-14 bg-blue-200 dark:bg-blue-700 rounded"></div>
-           </div>
+          <div className="flex-1 h-12 bg-white dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 p-2">
+            <div className="h-2 w-10 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
+            <div className="h-3 w-16 bg-emerald-200 dark:bg-emerald-700 rounded"></div>
+          </div>
+          <div className="flex-1 h-12 bg-white dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 p-2">
+            <div className="h-2 w-12 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
+            <div className="h-3 w-14 bg-blue-200 dark:bg-blue-700 rounded"></div>
+          </div>
         </div>
       </div>
     },
@@ -255,13 +255,13 @@ export default function HomePage() {
       desc: isRtl ? "نظام مراجعة وتوثيق لضمان صحة البيانات الميدانية وتقييم الأولويات." : "A verification system to ensure data accuracy.",
       colSpan: "md:col-span-1 lg:col-span-1",
       mockup: <div className="h-32 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex flex-col gap-3 relative overflow-hidden">
-         <div className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded shadow-sm">
-           <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-amber-500" /><div className="h-2 w-12 bg-amber-200 dark:bg-amber-700/50 rounded"></div></div>
-           <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-         </div>
-         <div className="flex items-center justify-between p-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded shadow-sm">
-           <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /><div className="h-2 w-16 bg-emerald-200 dark:bg-emerald-700/50 rounded"></div></div>
-         </div>
+        <div className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded shadow-sm">
+          <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-amber-500" /><div className="h-2 w-12 bg-amber-200 dark:bg-amber-700/50 rounded"></div></div>
+          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+        </div>
+        <div className="flex items-center justify-between p-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded shadow-sm">
+          <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /><div className="h-2 w-16 bg-emerald-200 dark:bg-emerald-700/50 rounded"></div></div>
+        </div>
       </div>
     },
     {
@@ -275,13 +275,13 @@ export default function HomePage() {
           <div className="pl-4"><span className="text-blue-400">layerCheck</span>(<span className="text-yellow-300">"MEDICAL"</span>);</div>
           <div>{'}'}</div>
           <div className="mt-2 text-slate-500 border-t border-slate-800 pt-2 flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-             {isRtl ? "// جاري تقييم الطبقة 4 من 9..." : "// Evaluating layer 4 of 9..."}
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            {isRtl ? "// جاري تقييم الطبقة 4 من 9..." : "// Evaluating layer 4 of 9..."}
           </div>
         </div>
         <div className="w-16 border-s border-slate-700/50 rtl:border-r rtl:border-s-0 ps-4 rtl:pr-4 flex flex-col justify-center gap-1.5 opacity-80">
-          {[1,2,3,4,5].map(i => (
-             <div key={i} className={`h-2 rounded-full w-full ${i === 4 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-slate-700'}`}></div>
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className={`h-2 rounded-full w-full ${i === 4 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-slate-700'}`}></div>
           ))}
         </div>
       </div>
@@ -292,12 +292,12 @@ export default function HomePage() {
       desc: isRtl ? "تتبع المهام وتوجيه المتطوعين الميدانيين لجمع البيانات." : "Track tasks and guide field volunteers.",
       colSpan: "md:col-span-1 lg:col-span-1",
       mockup: <div className="h-32 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex flex-col gap-2 justify-center items-center relative">
-         <Heart className="w-8 h-8 text-rose-500 mb-2" />
-         <div className="flex -space-x-2 rtl:space-x-reverse">
-           {["👨🏽", "👩🏽", "👨🏻", "👩🏻"].map((e, i) => (
-             <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[12px]">{e}</div>
-           ))}
-         </div>
+        <Heart className="w-8 h-8 text-rose-500 mb-2" />
+        <div className="flex -space-x-2 rtl:space-x-reverse">
+          {["👨🏽", "👩🏽", "👨🏻", "👩🏻"].map((e, i) => (
+            <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[12px]">{e}</div>
+          ))}
+        </div>
       </div>
     },
     {
@@ -308,7 +308,7 @@ export default function HomePage() {
       mockup: <div className="h-32 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex items-end justify-between gap-3">
         {[40, 70, 45, 90, 65, 80, 50, 85].map((h, i) => (
           <div key={i} className="w-full bg-green-200 dark:bg-green-900/50 rounded-t-md relative group transition-all duration-300 hover:bg-green-300 dark:hover:bg-green-800" style={{ height: `${h}%` }}>
-             <div className="absolute bottom-0 w-full bg-green-500 rounded-t-md transition-all duration-500" style={{ height: `max(10%, ${h - 20}%)` }}></div>
+            <div className="absolute bottom-0 w-full bg-green-500 rounded-t-md transition-all duration-500" style={{ height: `max(10%, ${h - 20}%)` }}></div>
           </div>
         ))}
       </div>
@@ -317,8 +317,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
-      <LandingNavbar 
-        onLoginClick={() => setShowLoginModal(true)} 
+      <LandingNavbar
+        onLoginClick={() => setShowLoginModal(true)}
         onContactClick={() => setShowContactModal(true)}
       />
 
@@ -343,7 +343,7 @@ export default function HomePage() {
                   {isRtl ? "نظام استهداف المساعدات الاجتماعية" : "Social Assistance Targeting Platform"}
                 </p>
                 <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {isRtl 
+                  {isRtl
                     ? "منصة متكاملة لإدارة وتوزيع المساعدات الاجتماعية بكفاءة عالية، تستخدم تقييم متعدد الطبقات لضمان وصول المساعدات للأحق بها."
                     : "An integrated platform for managing social assistance distribution, using multi-layer evaluation to ensure aid reaches those most in need."}
                 </p>
@@ -357,7 +357,7 @@ export default function HomePage() {
                   {isRtl ? "ابدأ الآن" : "Get Started"}
                   {isRtl ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
                 </button>
-                <button 
+                <button
                   onClick={() => setShowLoginModal(true)}
                   className="px-8 py-4 border-2 border-slate-300 dark:border-slate-600 hover:border-green-500 dark:hover:border-green-400 text-slate-900 dark:text-white font-bold rounded-lg transition-colors duration-200"
                 >
@@ -382,7 +382,20 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Image (Live Mockup instead of Image) */}
+            {/* Right Image */}
+            <div className="relative w-full mt-10 lg:mt-0 flex justify-center items-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-blue-400/20 rounded-2xl blur-3xl"></div>
+              <Image
+                src="/hero-dashboard1.png"
+                alt="CharityHub Dashboard Preview"
+                width={1200}
+                height={800}
+                className="relative w-full h-auto rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 z-10"
+                priority
+              />
+            </div>
+
+            {/* Right Image (Live Mockup instead of Image) - Commented out for future reference 
             <div className="relative h-96 lg:h-[500px] w-full mt-10 lg:mt-0">
               <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-blue-400/20 rounded-2xl blur-3xl"></div>
               <div className="relative h-full w-full rounded-2xl border border-slate-200/50 dark:border-slate-700/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col">
@@ -428,6 +441,7 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+            */}
           </div>
         </div>
       </section>
@@ -499,7 +513,7 @@ export default function HomePage() {
                   {isRtl ? "نظام معياري عالمي" : "Global Standard System"}
                 </h2>
                 <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
-                  {isRtl 
+                  {isRtl
                     ? "CharityHub يتبع أفضل الممارسات العالمية في إدارة المساعدات الاجتماعية، مع تصميم يراعي الخصوصيات المحلية."
                     : "CharityHub follows global best practices in managing social assistance, designed to respect local specificities."}
                 </p>
@@ -619,11 +633,11 @@ export default function HomePage() {
             {isRtl ? "هل أنت مستعد للبدء؟" : "Are you ready to start?"}
           </h2>
           <p className="text-lg text-green-50 mb-8">
-            {isRtl 
+            {isRtl
               ? "انضم إلينا اليوم وابدأ في إدارة المساعدات الاجتماعية بكفاءة وشفافية"
               : "Join us today and start managing social assistance efficiently and transparently"}
           </p>
-          <button 
+          <button
             onClick={() => setShowContactModal(true)}
             className="px-8 py-4 bg-white hover:bg-green-50 text-green-600 font-bold rounded-lg transition-colors duration-200 inline-flex items-center gap-2"
           >
@@ -653,8 +667,8 @@ export default function HomePage() {
               {
                 title: isRtl ? "الروابط" : "Links",
                 links: [
-                  { href: "#features",     label: isRtl ? "المميزات" : "Features" },
-                  { href: "#about",        label: isRtl ? "حول النظام" : "About" },
+                  { href: "#features", label: isRtl ? "المميزات" : "Features" },
+                  { href: "#about", label: isRtl ? "حول النظام" : "About" },
                   { href: "#how-it-works", label: isRtl ? "كيفية الاستخدام" : "How It Works" },
                 ],
               },
@@ -698,7 +712,7 @@ export default function HomePage() {
 
           <div className="border-t border-slate-800 pt-8 text-center text-sm text-slate-400">
             <p>
-              {isRtl 
+              {isRtl
                 ? "© 2024 CharityHub. جميع الحقوق محفوظة. | تم تطويره بعناية لخدمة المجتمع"
                 : "© 2024 CharityHub. All rights reserved. | Carefully developed to serve the community"}
             </p>

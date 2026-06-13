@@ -99,7 +99,7 @@ export function PersonsStep() {
  const householdId = useWizardStore((s) => s.householdId);
  const fd = useWizardStore((s) => s.formData);
  const members = fd.members ?? [];
- const displayMembers = [
+ const displayMembersRaw = [
   ...(fd.head?.name ? [{ ...fd.head, id: fd.head.personId, _isHeadOrSpouse: true, role: "HEAD" as const }] : []),
   ...(fd.wifeName && fd.socialStatus !== "SINGLE_OTHER" ? [{
     id: fd.wifePersonId,
@@ -114,6 +114,16 @@ export function PersonsStep() {
   }] : []),
   ...members
  ];
+
+ const seenIds = new Set();
+ const displayMembers = displayMembersRaw.filter((m: any) => {
+   const key = m.id || m._localKey;
+   if (key) {
+     if (seenIds.has(key)) return false;
+     seenIds.add(key);
+   }
+   return true;
+ });
  const setField = useWizardStore((s) => s.setField);
  const flags = useWizardStore((s) => s.conditionalFlags);
  const autoSave = useWizardStore((s) => s.autoSave);
@@ -736,7 +746,7 @@ export function PersonsStep() {
             </span>
             
             {/* Marital Status */}
-            {m.maritalStatus && !(m.maritalStatus === "MARRIED" && (mappedRole === "HEAD" || mappedRole === "SPOUSE")) && (
+            {m.maritalStatus && mappedRole !== "HEAD" && mappedRole !== "SPOUSE" && (
               <span className="px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium leading-none">
                 {t("wizard.persons.maritalOptions." + m.maritalStatus.toLowerCase())}
               </span>

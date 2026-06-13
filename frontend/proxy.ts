@@ -5,9 +5,15 @@ export default createMiddleware(routing);
 
 export const config = {
   matcher: [
-    // Match only the root path for initial redirection.
-    // By excluding /(ar|en)/:path*, we bypass the middleware on every navigation
-    // which restores the "instant" client-side routing speed.
+    // Enable a redirect to a matching locale at the root
     "/",
-  ],
+
+    // Set a cookie to remember the previous locale for
+    // all requests that have a locale prefix
+    "/(ar|en)/:path*",
+
+    // Enable redirects that add a locale to any path
+    // (e.g. /dashboard/reports -> /ar/dashboard/reports)
+    "/((?!_next|_vercel|.*\\..*).*)"
+  ]
 };

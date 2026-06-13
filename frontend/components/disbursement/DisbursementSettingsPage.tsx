@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CategoryBadge } from '@/components/disbursement/category-badge'
 import { formatAmount } from '@/lib/disbursement/types'
-import { getCategoryConfigs, getGrantConfigs, updateCategoryConfig, updateGrantConfig } from '@/lib/api/disbursement-api'
+import { getCategoryConfigs, getGrantConfigs, updateCategoryConfig, updateGrantConfig, createGrantConfig } from '@/lib/api/disbursement-api'
 import type { CategoryConfig, GrantConfig } from '@/lib/disbursement/types'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -237,6 +237,130 @@ function EditGrantDialog({
   )
 }
 
+// ─── Create Grant Dialog ──────────────────────────────────────────────────────
+
+function CreateGrantDialog({
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  onSaved: () => void
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formData, setFormData] = useState({
+    code: '',
+    nameAr: '',
+    amount: '',
+    type: 'MONTHLY',
+    condition: 'isOrphan',
+    active: true
+  })
+
+  const handleSave = async () => {
+    setIsSubmitting(true)
+    try {
+      await createGrantConfig({
+        code: formData.code,
+        nameAr: formData.nameAr,
+        nameEn: formData.code, // default to code
+        amount: formData.amount as any,
+        type: formData.type as any,
+        condition: formData.condition,
+        active: formData.active
+      })
+      onSaved()
+      onOpenChange(false)
+      // Reset form
+      setFormData({ code: '', nameAr: '', amount: '', type: 'MONTHLY', condition: 'isOrphan', active: true })
+    } catch (e: any) {
+      console.error(e)
+      alert(e.response?.data?.error?.message || e.message || 'حدث خطأ أثناء الإنشاء')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm shadow-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3 text-lg text-slate-900 dark:text-white">
+            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+              <Plus className="w-5 h-5" />
+            </div>
+            تأسيس حافز جديد
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label className="text-slate-600 dark:text-slate-400 text-sm font-semibold">كود الحافز (إنجليزي/فريد)</Label>
+            <Input
+              type="text"
+              placeholder="مثال: customGrant"
+              value={formData.code}
+              onChange={(e) => setFormData(p => ({ ...p, code: e.target.value }))}
+              className="h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-slate-600 dark:text-slate-400 text-sm font-semibold">اسم الحافز</Label>
+            <Input
+              type="text"
+              placeholder="مثال: منحة استثنائية"
+              value={formData.nameAr}
+              onChange={(e) => setFormData(p => ({ ...p, nameAr: e.target.value }))}
+              className="h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-slate-600 dark:text-slate-400 text-sm font-semibold">المبلغ (ج.م)</Label>
+            <Input
+              type="number"
+              value={formData.amount}
+              onChange={(e) => setFormData(p => ({ ...p, amount: e.target.value }))}
+              step={10}
+              min={0}
+              className="h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500 text-lg"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-slate-600 dark:text-slate-400 text-sm font-semibold">نوع الحافز</Label>
+            <Select value={formData.type} onValueChange={(v) => setFormData(p => ({ ...p, type: v as any }))}>
+              <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:ring-indigo-500">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800 shadow-xl">
+                <SelectItem value="MONTHLY" className="rounded-lg">شهري</SelectItem>
+                <SelectItem value="ANNUAL" className="rounded-lg">سنوي</SelectItem>
+                <SelectItem value="PERIODIC" className="rounded-lg">دوري</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter className="gap-3">
+          <Button
+            variant="ghost"
+            className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            إلغاء
+          </Button>
+          <Button 
+            className="rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white shadow-md shadow-indigo-500/20" 
+            onClick={handleSave} 
+            disabled={isSubmitting || !formData.code || !formData.nameAr || !formData.amount}
+          >
+            {isSubmitting ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'إنشاء الحافز'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 const GRANT_TYPE_LABEL: Record<GrantConfig['type'], string> = {
   MONTHLY:  'شهري',
   ANNUAL:   'سنوي',
@@ -260,6 +384,7 @@ export function DisbursementSettingsPage() {
 
   const [editCat, setEditCat] = useState<CategoryConfig | null>(null)
   const [editGrant, setEditGrant] = useState<GrantConfig | null>(null)
+  const [createGrantOpen, setCreateGrantOpen] = useState(false)
 
   const fetchData = async () => {
     setIsLoading(true)
@@ -502,6 +627,7 @@ export function DisbursementSettingsPage() {
             ))}
 
             <motion.button
+              onClick={() => setCreateGrantOpen(true)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: grants.length * 0.05 }}
@@ -533,6 +659,11 @@ export function DisbursementSettingsPage() {
           onSaved={fetchData}
         />
       )}
+      <CreateGrantDialog
+        open={createGrantOpen}
+        onOpenChange={setCreateGrantOpen}
+        onSaved={fetchData}
+      />
     </div>
   )
 }

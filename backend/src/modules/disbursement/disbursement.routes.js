@@ -87,6 +87,17 @@ router.get(
   }),
 );
 
+// POST /api/disbursement/config/grants
+router.post(
+  '/config/grants',
+  requireRoles(UserRole.ADMIN),
+  requirePermission(PERMISSIONS.RULES_WRITE),
+  asyncHandler(async (req, res) => {
+    const created = await service.createGrantConfig(req.user, req.body);
+    res.status(201).json({ success: true, data: created });
+  }),
+);
+
 // PUT /api/disbursement/config/grants/:code
 router.put(
   '/config/grants/:code',
